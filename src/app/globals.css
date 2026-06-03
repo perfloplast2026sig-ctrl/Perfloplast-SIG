@@ -1,0 +1,2338 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f5f6f3;
+  --foreground: #171a1c;
+  --card: #ffffff;
+  --card-muted: #f0f2ee;
+  --border: #dfe4dc;
+  --muted: #68716b;
+  --accent: #24483f;
+  --accent-foreground: #f8faf8;
+  --warning: #a16207;
+  --danger: #b42318;
+  --success: #157347;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-muted: var(--card-muted);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #0c1110;
+  --foreground: #eef2ed;
+  --card: #121917;
+  --card-muted: #18211f;
+  --border: #26322f;
+  --muted: #9da9a2;
+  --accent: #8ac5aa;
+  --accent-foreground: #08100e;
+  --warning: #f3c96b;
+  --danger: #ff8a7a;
+  --success: #86d7a8;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+@keyframes dashboard-line-draw {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dashboard-bar-rise {
+  from {
+    transform: scaleY(0.08);
+    opacity: 0.45;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes dashboard-pulse {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.16;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.28;
+  }
+}
+
+@keyframes dashboard-progress {
+  from {
+    transform: translateX(-28%);
+    filter: saturate(0.75);
+  }
+  to {
+    transform: translateX(0);
+    filter: saturate(1.15);
+  }
+}
+
+.dashboard-chart-line {
+  stroke-dasharray: 1200;
+  animation: dashboard-line-draw 1.1s ease-out both;
+}
+
+.dashboard-chart-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: dashboard-bar-rise 0.65s ease-out both;
+}
+
+.dashboard-chart-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dashboard-pulse 1.35s ease-in-out infinite;
+}
+
+.dashboard-progress-fill {
+  animation: dashboard-progress 0.7s ease-out both;
+}
+
+.app-main {
+  min-width: 0;
+}
+
+.app-main div:has(> table) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-main table {
+  max-width: 100%;
+}
+
+@media screen and (max-width: 767px) {
+  .app-main h1 {
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    line-height: 1.05;
+  }
+
+  .app-main h2 {
+    font-size: clamp(1.25rem, 5.6vw, 1.65rem);
+    line-height: 1.1;
+  }
+
+  .app-main .rounded-\[24px\],
+  .app-main .rounded-3xl {
+    border-radius: 1rem;
+  }
+
+  .app-main .p-5 {
+    padding: 1rem;
+  }
+
+  .app-main table {
+    min-width: 680px;
+  }
+
+  .app-main button,
+  .app-main a,
+  .app-main input,
+  .app-main select,
+  .app-main textarea {
+    max-width: 100%;
+  }
+
+  .app-main input,
+  .app-main select,
+  .app-main textarea {
+    font-size: 16px;
+  }
+}
+
+.invoice-print-stage,
+.activity-report-print-stage,
+.operational-report-print-stage,
+.quote-print-stage,
+.preorder-report-print-stage,
+.report-print-stage {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 8mm;
+  }
+
+  @page reportPage {
+    size: portrait;
+    margin: 7mm 7mm 10mm;
+  }
+
+  @page preorderReport {
+    size: portrait;
+    margin: 8mm;
+  }
+
+  @page quotePage {
+    size: portrait;
+    margin: 8mm;
+  }
+
+  @page operationalReport {
+    size: portrait;
+    margin: 8mm;
+  }
+
+  @page activityReportPage {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  body.printing-invoice .app-shell,
+  body.printing-invoice .app-content,
+  body.printing-invoice .app-main {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-invoice aside,
+  body.printing-invoice header,
+  body.printing-invoice .invoice-screen-section,
+  body.printing-invoice .invoice-no-print,
+  body.printing-invoice .app-main > *:not(.invoice-print-stage):not(:has(.invoice-print-stage)) {
+    display: none !important;
+  }
+
+  body.printing-invoice .invoice-print-stage {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-invoice .invoice-print-target {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 7mm 8mm 6mm !important;
+    color: #020617 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  body.printing-invoice .invoice-print-page {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body.printing-invoice .invoice-print-header {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: start !important;
+    gap: 16mm !important;
+    padding-bottom: 4mm !important;
+  }
+
+  body.printing-invoice .invoice-print-info {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12mm !important;
+    padding: 5mm 0 !important;
+  }
+
+  body.printing-invoice .invoice-print-summary {
+    display: grid !important;
+    grid-template-columns: 1fr 70mm !important;
+    gap: 12mm !important;
+    margin-top: 5mm !important;
+  }
+
+  body.printing-invoice .invoice-print-target table {
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+
+  body.printing-invoice .invoice-print-target th,
+  body.printing-invoice .invoice-print-target td {
+    padding-top: 2.6mm !important;
+    padding-bottom: 2.6mm !important;
+  }
+
+  body.printing-invoice .invoice-print-target img {
+    max-width: 18mm !important;
+    max-height: 14mm !important;
+  }
+
+  body.printing-quote .app-shell,
+  body.printing-quote .app-content,
+  body.printing-quote .app-main {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-quote aside,
+  body.printing-quote header,
+  body.printing-quote #mobile-navigation,
+  body.printing-quote .app-main > *:not(:has(.quote-print-stage)):not(.quote-print-stage) {
+    display: none !important;
+  }
+
+  body.printing-quote .quote-print-stage {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  body.printing-quote .quote-print-target {
+    page: quotePage;
+    width: 100% !important;
+    color: #06184a !important;
+    background: #ffffff !important;
+    font-size: 8px !important;
+    line-height: 1.22 !important;
+  }
+
+  body.printing-quote .quote-print-header {
+    display: grid !important;
+    grid-template-columns: 1fr 58mm !important;
+    align-items: center !important;
+    gap: 8mm !important;
+    border-bottom: 1px solid #8fa9d5 !important;
+    padding-bottom: 3mm !important;
+  }
+
+  body.printing-quote .quote-print-brand-block {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2.5mm !important;
+  }
+
+  body.printing-quote .quote-print-brand-block img {
+    width: 15mm !important;
+    height: auto !important;
+  }
+
+  body.printing-quote .quote-print-brand {
+    color: #003b8f !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-quote .quote-print-header > div:last-child {
+    text-align: right !important;
+  }
+
+  body.printing-quote .quote-print-header h1 {
+    margin: 0.4mm 0 !important;
+    color: #06184a !important;
+    font-size: 23px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-quote .quote-print-meta,
+  body.printing-quote .quote-print-address {
+    display: grid !important;
+    gap: 0 !important;
+    border-bottom: 1px solid #d7e1f2 !important;
+  }
+
+  body.printing-quote .quote-print-meta {
+    grid-template-columns: repeat(3, 1fr) !important;
+    margin-top: 3mm !important;
+    border-top: 1px solid #d7e1f2 !important;
+  }
+
+  body.printing-quote .quote-print-address {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  body.printing-quote .quote-print-meta > div,
+  body.printing-quote .quote-print-address > div {
+    border-right: 1px solid #e2e9f5 !important;
+    padding: 1.6mm 2mm !important;
+  }
+
+  body.printing-quote .quote-print-meta > div:nth-child(3n),
+  body.printing-quote .quote-print-address > div:last-child {
+    border-right: 0 !important;
+  }
+
+  body.printing-quote .quote-print-meta span,
+  body.printing-quote .quote-print-address span {
+    display: block !important;
+    color: #003b8f !important;
+    font-size: 6.8px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-quote .quote-print-meta strong,
+  body.printing-quote .quote-print-address strong {
+    display: block !important;
+    margin-top: 0.5mm !important;
+    color: #06184a !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-quote .quote-print-note {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    margin-top: 3mm !important;
+    border-top: 1px solid #8fa9d5 !important;
+    border-bottom: 1px solid #8fa9d5 !important;
+    padding: 2mm 0 !important;
+    color: #06184a !important;
+  }
+
+  body.printing-quote .quote-print-note strong {
+    color: #003b8f !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-quote .quote-print-table {
+    margin-top: 3mm !important;
+    border-top: 1px solid #8fa9d5 !important;
+    padding-top: 2mm !important;
+  }
+
+  body.printing-quote .quote-print-table h2 {
+    margin: 0 0 1.6mm !important;
+    color: #003b8f !important;
+    font-size: 8px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-quote .quote-print-table table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.printing-quote .quote-print-table thead {
+    display: table-header-group !important;
+  }
+
+  body.printing-quote .quote-print-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-quote .quote-print-table th {
+    background: #f7faff !important;
+    color: #334d85 !important;
+    font-size: 6.6px !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-quote .quote-print-table th,
+  body.printing-quote .quote-print-table td {
+    border-bottom: 1px solid #dce6f4 !important;
+    height: 5mm !important;
+    padding: 1.1mm 1.2mm !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+  }
+
+  body.printing-quote .quote-print-totals {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 !important;
+    width: 72mm !important;
+    margin: 4mm 0 0 auto !important;
+    border-top: 1px solid #8fa9d5 !important;
+    border-bottom: 1px solid #8fa9d5 !important;
+  }
+
+  body.printing-quote .quote-print-totals p {
+    display: grid !important;
+    gap: 0.6mm !important;
+    margin: 0 !important;
+    border-right: 1px solid #e2e9f5 !important;
+    padding: 1.8mm 2mm !important;
+  }
+
+  body.printing-quote .quote-print-totals p:last-child {
+    border-right: 0 !important;
+  }
+
+  body.printing-quote .quote-print-totals span {
+    color: #003b8f !important;
+    font-size: 6.8px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-quote .quote-print-totals strong {
+    color: #06184a !important;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-quote .quote-print-target footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    margin-top: 5mm !important;
+    border-top: 1px solid #8fa9d5 !important;
+    padding-top: 1.5mm !important;
+    color: #6b7898 !important;
+    font-size: 6.8px !important;
+  }
+
+  body.printing-operational-report .app-shell,
+  body.printing-operational-report .app-content,
+  body.printing-operational-report .app-main {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-operational-report aside,
+  body.printing-operational-report header,
+  body.printing-operational-report #mobile-navigation,
+  body.printing-operational-report .app-main > *:not(:has(.operational-report-print-stage)):not(.operational-report-print-stage) {
+    display: none !important;
+  }
+
+  body.printing-operational-report .app-main > *:has(.operational-report-print-stage) {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-operational-report .app-main > *:has(.operational-report-print-stage) > *:not(:has(.operational-report-print-stage)):not(.operational-report-print-stage) {
+    display: none !important;
+  }
+
+  body.printing-operational-report .app-main > *:has(.operational-report-print-stage) > *:has(.operational-report-print-stage) {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  body.printing-operational-report .operational-report-control {
+    display: none !important;
+  }
+
+  body.printing-operational-report *:has(> .operational-report-print-stage) > *:not(.operational-report-print-stage) {
+    display: none !important;
+  }
+
+  body.printing-operational-report .operational-report-print-stage {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-operational-report .operational-report-print-target {
+    page: operationalReport;
+    width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #06184a !important;
+    background: #ffffff !important;
+    font-size: 7.6px !important;
+    line-height: 1.18 !important;
+  }
+
+  body.printing-operational-report .operational-report-header {
+    display: grid !important;
+    grid-template-columns: 1fr 58mm !important;
+    align-items: center !important;
+    gap: 7mm !important;
+    border-bottom: 1px solid #8fa9d5 !important;
+    padding-bottom: 2.4mm !important;
+  }
+
+  body.printing-operational-report .operational-report-brand-block {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2.2mm !important;
+  }
+
+  body.printing-operational-report .operational-report-brand-block img {
+    width: 13mm !important;
+    height: auto !important;
+  }
+
+  body.printing-operational-report .operational-report-brand {
+    color: #003b8f !important;
+    font-size: 14.5px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-operational-report .operational-report-header > div:last-child {
+    text-align: right !important;
+  }
+
+  body.printing-operational-report .operational-report-header h1 {
+    margin: 0.3mm 0 !important;
+    color: #06184a !important;
+    font-size: 21px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-operational-report .operational-report-header span {
+    display: block !important;
+    margin-top: 0.7mm !important;
+    color: #334d85 !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-operational-report .operational-report-meta,
+  body.printing-operational-report .operational-report-summary {
+    display: grid !important;
+    gap: 0 !important;
+    border-bottom: 1px solid #d7e1f2 !important;
+  }
+
+  body.printing-operational-report .operational-report-meta {
+    grid-template-columns: repeat(4, 1fr) !important;
+    margin-top: 2.2mm !important;
+    border-top: 1px solid #d7e1f2 !important;
+    padding: 1.4mm 0 !important;
+  }
+
+  body.printing-operational-report .operational-report-summary {
+    grid-template-columns: repeat(4, 1fr) !important;
+    margin-top: 2.2mm !important;
+    border-top: 1px solid #d7e1f2 !important;
+  }
+
+  body.printing-operational-report .operational-report-meta > div,
+  body.printing-operational-report .operational-report-summary > div {
+    border-right: 1px solid #e2e9f5 !important;
+    padding: 1.5mm 2mm !important;
+  }
+
+  body.printing-operational-report .operational-report-meta > div:first-child,
+  body.printing-operational-report .operational-report-summary > div:first-child {
+    padding-left: 0 !important;
+  }
+
+  body.printing-operational-report .operational-report-meta > div:last-child,
+  body.printing-operational-report .operational-report-summary > div:last-child {
+    border-right: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body.printing-operational-report .operational-report-meta span,
+  body.printing-operational-report .operational-report-summary span {
+    display: block !important;
+    color: #003b8f !important;
+    font-size: 6.8px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-operational-report .operational-report-meta strong,
+  body.printing-operational-report .operational-report-summary strong {
+    display: block !important;
+    margin-top: 0.5mm !important;
+    color: #06184a !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-operational-report .operational-report-summary small {
+    display: block !important;
+    margin-top: 0.5mm !important;
+    color: #607399 !important;
+    font-weight: 750 !important;
+  }
+
+  body.printing-operational-report .operational-report-table {
+    margin-top: 2.6mm !important;
+    border-top: 1px solid #8fa9d5 !important;
+    padding-top: 1.8mm !important;
+    break-inside: auto !important;
+  }
+
+  body.printing-operational-report .operational-report-table h2 {
+    margin: 0 0 1.4mm !important;
+    color: #003b8f !important;
+    font-size: 7.8px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-operational-report .operational-report-table table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.printing-operational-report .operational-report-table thead {
+    display: table-header-group !important;
+  }
+
+  body.printing-operational-report .operational-report-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-operational-report .operational-report-table th {
+    background: #f7faff !important;
+    color: #334d85 !important;
+    font-size: 6.4px !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-operational-report .operational-report-table th,
+  body.printing-operational-report .operational-report-table td {
+    border-bottom: 1px solid #dce6f4 !important;
+    height: 4.2mm !important;
+    padding: 1mm 1.1mm !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+  }
+
+  body.printing-operational-report .operational-report-table .text-right {
+    text-align: right !important;
+  }
+
+  body.printing-operational-report .operational-report-print-target footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    margin-top: 4mm !important;
+    border-top: 1px solid #8fa9d5 !important;
+    padding-top: 1.4mm !important;
+    color: #6b7898 !important;
+    font-size: 6.6px !important;
+  }
+
+  body.printing-activity-report .app-shell,
+  body.printing-activity-report .activity-report-no-print {
+    display: none !important;
+  }
+
+  body.printing-activity-report .activity-report-print-stage {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-target {
+    page: activityReportPage;
+    width: 100% !important;
+    color: #16233b !important;
+    background: #ffffff !important;
+    font-size: 8.2px !important;
+    line-height: 1.24 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-header {
+    display: grid !important;
+    grid-template-columns: 1fr 58mm !important;
+    align-items: center !important;
+    gap: 8mm !important;
+    padding: 5mm 0 4mm !important;
+  }
+
+  body.printing-activity-report .activity-report-print-brand-block {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2.5mm !important;
+  }
+
+  body.printing-activity-report .activity-report-print-brand-block img {
+    width: 18mm !important;
+    height: auto !important;
+  }
+
+  body.printing-activity-report .activity-report-print-brand {
+    color: #003b8f !important;
+    font-size: 15.5px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-header > div:last-child {
+    text-align: right !important;
+  }
+
+  body.printing-activity-report .activity-report-print-header span {
+    display: block !important;
+    margin-top: 0.7mm !important;
+    color: #51617f !important;
+    font-size: 7px !important;
+    font-weight: 750 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-title {
+    margin-top: 2mm !important;
+    border-radius: 1.5mm !important;
+    padding: 4mm !important;
+    color: #ffffff !important;
+    background: #0b1530 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-title h1 {
+    margin: 0 !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-activity-report .activity-report-print-title p {
+    margin: 1.2mm 0 0 !important;
+    color: #d7deeb !important;
+    font-size: 7.2px !important;
+    font-weight: 700 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-meta-table {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    margin-top: 3mm !important;
+    border: 1px solid #9fb0ca !important;
+  }
+
+  body.printing-activity-report .activity-report-print-meta-table > div {
+    display: grid !important;
+    grid-template-columns: 28mm 1fr !important;
+    border-right: 1px solid #9fb0ca !important;
+  }
+
+  body.printing-activity-report .activity-report-print-meta-table > div:nth-child(2n) {
+    border-right: 0 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-meta-table > div:nth-child(-n + 2) {
+    border-bottom: 1px solid #9fb0ca !important;
+  }
+
+  body.printing-activity-report .activity-report-print-meta-table span {
+    display: block !important;
+    padding: 2mm !important;
+    color: #16233b !important;
+    background: #edf2f7 !important;
+    font-size: 6.7px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-activity-report .activity-report-print-meta-table strong {
+    display: block !important;
+    padding: 2mm !important;
+    color: #16233b !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-summary {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2mm !important;
+    margin-top: 2.5mm !important;
+  }
+
+  body.printing-activity-report .activity-report-print-summary > div {
+    border-left: 2mm solid #0b1530 !important;
+    padding: 1.6mm 2mm !important;
+    background: #f6f8fb !important;
+  }
+
+  body.printing-activity-report .activity-report-print-summary span {
+    display: block !important;
+    color: #51617f !important;
+    font-size: 6.6px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-activity-report .activity-report-print-summary strong {
+    display: block !important;
+    margin-top: 0.8mm !important;
+    color: #0b1530 !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table {
+    margin-top: 3mm !important;
+    padding-top: 0 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-closing h2 {
+    margin: 0 0 1.8mm !important;
+    color: #16233b !important;
+    font-size: 8px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table thead {
+    display: table-header-group !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table th {
+    border: 1px solid #9fb0ca !important;
+    background: #dfe7f0 !important;
+    color: #16233b !important;
+    font-size: 6.8px !important;
+    font-weight: 950 !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table th,
+  body.printing-activity-report .activity-report-print-table td {
+    border: 1px solid #9fb0ca !important;
+    min-height: 5.5mm !important;
+    padding: 1.4mm 1.5mm !important;
+    color: #16233b !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+  }
+
+  body.printing-activity-report .activity-report-print-table tbody tr:nth-child(even) td {
+    background: #f7f9fc !important;
+  }
+
+  body.printing-activity-report .activity-report-print-closing {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 3mm !important;
+    margin-top: 3.5mm !important;
+  }
+
+  body.printing-activity-report .activity-report-print-closing > div {
+    border: 1px solid #9fb0ca !important;
+    padding: 2.2mm !important;
+  }
+
+  body.printing-activity-report .activity-report-print-closing p {
+    margin: 0 !important;
+    min-height: 14mm !important;
+    color: #16233b !important;
+  }
+
+  body.printing-activity-report .activity-report-print-signatures {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 28mm !important;
+    margin: 12mm 18mm 0 !important;
+  }
+
+  body.printing-activity-report .activity-report-print-signatures span {
+    display: block !important;
+    border-top: 1px solid #51617f !important;
+  }
+
+  body.printing-activity-report .activity-report-print-signatures p {
+    margin: 2mm 0 0 !important;
+    color: #51617f !important;
+    font-size: 7px !important;
+    text-align: center !important;
+  }
+
+  body.printing-activity-report .activity-report-print-target footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    margin-top: 12mm !important;
+    color: #8ca0bf !important;
+    font-size: 6.5px !important;
+  }
+
+  body.printing-report .app-shell,
+  body.printing-report .app-content,
+  body.printing-report .app-main {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report aside,
+  body.printing-report header,
+  body.printing-report #mobile-navigation,
+  body.printing-report .report-screen-section {
+    display: none !important;
+  }
+
+  body.printing-report .report-print-stage {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-preorder-report .app-shell,
+  body.printing-preorder-report .app-content,
+  body.printing-preorder-report .app-main {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-preorder-report aside,
+  body.printing-preorder-report header,
+  body.printing-preorder-report #mobile-navigation,
+  body.printing-preorder-report .report-screen-section,
+  body.printing-preorder-report .app-main > *:not(:has(.preorder-report-print-stage)):not(.preorder-report-print-stage) {
+    display: none !important;
+  }
+
+  body.printing-preorder-report .preorder-report-print-stage {
+    display: block !important;
+  }
+
+  body.printing-preorder-report .preorder-report-controls {
+    display: none !important;
+  }
+
+  body.printing-preorder-report .preorder-report-print-target {
+    page: preorderReport;
+    position: relative !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    color: #06184a !important;
+    background: #ffffff !important;
+    font-size: 7.6px !important;
+    line-height: 1.18 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-header {
+    display: grid !important;
+    grid-template-columns: 1fr 54mm !important;
+    gap: 6mm !important;
+    align-items: center !important;
+    border-bottom: 1px solid #8fa9d5 !important;
+    padding-bottom: 2.4mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-brand-block {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2.2mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-brand-block img {
+    width: 13mm !important;
+    height: auto !important;
+  }
+
+  body.printing-preorder-report .preorder-report-brand {
+    color: #003b8f !important;
+    font-size: 14.5px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-header > div:last-child {
+    text-align: right !important;
+  }
+
+  body.printing-preorder-report .preorder-report-header h1 {
+    margin: 0.3mm 0 !important;
+    color: #06184a !important;
+    font-size: 22px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0 !important;
+    margin-top: 2.2mm !important;
+    border-top: 1px solid #d7e1f2 !important;
+    border-bottom: 1px solid #d7e1f2 !important;
+    padding: 1.6mm 0 !important;
+    background: transparent !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters > div {
+    border-right: 1px solid #e2e9f5 !important;
+    padding: 0 2mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters > div:first-child {
+    padding-left: 0 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters > div:last-child {
+    border-right: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters span,
+  body.printing-preorder-report .preorder-report-summary span {
+    display: block !important;
+    color: #003b8f !important;
+    font-size: 7px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters strong {
+    display: block !important;
+    margin-top: 0.8mm !important;
+    color: #06184a !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0 !important;
+    margin-top: 2.2mm !important;
+    border-top: 1px solid #d7e1f2 !important;
+    border-bottom: 1px solid #d7e1f2 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary > div {
+    border: 0 !important;
+    border-right: 1px solid #e2e9f5 !important;
+    border-radius: 0 !important;
+    padding: 2mm 2.4mm !important;
+    background: transparent !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary > div:first-child {
+    padding-left: 0 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary > div:last-child {
+    border-right: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary strong {
+    display: block !important;
+    margin-top: 0.4mm !important;
+    color: #06184a !important;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary small {
+    display: block !important;
+    margin-top: 0.5mm !important;
+    color: #607399 !important;
+    font-weight: 750 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4mm !important;
+    margin-top: 2.6mm !important;
+    break-inside: avoid !important;
+  }
+
+  body.printing-preorder-report .preorder-report-detail-grid {
+    display: block !important;
+    margin-top: 2.6mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-card {
+    border: 0 !important;
+    border-top: 1px solid #8fa9d5 !important;
+    border-radius: 0 !important;
+    min-height: 0 !important;
+    padding: 1.8mm 0 0 !important;
+    background: transparent !important;
+  }
+
+  body.printing-preorder-report .preorder-report-card h2,
+  body.printing-preorder-report .preorder-report-table h2 {
+    margin: 0 0 1.4mm !important;
+    color: #003b8f !important;
+    font-size: 7.6px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-preorder-report .preorder-report-bars > div {
+    margin-bottom: 1.5mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-bars p {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 4mm !important;
+    margin-bottom: 1mm !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-bars i {
+    display: block !important;
+    height: 2mm !important;
+    border-radius: 999px !important;
+    background: #0f9f63 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table {
+    margin-top: 2.6mm !important;
+    border: 0 !important;
+    border-top: 1px solid #8fa9d5 !important;
+    border-radius: 0 !important;
+    padding: 1.8mm 0 0 !important;
+    break-inside: auto !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table table,
+  body.printing-preorder-report .preorder-report-card table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table thead,
+  body.printing-preorder-report .preorder-report-card thead {
+    display: table-header-group !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table tfoot,
+  body.printing-preorder-report .preorder-report-card tfoot {
+    display: table-footer-group !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table tr,
+  body.printing-preorder-report .preorder-report-card tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table th,
+  body.printing-preorder-report .preorder-report-card th {
+    background: #f7faff !important;
+    color: #334d85 !important;
+    font-size: 6.4px !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table th,
+  body.printing-preorder-report .preorder-report-table td,
+  body.printing-preorder-report .preorder-report-card th,
+  body.printing-preorder-report .preorder-report-card td {
+    border-bottom: 1px solid #dce6f4 !important;
+    height: 4.2mm !important;
+    padding: 1mm 1.1mm !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+  }
+
+  body.printing-preorder-report .preorder-report-print-target footer {
+    position: static !important;
+    margin-top: 4mm !important;
+    border-top: 1px solid #8fa9d5 !important;
+    padding-top: 1.5mm !important;
+    color: #6b7898 !important;
+    font-size: 6.6px !important;
+  }
+
+  body.printing-report .report-print-target {
+    page: reportPage;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 276mm !important;
+    margin: 0 !important;
+    padding: 0 0 8mm !important;
+    color: #020617 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    font-size: 7.9px !important;
+    line-height: 1.22 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-header {
+    display: grid !important;
+    grid-template-columns: 1fr 65mm !important;
+    gap: 8mm !important;
+    align-items: start !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 0 0 2.8mm !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-header img {
+    max-width: 18mm !important;
+    max-height: 13mm !important;
+  }
+
+  body.printing-report .report-print-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4mm !important;
+  }
+
+  body.printing-report .report-print-company {
+    color: #0f4b83 !important;
+    font-size: 17px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-report .report-print-company-subtitle {
+    margin: 1mm 0 !important;
+    color: #1e3a8a !important;
+    font-size: 7px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-title {
+    text-align: right !important;
+  }
+
+  body.printing-report .report-print-title > p {
+    color: #475569 !important;
+    font-size: 7px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-title h1 {
+    margin: 0.5mm 0 1.4mm !important;
+    color: #0f172a !important;
+    font-size: 23px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-title dl {
+    display: grid !important;
+    gap: 0.5mm !important;
+  }
+
+  body.printing-report .report-print-title div {
+    display: grid !important;
+    grid-template-columns: 17mm 1fr !important;
+    gap: 2mm !important;
+  }
+
+  body.printing-report .report-print-title dt {
+    color: #64748b !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-title dd {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-report .report-print-label {
+    margin-bottom: 1.4mm !important;
+    color: #64748b !important;
+    font-size: 7px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-section {
+    margin-top: 2.5mm !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-report .report-print-filters {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 1.2mm !important;
+  }
+
+  body.printing-report .report-print-filters > div {
+    border: 1px solid #dbe3ea !important;
+    border-radius: 1.2mm !important;
+    padding: 1.4mm 1.6mm !important;
+    background: #f8fafc !important;
+  }
+
+  body.printing-report .report-print-filters span {
+    display: block !important;
+    color: #64748b !important;
+    font-size: 7px !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-report .report-print-filters strong {
+    display: block !important;
+    margin-top: 0.7mm !important;
+    color: #0f172a !important;
+  }
+
+  body.printing-report .report-print-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.2mm !important;
+    margin: 0 !important;
+  }
+
+  body.printing-report .report-print-kpis > div {
+    position: relative !important;
+    border: 1px solid #dbe3ea !important;
+    border-radius: 1.2mm !important;
+    min-height: 16mm !important;
+    padding: 1.7mm 1.7mm 1.5mm 7mm !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-kpi-icon {
+    position: absolute !important;
+    top: 1.7mm !important;
+    left: 1.6mm !important;
+    display: grid !important;
+    width: 3.8mm !important;
+    height: 3.8mm !important;
+    place-items: center !important;
+    border: 1px solid #bbf7d0 !important;
+    border-radius: 1mm !important;
+    color: #0f8f56 !important;
+    font-size: 6.6px !important;
+    font-weight: 950 !important;
+    background: #ecfdf5 !important;
+  }
+
+  body.printing-report .report-print-kpis p {
+    color: #64748b !important;
+    font-size: 7px !important;
+  }
+
+  body.printing-report .report-print-kpis strong {
+    display: block !important;
+    margin: 0.6mm 0 !important;
+    color: #020617 !important;
+    font-size: 10.5px !important;
+  }
+
+  body.printing-report .report-print-kpis em {
+    display: block !important;
+    color: #0f8f56 !important;
+    font-size: 6.6px !important;
+    font-style: normal !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-kpis small {
+    display: block !important;
+    color: #64748b !important;
+    font-size: 6.4px !important;
+  }
+
+  body.printing-report .report-print-chart-grid,
+  body.printing-report .report-print-tables {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 1.6mm !important;
+    margin: 0 !important;
+  }
+
+  body.printing-report .report-print-chart-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  body.printing-report .report-print-panel {
+    border: 1px solid #dbe3ea !important;
+    border-radius: 1.4mm !important;
+    padding: 1.7mm !important;
+    background: #ffffff !important;
+    break-inside: avoid !important;
+    min-height: 24mm !important;
+  }
+
+  body.printing-report .report-print-panel h2 {
+    margin: 0 0 1.4mm !important;
+    color: #0f172a !important;
+    font-size: 7.4px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-panel svg {
+    display: block !important;
+    width: 100% !important;
+    height: 28mm !important;
+  }
+
+  body.printing-report .report-print-wide {
+    grid-column: span 1 !important;
+  }
+
+  body.printing-report .report-print-donut {
+    display: grid !important;
+    grid-template-columns: 20mm 1fr !important;
+    align-items: center !important;
+    gap: 2mm !important;
+  }
+
+  body.printing-report .report-print-donut-graphic {
+    display: grid !important;
+    place-items: center !important;
+    width: 19mm !important;
+    height: 19mm !important;
+    border: 3.2mm solid #0f8f56 !important;
+    border-right-color: #2563eb !important;
+    border-bottom-color: #7c3aed !important;
+    border-radius: 999px !important;
+    text-align: center !important;
+  }
+
+  body.printing-report .report-print-donut-graphic strong {
+    font-size: 7.4px !important;
+  }
+
+  body.printing-report .report-print-donut-graphic span {
+    color: #64748b !important;
+    font-size: 6px !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-donut p {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 2mm !important;
+    margin-bottom: 1.4mm !important;
+  }
+
+  body.printing-report .report-print-donut p span {
+    width: 2mm !important;
+    height: 2mm !important;
+    border-radius: 999px !important;
+  }
+
+  body.printing-report .report-print-production {
+    display: grid !important;
+    grid-template-columns: 22mm 1fr !important;
+    align-items: center !important;
+    gap: 3mm !important;
+  }
+
+  body.printing-report .report-print-production-graphic {
+    display: grid !important;
+    place-items: center !important;
+    width: 21mm !important;
+    height: 21mm !important;
+    border: 3.5mm solid #0f8f56 !important;
+    border-radius: 999px !important;
+    text-align: center !important;
+  }
+
+  body.printing-report .report-print-production-graphic strong {
+    display: block !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-report .report-print-production-graphic span {
+    color: #64748b !important;
+    font-size: 5.8px !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-report .report-print-production p {
+    display: grid !important;
+    grid-template-columns: 2mm 1fr auto auto !important;
+    align-items: center !important;
+    gap: 1.6mm !important;
+    margin-bottom: 1.4mm !important;
+  }
+
+  body.printing-report .report-print-production p span {
+    display: block !important;
+    width: 2mm !important;
+    height: 2mm !important;
+    border-radius: 999px !important;
+    background: #0f8f56 !important;
+  }
+
+  body.printing-report .report-print-production p strong,
+  body.printing-report .report-print-production p em {
+    font-style: normal !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-report .report-print-bars > div {
+    margin-bottom: 1.4mm !important;
+  }
+
+  body.printing-report .report-print-bars p {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 2mm !important;
+    margin-bottom: 0.8mm !important;
+  }
+
+  body.printing-report .report-print-bars i {
+    display: block !important;
+    height: 2.2mm !important;
+    border-radius: 999px !important;
+    background: #0f8f56 !important;
+  }
+
+  body.printing-report .report-print-target table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.printing-report .report-print-target th {
+    background: #f3f6f8 !important;
+    color: #334155 !important;
+    font-size: 6.2px !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-target th,
+  body.printing-report .report-print-target td {
+    border-bottom: 1px solid #e5e7eb !important;
+    height: 5mm !important;
+    padding: 1.15mm 1.2mm !important;
+    vertical-align: top !important;
+    word-break: break-word !important;
+  }
+
+  body.printing-report .report-print-empty-row td {
+    color: transparent !important;
+  }
+
+  body.printing-report .report-print-notes,
+  body.printing-report .report-print-observations {
+    border: 1px solid #dbe3ea !important;
+    border-radius: 1.4mm !important;
+    padding: 1.8mm !important;
+    color: #334155 !important;
+    background: #f8fafc !important;
+  }
+
+  body.printing-report .report-print-observations {
+    display: grid !important;
+    grid-template-columns: 1fr 42mm !important;
+    align-items: end !important;
+    gap: 8mm !important;
+  }
+
+  body.printing-report .report-print-observations div {
+    border-top: 1px solid #0f172a !important;
+    padding-top: 1.4mm !important;
+    text-align: center !important;
+  }
+
+  body.printing-report .report-print-observations strong,
+  body.printing-report .report-print-observations span {
+    display: block !important;
+  }
+
+  body.printing-report .report-print-footer {
+    position: fixed !important;
+    right: 0 !important;
+    bottom: -7mm !important;
+    left: 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    border-top: 1px solid #cbd5e1 !important;
+    padding-top: 1.4mm !important;
+    color: #64748b !important;
+    font-size: 7px !important;
+  }
+
+  body.printing-report .report-page-number::after {
+    content: "Pagina " counter(page) " de " counter(pages);
+  }
+
+  body.printing-report .bg-emerald-500 {
+    background: #0f8f56 !important;
+  }
+
+  body.printing-report .bg-blue-500 {
+    background: #2563eb !important;
+  }
+
+  body.printing-report .bg-amber-500 {
+    background: #d97706 !important;
+  }
+
+  body.printing-report .report-print-empty {
+    color: #64748b !important;
+    font-weight: 700 !important;
+  }
+
+  @page reportPage {
+    size: portrait;
+    margin: 7mm 7mm 8mm;
+  }
+
+  body.printing-report .report-print-target {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    color: #06184a !important;
+    font-size: 7.2px !important;
+    line-height: 1.16 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-page {
+    position: relative !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  body.printing-report .report-print-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  body.printing-report .report-print-page-break {
+    padding-top: 0 !important;
+    page-break-before: auto !important;
+    break-before: auto !important;
+  }
+
+  body.printing-report .report-print-header {
+    display: grid !important;
+    grid-template-columns: 52mm 1fr 58mm !important;
+    gap: 5mm !important;
+    align-items: center !important;
+    border-bottom: 1.4px solid #0b3f91 !important;
+    padding: 0.8mm 0 2.4mm !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-header-compact {
+    padding-bottom: 3mm !important;
+  }
+
+  body.printing-report .report-print-header-compact .report-print-title h1,
+  body.printing-report .report-print-header-compact .report-print-title span {
+    display: none !important;
+  }
+
+  body.printing-report .report-print-brand {
+    display: grid !important;
+    grid-template-columns: 18mm 1fr !important;
+    gap: 3mm !important;
+    align-items: center !important;
+  }
+
+  body.printing-report .report-print-header img {
+    width: 18mm !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+
+  body.printing-report .report-print-company {
+    color: #003b8f !important;
+    font-size: 14px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-report .report-print-company-subtitle {
+    margin-top: 1mm !important;
+    color: #003b8f !important;
+    font-size: 7.2px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-contact {
+    border-left: 1px solid #b7c7e5 !important;
+    padding-left: 4mm !important;
+    color: #06184a !important;
+    font-size: 7.3px !important;
+    font-weight: 700 !important;
+  }
+
+  body.printing-report .report-print-contact p {
+    margin: 1mm 0 !important;
+  }
+
+  body.printing-report .report-print-title {
+    text-align: right !important;
+  }
+
+  body.printing-report .report-print-title > p {
+    color: #6b7898 !important;
+    font-size: 8px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-title h1 {
+    margin: 0 !important;
+    color: #06184a !important;
+    font-size: 18px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-report .report-print-title strong,
+  body.printing-report .report-print-title span {
+    display: block !important;
+    margin-top: 1mm !important;
+    color: #003b8f !important;
+    font-size: 7.6px !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-report .report-print-meta {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 3mm !important;
+    border-bottom: 1px solid #c8d7ef !important;
+    padding: 3mm 0 !important;
+  }
+
+  body.printing-report .report-print-meta div {
+    border-right: 1px solid #d7e1f2 !important;
+    padding-left: 4mm !important;
+  }
+
+  body.printing-report .report-print-meta div:last-child {
+    border-right: 0 !important;
+  }
+
+  body.printing-report .report-print-meta span,
+  body.printing-report .report-print-meta strong {
+    display: block !important;
+  }
+
+  body.printing-report .report-print-meta span {
+    color: #334d85 !important;
+    font-size: 7.6px !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-report .report-print-meta strong {
+    margin-top: 0.8mm !important;
+    color: #06184a !important;
+    font-size: 9.2px !important;
+  }
+
+  body.printing-report .report-print-filter-card {
+    margin-top: 3mm !important;
+    border-top: 1px solid #c8d7ef !important;
+    border-bottom: 1px solid #c8d7ef !important;
+    border-right: 0 !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    padding: 2.2mm 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-block-title,
+  body.printing-report .report-print-section-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.4mm !important;
+    margin: 0 0 2.3mm !important;
+    color: #003b8f !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-filters {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    row-gap: 2mm !important;
+    column-gap: 6mm !important;
+  }
+
+  body.printing-report .report-print-filters > div {
+    border: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  body.printing-report .report-print-filters span {
+    color: #003b8f !important;
+    font-size: 7.3px !important;
+    font-weight: 900 !important;
+  }
+
+  body.printing-report .report-print-filters strong {
+    margin-top: 1mm !important;
+    color: #06184a !important;
+    font-size: 7.6px !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-report .report-print-section {
+    margin-top: 1.8mm !important;
+    break-inside: auto !important;
+  }
+
+  body.printing-report .report-print-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 0 !important;
+    border-top: 1px solid #c8d7ef !important;
+    border-bottom: 1px solid #c8d7ef !important;
+  }
+
+  body.printing-report .report-print-kpis > div {
+    position: relative !important;
+    min-height: 9.2mm !important;
+    border: 0 !important;
+    border-right: 1px solid #dbe5f3 !important;
+    border-radius: 0 !important;
+    padding: 1.2mm 1.5mm 1.1mm !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .report-print-kpis > div:nth-child(5n) {
+    border-right: 0 !important;
+  }
+
+  body.printing-report .report-print-kpi-icon {
+    display: none !important;
+  }
+
+  body.printing-report .report-print-kpis p {
+    color: #003b8f !important;
+    font-size: 6.8px !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-report .report-print-kpis strong {
+    margin: 0.2mm 0 !important;
+    color: #06184a !important;
+    font-size: 8.7px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-kpis em {
+    color: #00995a !important;
+    font-size: 6.8px !important;
+    font-style: normal !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-kpis small {
+    display: block !important;
+    margin-top: 0.2mm !important;
+    color: #334d85 !important;
+    font-size: 6.3px !important;
+    font-weight: 750 !important;
+  }
+
+  body.printing-report .report-print-chart-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 2mm 4mm !important;
+    align-items: stretch !important;
+    break-inside: auto !important;
+  }
+
+  body.printing-report .report-print-chart-grid .report-print-panel {
+    display: flex !important;
+    min-height: 31mm !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+
+  body.printing-report .report-print-chart-trend {
+    grid-column: span 7 !important;
+  }
+
+  body.printing-report .report-print-chart-donut {
+    grid-column: span 5 !important;
+  }
+
+  body.printing-report .report-print-chart-production {
+    grid-column: span 5 !important;
+  }
+
+  body.printing-report .report-print-chart-category {
+    grid-column: span 7 !important;
+  }
+
+  body.printing-report .report-print-main-tables {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.8mm 3mm !important;
+    margin-top: 1.8mm !important;
+  }
+
+  body.printing-report .report-print-secondary-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.8mm 3mm !important;
+    margin-top: 1.8mm !important;
+  }
+
+  body.printing-report .report-print-bottom-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.8mm 3mm !important;
+  }
+
+  body.printing-report .report-print-panel {
+    min-height: 0 !important;
+    border: 0 !important;
+    border-top: 1.2px solid #0b3f91 !important;
+    border-radius: 0 !important;
+    padding: 1.6mm 0 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-report .report-print-wide {
+    grid-column: 1 / -1 !important;
+  }
+
+  body.printing-report .report-print-panel h2 {
+    margin: 0 0 1.5mm !important;
+    color: #003b8f !important;
+    font-size: 8.6px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.02em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-panel svg {
+    width: 100% !important;
+    height: 24mm !important;
+  }
+
+  body.printing-report .report-print-chart-trend svg {
+    flex: 1 1 auto !important;
+    height: 31mm !important;
+  }
+
+  body.printing-report .report-print-trend-analysis {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 35mm !important;
+    align-items: center !important;
+    gap: 3mm !important;
+  }
+
+  body.printing-report .report-print-trend-data {
+    border-left: 1px solid #d7e1f2 !important;
+    padding-left: 2.4mm !important;
+  }
+
+  body.printing-report .report-print-trend-data p {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 2mm !important;
+    margin: 0 !important;
+    border-bottom: 1px solid #e3ebf7 !important;
+    padding: 1mm 0 !important;
+    color: #06184a !important;
+    font-size: 6.8px !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-report .report-print-trend-data p:last-child {
+    border-bottom: 0 !important;
+  }
+
+  body.printing-report .report-print-trend-data span {
+    color: #334d85 !important;
+  }
+
+  body.printing-report .report-print-trend-data strong {
+    color: #06184a !important;
+    font-size: 7px !important;
+    font-weight: 950 !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  body.printing-report .report-print-donut,
+  body.printing-report .report-print-production {
+    display: grid !important;
+    grid-template-columns: 27mm minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 2.4mm !important;
+    min-height: 27mm !important;
+  }
+
+  body.printing-report .report-print-donut-graphic,
+  body.printing-report .report-print-production-graphic {
+    display: grid !important;
+    width: 24mm !important;
+    height: 24mm !important;
+    place-items: center !important;
+    border: 5.2mm solid #0f9f63 !important;
+    border-right-color: #00a6a6 !important;
+    border-bottom-color: #2557d6 !important;
+    border-radius: 999px !important;
+    text-align: center !important;
+  }
+
+  body.printing-report .report-print-production-graphic {
+    border-color: #0f9f63 !important;
+  }
+
+  body.printing-report .report-print-donut-graphic strong,
+  body.printing-report .report-print-production-graphic strong {
+    color: #06184a !important;
+    font-size: 9px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-donut-graphic span,
+  body.printing-report .report-print-production-graphic span {
+    color: #334d85 !important;
+    font-size: 6.5px !important;
+    font-weight: 850 !important;
+    text-transform: none !important;
+  }
+
+  body.printing-report .report-print-donut p,
+  body.printing-report .report-print-production p {
+    display: grid !important;
+    grid-template-columns: 2mm minmax(18mm, 1fr) auto auto !important;
+    align-items: center !important;
+    gap: 1.4mm !important;
+    margin: 0 0 1.4mm !important;
+    color: #06184a !important;
+    font-size: 7.2px !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-report .report-print-donut p span,
+  body.printing-report .report-print-production p span {
+    width: 2.2mm !important;
+    height: 2.2mm !important;
+    border-radius: 999px !important;
+    background: #0f9f63 !important;
+  }
+
+  body.printing-report .report-print-donut p strong,
+  body.printing-report .report-print-production p strong,
+  body.printing-report .report-print-production p em {
+    font-style: normal !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-category-table td:last-child {
+    display: grid !important;
+    grid-template-columns: minmax(22mm, 1fr) auto !important;
+    align-items: center !important;
+    gap: 2mm !important;
+  }
+
+  body.printing-report .report-print-category-table td:last-child span {
+    display: block !important;
+    height: 2.2mm !important;
+    border-radius: 99px !important;
+    background: #11a36a !important;
+  }
+
+  body.printing-report .report-print-target table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  body.printing-report .report-print-target th {
+    background: #ffffff !important;
+    color: #334d85 !important;
+    font-size: 6.7px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-target th,
+  body.printing-report .report-print-target td {
+    height: 4.2mm !important;
+    border-bottom: 1px solid #dce6f4 !important;
+    padding: 0.6mm 1mm !important;
+    color: #06184a !important;
+    vertical-align: middle !important;
+    word-break: break-word !important;
+  }
+
+  body.printing-report .report-print-total-row td {
+    color: #06184a !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-financial p {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    margin: 0 !important;
+    padding: 1.4mm 0 !important;
+    color: #06184a !important;
+    font-size: 8.5px !important;
+    font-weight: 850 !important;
+  }
+
+  body.printing-report .report-print-financial strong {
+    font-size: 9.5px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-report .report-print-financial-total {
+    margin: 0 !important;
+    padding: 1.4mm 0 !important;
+    background: transparent !important;
+  }
+
+  body.printing-report .report-print-observations {
+    display: grid !important;
+    grid-template-columns: 1fr 74mm !important;
+    align-items: center !important;
+    gap: 5mm !important;
+    margin-top: 2mm !important;
+    border: 0 !important;
+    border-top: 1.2px solid #0b3f91 !important;
+    border-radius: 0 !important;
+    padding: 2mm 0 0 !important;
+    color: #06184a !important;
+    background: #ffffff !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-report .report-print-observations h2 {
+    margin: 0 0 1.6mm !important;
+    color: #003b8f !important;
+    font-size: 9px !important;
+    font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-report .report-print-signature {
+    border-top: 1px solid #7084aa !important;
+    padding-top: 2mm !important;
+    text-align: center !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.printing-report .report-print-signature span {
+    display: block !important;
+    margin-top: -7mm !important;
+    color: #06184a !important;
+    font-family: "Brush Script MT", "Segoe Script", cursive !important;
+    font-size: 20px !important;
+    font-weight: 400 !important;
+  }
+
+  body.printing-report .report-print-signature strong,
+  body.printing-report .report-print-signature small {
+    display: block !important;
+    color: #06184a !important;
+  }
+
+  body.printing-report .report-print-page-footer {
+    position: static !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 2.5mm !important;
+    border-top: 1px solid #d7e1f2 !important;
+    padding-top: 1.2mm !important;
+    color: #6b7898 !important;
+    font-size: 6.8px !important;
+  }
+
+  body.printing-report .report-print-footer {
+    display: none !important;
+  }
+
+  .report-no-print {
+    display: none !important;
+  }
+}

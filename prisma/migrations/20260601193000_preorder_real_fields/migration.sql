@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE `Preorder`
+    ADD COLUMN `deliveryAddress` VARCHAR(255) NULL,
+    ADD COLUMN `originLocationId` VARCHAR(191) NULL,
+    ADD COLUMN `paymentMethod` VARCHAR(80) NULL,
+    ADD COLUMN `discountGTQ` DECIMAL(14, 2) NOT NULL DEFAULT 0,
+    ADD COLUMN `amountReceivedGTQ` DECIMAL(14, 2) NOT NULL DEFAULT 0,
+    ADD COLUMN `totalGTQ` DECIMAL(14, 2) NOT NULL DEFAULT 0;

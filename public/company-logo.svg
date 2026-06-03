@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80" role="img" aria-label="Logo de la empresa">
+  <rect width="160" height="80" rx="18" fill="#f5f8f6"/>
+  <path d="M28 51 48 18h34L62 51H28Z" fill="#0f63b6"/>
+  <path d="M68 51 88 18h26L94 51H68Z" fill="#1d8bd1"/>
+  <text x="28" y="66" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#0f63b6">PERFLOPLAST</text>
+</svg>
