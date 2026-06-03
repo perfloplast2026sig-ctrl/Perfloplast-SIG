@@ -19,6 +19,7 @@ type TableColumn = {
 
 export function OperationalReportExport({
   columns,
+  generatedAt,
   generatedBy,
   metrics,
   period = "Inicio / Hoy",
@@ -27,6 +28,7 @@ export function OperationalReportExport({
   title,
 }: {
   columns: TableColumn[];
+  generatedAt: string;
   generatedBy: string;
   metrics: Metric[];
   period?: string;
@@ -34,8 +36,6 @@ export function OperationalReportExport({
   subtitle: string;
   title: string;
 }) {
-  const generatedAt = new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
-
   const print = () => {
     const cleanup = () => {
       document.body.classList.remove("printing-operational-report");
@@ -76,7 +76,7 @@ export function OperationalReportExport({
             <div><span>Modulo</span><strong>{title}</strong></div>
             <div><span>Periodo</span><strong>{period}</strong></div>
             <div><span>Generado por</span><strong>{generatedBy}</strong></div>
-            <div><span>Registros</span><strong>{rows.length.toLocaleString("es-GT")}</strong></div>
+            <div><span>Registros</span><strong>{String(rows.length)}</strong></div>
           </section>
 
           <section className="operational-report-summary">

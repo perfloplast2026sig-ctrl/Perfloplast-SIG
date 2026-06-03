@@ -24,13 +24,14 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const totalLoad = visibleDispatches.reduce((sum, dispatch) => sum + Number(dispatch.load.replace(/[^\d.-]/g, "") || 0), 0);
   const delivered = visibleDispatches.filter((dispatch) => dispatch.status.label === "Entregado").length;
   const active = visibleDispatches.filter((dispatch) => !["Entregado", "Cancelado"].includes(dispatch.status.label)).length;
+  const generatedAt = formatOperationalDate(new Date());
 
   return (
     <>
       <PageHeading
         title="Logistica y despachos"
         description="Crea despachos desde preventas, asigna piloto, controla valor de carga, entrega y rastreo GPS administrativo."
-        actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Logistica" subtitle="Despachos y rutas registradas" generatedBy={user.name} metrics={[
+        actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Logistica" subtitle="Despachos y rutas registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Despachos", value: String(visibleDispatches.length), detail: "Registros incluidos" },
           { label: "Activos", value: String(active), detail: "Pendientes o en ruta" },
           { label: "Entregados", value: String(delivered), detail: "Cerrados correctamente" },
@@ -95,6 +96,10 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
       ) : null}
     </>
   );
+}
+
+function formatOperationalDate(date: Date) {
+  return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {

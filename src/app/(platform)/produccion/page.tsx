@@ -16,13 +16,14 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
   const totalProduced = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
   const registered = orders.filter((order) => order.status.label === "Registrada").length;
   const warehousesUsed = new Set(orders.map((order) => order.warehouse).filter(Boolean)).size;
+  const generatedAt = formatOperationalDate(new Date());
 
   return (
     <>
       <PageHeading
         title="Produccion real"
         description="Produccion usa productos terminados registrados en inventario. El sistema genera numero, fecha, hora y turno automaticamente."
-        actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedBy={user.name} metrics={[
+        actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Produccion total", value: `${totalProduced.toLocaleString("es-GT")} un`, detail: "Unidades registradas" },
           { label: "Ordenes", value: String(orders.length), detail: `${registered} registradas` },
           { label: "Turno actual", value: currentShift, detail: currentShiftRange },
@@ -78,6 +79,10 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       </div>
     </>
   );
+}
+
+function formatOperationalDate(date: Date) {
+  return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function MiniKpi({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof Factory; tone: "emerald" | "sky" | "violet" | "amber" }) {
