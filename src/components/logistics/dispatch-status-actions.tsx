@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCcw, Truck, Undo2, X } from "lucide-react";
+import { Clock3, RotateCcw, Truck, Undo2, X } from "lucide-react";
 import { requestDispatchReturnAction, resolveDispatchReturnAction, updateDispatchStatusAction } from "@/actions/logistics";
 
 type DispatchRow = {
@@ -19,9 +19,10 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
   return (
     <div className="flex flex-wrap gap-2">
       {canLoadTruck && ["SCHEDULED", "RESCHEDULED"].includes(dispatch.statusKey) ? <StatusButton dispatchId={dispatch.id} label="Cargar camion" status="LOADED" /> : null}
-      {isDriver && ["LOADED", "SCHEDULED", "RESCHEDULED"].includes(dispatch.statusKey) ? <StatusButton dispatchId={dispatch.id} label="En ruta" status="IN_ROUTE" /> : null}
+      {isDriver && ["SCHEDULED", "RESCHEDULED"].includes(dispatch.statusKey) ? <WaitingBadge label="Esperando carga" /> : null}
+      {isDriver && dispatch.statusKey === "LOADED" ? <StatusButton dispatchId={dispatch.id} label="En ruta" status="IN_ROUTE" /> : null}
       {isDriver && dispatch.statusKey === "IN_ROUTE" ? <StatusButton dispatchId={dispatch.id} label="Entregado" status="DELIVERED" /> : null}
-      {isDriver && !["DELIVERED", "RETURN_REQUESTED", "RETURNED_TO_WAREHOUSE", "CANCELLED"].includes(dispatch.statusKey) ? (
+      {isDriver && dispatch.statusKey === "IN_ROUTE" ? (
         <button className="inline-flex h-9 items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium transition hover:bg-card-muted" onClick={() => setReturnOpen(true)} type="button">
           <Undo2 size={14} /> Devolucion
         </button>
@@ -59,6 +60,14 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
         </div>
       ) : null}
     </div>
+  );
+}
+
+function WaitingBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex h-9 items-center gap-2 rounded-full border bg-card-muted px-3 text-xs font-medium text-muted">
+      <Clock3 size={14} />{label}
+    </span>
   );
 }
 

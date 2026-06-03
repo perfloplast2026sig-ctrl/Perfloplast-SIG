@@ -186,7 +186,7 @@ export async function updateDispatchStatus(input: { dispatchId: string; status: 
   if (input.status === "LOADED" && !isAdmin && !isWarehouse) throw new Error("Solo bodega o administracion pueden confirmar la carga.");
   if (["IN_ROUTE", "DELIVERED"].includes(input.status) && !isAdmin && !isDriver) throw new Error("Solo piloto o administracion pueden avanzar la ruta.");
   if (input.status === "LOADED" && !["SCHEDULED", "RESCHEDULED"].includes(dispatch.status)) throw new Error("Este despacho no esta listo para cargar.");
-  if (input.status === "IN_ROUTE" && !["LOADED", "SCHEDULED", "RESCHEDULED"].includes(dispatch.status)) throw new Error("Este despacho no puede salir a ruta desde su estado actual.");
+  if (input.status === "IN_ROUTE" && dispatch.status !== "LOADED") throw new Error("Primero bodega o administracion debe confirmar la carga del camion.");
   if (input.status === "DELIVERED" && dispatch.status !== "IN_ROUTE") throw new Error("Primero marca el despacho en ruta antes de entregarlo.");
 
   if (input.status !== "DELIVERED") {
