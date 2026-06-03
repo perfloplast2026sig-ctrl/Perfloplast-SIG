@@ -21,7 +21,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     getCatalogProductCards(),
     getPreorderModuleData(),
   ]);
-  const factoryWarehouseId = warehouses.find((warehouse) => warehouse.isFactoryWarehouse)?.id || "";
+  const factoryWarehouseId = warehouses.find((warehouse: { isFactoryWarehouse: boolean; id: string }) => warehouse.isFactoryWarehouse)?.id || "";
 
   return (
     <>
