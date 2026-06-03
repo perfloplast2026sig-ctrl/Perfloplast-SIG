@@ -8,7 +8,7 @@ export function PageHeading({ title, description, actions }: { title: string; de
         <h1 className="text-3xl font-semibold tracking-[-0.04em] text-foreground md:text-4xl">{title}</h1>
         <p className="mt-3 text-sm leading-6 text-muted md:text-base">{description}</p>
       </div>
-      {actions ? <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">{actions}</div> : null}
+      {actions ? <div className="page-actions grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">{actions}</div> : null}
     </div>
   );
 }

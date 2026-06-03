@@ -44,7 +44,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Configuracion actualizada.</div> : null}
       {params.synced ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Catalogo sincronizado: {params.synced} combinaciones de producto/modelo/color.</div> : null}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-6">
         {[
           { label: "Valor inventario", value: stats.inventoryValue, detail: "Producto terminado", icon: Coins, className: "from-emerald-50 to-white text-emerald-700 dark:from-emerald-950/45 dark:to-card dark:text-emerald-200" },
           { label: "Unidades finales", value: stats.finishedUnits, detail: "En bodegas", icon: Boxes, className: "from-sky-50 to-white text-sky-700 dark:from-sky-950/45 dark:to-card dark:text-sky-200" },
@@ -55,12 +55,12 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         ].map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-4 shadow-[0_18px_48px_rgba(20,36,31,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(20,36,31,0.13)] ${item.className}`}>
-              <div className="absolute right-3 top-3 grid size-10 place-items-center rounded-2xl bg-white/75 shadow-sm transition group-hover:scale-105 dark:bg-white/10">
-                <Icon size={18} />
+            <div key={item.label} className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3 shadow-[0_18px_48px_rgba(20,36,31,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(20,36,31,0.13)] sm:p-4 ${item.className}`}>
+              <div className="absolute right-2.5 top-2.5 grid size-8 place-items-center rounded-2xl bg-white/75 shadow-sm transition group-hover:scale-105 sm:right-3 sm:top-3 sm:size-10 dark:bg-white/10">
+                <Icon size={16} />
               </div>
-              <p className="max-w-28 text-sm font-bold text-muted">{item.label}</p>
-              <p className="mt-5 truncate text-2xl font-black text-foreground">{item.value}</p>
+              <p className="max-w-24 pr-7 text-xs font-bold leading-4 text-muted sm:max-w-28 sm:text-sm">{item.label}</p>
+              <p className="mt-4 break-words text-xl font-black text-foreground sm:mt-5 sm:text-2xl">{item.value}</p>
               <p className="mt-2 text-xs font-medium text-muted">{item.detail}</p>
               <div className="pointer-events-none mt-4 h-1.5 overflow-hidden rounded-full bg-white/70 dark:bg-white/10">
                 <div className="h-full w-3/4 rounded-full bg-current opacity-55 transition-all duration-500 group-hover:w-full" />

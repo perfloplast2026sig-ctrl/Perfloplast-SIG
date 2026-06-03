@@ -17,7 +17,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell flex min-h-screen bg-background">
       <Sidebar role={currentUser.role} />
-      <div className="app-content min-w-0 flex-1 pb-20 lg:pb-0">
+      <div className="app-content min-w-0 flex-1 pb-24 lg:pb-0">
         <Header user={currentUser} />
         <DriverLocationTracker enabled={["Piloto", "Vendedor"].includes(currentUser.role)} />
         <main className="app-main mx-auto w-full max-w-[1500px] px-3 py-4 sm:px-4 sm:py-6 lg:px-8 lg:py-8">{children}</main>

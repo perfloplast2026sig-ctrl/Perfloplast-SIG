@@ -44,7 +44,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
         <PreorderReportExport preorders={salesRows} />
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <MiniKpi label="Preventas" value={String(salesRows.length)} detail="Ventas/preventas reales" icon={ReceiptText} tone="emerald" />
         <MiniKpi label="Total vendido" value={formatGTQ(totalSales)} detail="Monto acumulado" icon={TrendingUp} tone="sky" />
         <MiniKpi label="Confirmadas" value={String(confirmed)} detail="Listas para despacho" icon={CheckCircle2} tone="violet" />
@@ -83,14 +83,14 @@ function MiniKpi({ label, value, detail, icon: Icon, tone }: { label: string; va
     amber: "from-amber-500/18 to-amber-500/5 text-amber-300 shadow-amber-950/20",
   };
   return (
-    <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 shadow-xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl ${tones[tone]}`}>
-      <div className="absolute right-4 top-4 grid size-11 place-items-center rounded-2xl border bg-background/50 text-current shadow-sm transition duration-300 group-hover:scale-105">
-        <Icon size={20} />
+    <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3 shadow-xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:p-5 ${tones[tone]}`}>
+      <div className="absolute right-2.5 top-2.5 grid size-8 place-items-center rounded-2xl border bg-background/50 text-current shadow-sm transition duration-300 group-hover:scale-105 sm:right-4 sm:top-4 sm:size-11">
+        <Icon size={16} />
       </div>
-      <p className="pr-12 text-xs font-black uppercase tracking-[0.16em] text-muted">{label}</p>
-      <p className="mt-4 text-3xl font-black text-foreground">{value}</p>
+      <p className="pr-8 text-[11px] font-black uppercase leading-4 tracking-[0.12em] text-muted sm:pr-12 sm:text-xs sm:tracking-[0.16em]">{label}</p>
+      <p className="mt-3 break-words text-xl font-black text-foreground sm:mt-4 sm:text-3xl">{value}</p>
       <p className="mt-1 text-xs font-medium text-muted">{detail}</p>
-      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10 sm:mt-5">
         <div className="h-full w-2/3 rounded-full bg-current opacity-70 transition-all duration-500 group-hover:w-full" />
       </div>
     </div>

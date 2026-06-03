@@ -28,7 +28,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Usuario creado correctamente.</div> : null}
       {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Estado del usuario actualizado.</div> : null}
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <UserKpi label="Usuarios activos" value={String(stats.activeUsers)} detail="Con acceso vigente" icon={UsersRound} tone="emerald" />
         <UserKpi label="Roles operativos" value={String(stats.roles)} detail="Perfiles configurados" icon={ShieldCheck} tone="sky" />
         <UserKpi label="Dominio permitido" value={CORPORATE_EMAIL_DOMAIN} detail="Correo corporativo" icon={Globe2} tone="violet" />
@@ -119,19 +119,19 @@ function UserKpi({ label, value, detail, icon: Icon, tone }: { label: string; va
     rose: "from-rose-500/20 to-rose-500/5 text-rose-300 shadow-rose-950/20",
   };
   return (
-    <div className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br p-5 shadow-xl transition duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl ${tones[tone]}`}>
+    <div className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3 shadow-xl transition duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl sm:rounded-3xl sm:p-5 ${tones[tone]}`}>
       <div className="absolute -right-8 -top-8 size-24 rounded-full bg-current opacity-10 blur-2xl transition duration-500 group-hover:scale-125 group-hover:opacity-20" />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">{label}</p>
-          <p className="mt-4 max-w-full break-words text-2xl font-black tracking-[-0.04em] text-foreground">{value}</p>
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <p className="text-[11px] font-black uppercase leading-4 tracking-[0.12em] text-muted sm:text-xs sm:tracking-[0.16em]">{label}</p>
+          <p className="mt-3 max-w-full break-words text-xl font-black tracking-tight text-foreground sm:mt-4 sm:text-2xl sm:tracking-[-0.04em]">{value}</p>
           <p className="mt-1 text-xs font-medium text-muted">{detail}</p>
         </div>
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl border bg-background/50 text-current shadow-sm transition duration-300 group-hover:rotate-6 group-hover:scale-110">
-          <Icon size={20} />
+        <span className="grid size-8 shrink-0 place-items-center rounded-2xl border bg-background/50 text-current shadow-sm transition duration-300 group-hover:rotate-6 group-hover:scale-110 sm:size-11">
+          <Icon size={16} />
         </span>
       </div>
-      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10 sm:mt-5">
         <div className="h-full w-2/3 rounded-full bg-current opacity-70 transition-all duration-700 group-hover:w-full" />
       </div>
     </div>

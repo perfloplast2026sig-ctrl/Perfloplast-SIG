@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         description="Inventario, ventas, produccion y rutas en tiempo real."
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-5">
         {dashboard.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}
       </div>
 

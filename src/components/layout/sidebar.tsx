@@ -66,8 +66,8 @@ export function Sidebar({ role }: { role: Role }) {
         </nav>
       </aside>
 
-      <nav id="mobile-navigation" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-2 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:hidden">
-        <div className="flex gap-1 overflow-x-auto pb-1">
+      <nav id="mobile-navigation" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:hidden">
+        <div className="mobile-nav-scroll flex gap-1 overflow-x-auto overscroll-x-contain pb-1">
         {visibleNavigation.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
@@ -76,7 +76,7 @@ export function Sidebar({ role }: { role: Role }) {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex min-w-20 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-semibold text-muted transition",
+                "flex min-w-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-1.5 text-[10px] font-semibold text-muted transition",
                 active ? "bg-accent text-accent-foreground" : "hover:bg-card-muted hover:text-foreground",
               )}
             >

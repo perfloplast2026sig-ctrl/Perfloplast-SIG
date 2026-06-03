@@ -17,19 +17,19 @@ const iconClass = {
 
 export function KpiCard({ label, value, change, tone }: { label: string; value: string; change: string; tone: keyof typeof toneClass }) {
   return (
-    <div className={cn("group relative overflow-hidden rounded-3xl border p-5 shadow-xl transition duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]", toneClass[tone])}>
+    <div className={cn("group relative overflow-hidden rounded-2xl border p-3 shadow-xl transition duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl sm:rounded-3xl sm:p-5 dark:shadow-[0_18px_45px_rgba(0,0,0,0.28)]", toneClass[tone])}>
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-current opacity-60" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(120deg,rgba(255,255,255,.85)_0_1px,transparent_1px_12px)] dark:opacity-[0.08]" />
       <div className="pointer-events-none absolute -right-8 -top-8 size-24 rounded-full bg-current opacity-10 blur-2xl transition duration-500 group-hover:scale-125 group-hover:opacity-20" />
       <div className="flex items-start justify-between gap-3">
-        <p className="max-w-36 text-sm font-semibold opacity-80">{label}</p>
-        <span className={cn("grid size-9 place-items-center rounded-full shadow-sm transition duration-300 group-hover:rotate-12 group-hover:scale-110", iconClass[tone])}>
-          {tone === "warning" ? <CircleAlert size={17} /> : <ArrowUpRight size={17} />}
+        <p className="max-w-28 text-xs font-semibold leading-4 opacity-80 sm:max-w-36 sm:text-sm">{label}</p>
+        <span className={cn("grid size-8 shrink-0 place-items-center rounded-full shadow-sm transition duration-300 group-hover:rotate-12 group-hover:scale-110 sm:size-9", iconClass[tone])}>
+          {tone === "warning" ? <CircleAlert size={15} /> : <ArrowUpRight size={15} />}
         </span>
       </div>
-      <p className="mt-5 text-4xl font-black tracking-tight">{value}</p>
-      <p className="mt-2 text-sm font-semibold opacity-70">{change}</p>
-      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/35 dark:bg-white/10">
+      <p className="mt-4 break-words text-2xl font-black tracking-tight sm:mt-5 sm:text-4xl">{value}</p>
+      <p className="mt-1 text-xs font-semibold leading-4 opacity-70 sm:mt-2 sm:text-sm">{change}</p>
+      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/35 sm:mt-5 dark:bg-white/10">
         <div className="h-full w-2/3 rounded-full bg-current opacity-70 transition-all duration-700 group-hover:w-full" />
       </div>
     </div>
