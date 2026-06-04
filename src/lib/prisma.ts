@@ -11,7 +11,7 @@ function createAdapter() {
   }
 
   const url = new URL(databaseUrl);
-  const useSSL = url.searchParams.get("sslaccept") === "accept_invalid_certs" || url.hostname !== "localhost";
+  const isRemote = url.hostname !== "localhost" && url.hostname !== "127.0.0.1";
 
   return new PrismaMariaDb({
     host: url.hostname,
@@ -19,13 +19,13 @@ function createAdapter() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ""),
-    connectionLimit: 5,
-    ...(useSSL && { ssl: { rejectUnauthorized: false } }),
+    // Serverless: fewer connections, faster startup
+    connectionLimit: isRemote ? 1 : 5,
+    // SSL required for Google Cloud SQL
+    ...(isRemote && { ssl: { rejectUnauthorized: false } }),
   });
 }
 
+// Cache the Prisma client across warm serverless invocations
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter: createAdapter() });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;
