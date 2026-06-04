@@ -17,6 +17,9 @@ export async function createDispatchAction(formData: FormData) {
     revalidatePath("/logistica");
     revalidatePath("/preventas");
     revalidatePath("/facturas");
+    revalidateTag("logistics", "default");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo crear el despacho.")}`);
@@ -48,6 +51,9 @@ export async function updateDispatchStatusAction(formData: FormData) {
     revalidatePath("/preventas");
     revalidatePath("/inventario");
     revalidatePath("/facturas");
+    revalidateTag("logistics", "default");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo actualizar el despacho.")}`);
@@ -67,6 +73,9 @@ export async function requestDispatchReturnAction(formData: FormData) {
     revalidatePath("/logistica");
     revalidatePath("/");
     revalidatePath("/dashboard");
+    revalidateTag("logistics", "default");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo registrar la devolucion.")}`);
@@ -85,6 +94,9 @@ export async function resolveDispatchReturnAction(formData: FormData) {
     revalidatePath("/logistica");
     revalidatePath("/");
     revalidatePath("/dashboard");
+    revalidateTag("logistics", "default");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo resolver la devolucion.")}`);

@@ -1,10 +1,11 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/types";
+import { unstable_cache } from "next/cache";
 
 type Viewer = { id: string; role: { name: string } };
 
-export async function getPreorderModuleData(viewer?: Viewer) {
+async function getPreorderModuleDataRaw(viewer?: Viewer) {
   const roleName = viewer?.role.name as Role | undefined;
   const preorderWhere: Prisma.PreorderWhereInput = roleName === "Vendedor" ? { createdById: viewer?.id } : {};
 
@@ -69,6 +70,21 @@ export async function getPreorderModuleData(viewer?: Viewer) {
       })),
     })),
   };
+}
+
+const getPreorderModuleDataCached = unstable_cache(
+  async (viewerId?: string, viewerRole?: string) => {
+    return getPreorderModuleDataRaw(viewerId ? { id: viewerId, role: { name: viewerRole || "" } } : undefined);
+  },
+  ["preorders-data"],
+  {
+    revalidate: 10,
+    tags: ["preorders"],
+  }
+);
+
+export function getPreorderModuleData(viewer?: Viewer) {
+  return getPreorderModuleDataCached(viewer?.id, viewer?.role.name);
 }
 
 export async function createPreorder(input: {

@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
-export async function getInventoryModuleData() {
+async function getInventoryModuleDataRaw() {
   const [warehouses, balances, movements, activeFinishedProducts] = await Promise.all([
     prisma.location.findMany({
       where: { type: "WAREHOUSE" },
@@ -106,6 +107,17 @@ export async function getInventoryModuleData() {
     },
   };
 }
+
+export const getInventoryModuleData = unstable_cache(
+  async () => {
+    return getInventoryModuleDataRaw();
+  },
+  ["inventory-data"],
+  {
+    revalidate: 10,
+    tags: ["inventory"],
+  }
+);
 
 function groupWarehouseProducts(
   balances: Array<{

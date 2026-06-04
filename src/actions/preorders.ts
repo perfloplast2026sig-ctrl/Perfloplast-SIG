@@ -33,6 +33,8 @@ export async function createPreorderAction(formData: FormData) {
     });
     revalidatePath("/preventas");
     revalidatePath("/inventario");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
     if (mode === "quote") {
       redirectTo = `/preventas?created=quote&quote=${preorder.id}`;

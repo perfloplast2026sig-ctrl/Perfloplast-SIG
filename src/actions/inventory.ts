@@ -14,6 +14,8 @@ export async function createWarehouseAction(formData: FormData) {
       isFactoryWarehouse: String(formData.get("isFactoryWarehouse") || "") === "on",
     });
     revalidatePath("/inventario");
+    revalidateTag("inventory", "default");
+    revalidateTag("catalog", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo crear la bodega.")}`);
@@ -27,6 +29,8 @@ export async function setFactoryWarehouseAction(formData: FormData) {
     await requireInventoryManager();
     await setFactoryWarehouse(String(formData.get("warehouseId") || ""));
     revalidatePath("/inventario");
+    revalidateTag("inventory", "default");
+    revalidateTag("catalog", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo asignar bodega de fabrica.")}`);
@@ -47,6 +51,8 @@ export async function adjustFinishedStockAction(formData: FormData) {
     });
     revalidatePath("/inventario");
     revalidatePath("/reportes");
+    revalidateTag("inventory", "default");
+    revalidateTag("catalog", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo ajustar el stock.")}`);
@@ -73,6 +79,8 @@ export async function createFinishedProductAction(formData: FormData) {
     });
     revalidatePath("/inventario");
     revalidatePath("/produccion");
+    revalidateTag("inventory", "default");
+    revalidateTag("catalog", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo crear el producto terminado.")}`);
@@ -97,6 +105,8 @@ export async function updateFinishedProductAction(formData: FormData) {
     });
     revalidatePath("/inventario");
     revalidatePath("/produccion");
+    revalidateTag("inventory", "default");
+    revalidateTag("catalog", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo actualizar el producto terminado.")}`);
@@ -111,6 +121,8 @@ export async function deactivateFinishedProductAction(formData: FormData) {
     await deactivateFinishedProduct(String(formData.get("productId") || ""));
     revalidatePath("/inventario");
     revalidatePath("/produccion");
+    revalidateTag("inventory", "default");
+    revalidateTag("catalog", "default");
     revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo desactivar el producto terminado.")}`);

@@ -1,9 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 type Viewer = { id: string; role: { name: string } };
 
-export async function getLogisticsModuleData(viewer?: Viewer) {
+async function getLogisticsModuleDataRaw(viewer?: Viewer) {
   const isDriver = viewer?.role.name === "Piloto";
   const dispatchWhere: Prisma.DispatchWhereInput = isDriver ? { responsibleId: viewer.id } : {};
 
@@ -90,6 +91,21 @@ export async function getLogisticsModuleData(viewer?: Viewer) {
       longitude: dispatch.destinationLongitude ? Number(dispatch.destinationLongitude) : null,
     })),
   };
+}
+
+const getLogisticsModuleDataCached = unstable_cache(
+  async (viewerId?: string, viewerRole?: string) => {
+    return getLogisticsModuleDataRaw(viewerId ? { id: viewerId, role: { name: viewerRole || "" } } : undefined);
+  },
+  ["logistics-data"],
+  {
+    revalidate: 10,
+    tags: ["logistics"],
+  }
+);
+
+export function getLogisticsModuleData(viewer?: Viewer) {
+  return getLogisticsModuleDataCached(viewer?.id, viewer?.role.name);
 }
 
 async function getInvoiceNumbers(preorderIds: string[]) {

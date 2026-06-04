@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 type CatalogColor = {
   name?: string;
@@ -133,7 +134,7 @@ export async function syncCatalogProducts() {
   return { synced };
 }
 
-export async function getCatalogProductCards() {
+async function getCatalogProductCardsRaw() {
   const products = await prisma.product.findMany({
     where: { type: "FINISHED_GOOD", catalogExternalId: { not: null }, isActive: true },
     orderBy: [{ name: "asc" }, { modelName: "asc" }, { color: "asc" }],
@@ -154,6 +155,17 @@ export async function getCatalogProductCards() {
     description: product.description || "Sin descripcion",
   }));
 }
+
+export const getCatalogProductCards = unstable_cache(
+  async () => {
+    return getCatalogProductCardsRaw();
+  },
+  ["catalog-data"],
+  {
+    revalidate: 10,
+    tags: ["catalog"],
+  }
+);
 
 function normalizeCatalogProduct(product: CatalogProduct) {
   const catalogProductId = String(product.externalId || product.external_id || product.id || product._id || product.name || crypto.randomUUID());
