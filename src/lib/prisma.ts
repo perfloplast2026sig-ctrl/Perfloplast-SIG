@@ -11,6 +11,7 @@ function createAdapter() {
   }
 
   const url = new URL(databaseUrl);
+  const useSSL = url.searchParams.get("sslaccept") === "accept_invalid_certs" || url.hostname !== "localhost";
 
   return new PrismaMariaDb({
     host: url.hostname,
@@ -19,6 +20,7 @@ function createAdapter() {
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ""),
     connectionLimit: 5,
+    ...(useSSL && { ssl: { rejectUnauthorized: false } }),
   });
 }
 

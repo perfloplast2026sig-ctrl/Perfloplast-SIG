@@ -22,6 +22,7 @@ if (!adminPassword || adminPassword === "cambia-esta-clave") {
 }
 
 const url = new URL(process.env.DATABASE_URL);
+const useSSL = url.searchParams.get("sslaccept") === "accept_invalid_certs" || url.hostname !== "localhost";
 const adapter = new PrismaMariaDb({
   host: url.hostname,
   port: Number(url.port || 3306),
@@ -29,6 +30,7 @@ const adapter = new PrismaMariaDb({
   password: decodeURIComponent(url.password),
   database: url.pathname.replace(/^\//, ""),
   connectionLimit: 5,
+  ...(useSSL && { ssl: { rejectUnauthorized: false } }),
 });
 const prisma = new PrismaClient({ adapter });
 
