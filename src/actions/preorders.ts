@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCurrentUser } from "@/services/auth";
 import { createPreorder } from "@/services/preorders";
@@ -33,6 +33,7 @@ export async function createPreorderAction(formData: FormData) {
     });
     revalidatePath("/preventas");
     revalidatePath("/inventario");
+    revalidateTag("dashboard", "default");
     if (mode === "quote") {
       redirectTo = `/preventas?created=quote&quote=${preorder.id}`;
     }

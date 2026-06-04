@@ -1,13 +1,14 @@
 import type { PreorderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 const GT_TIME_ZONE = "America/Guatemala";
 const OPEN_DISPATCH_STATUSES = ["SCHEDULED", "LOADED", "IN_ROUTE", "RETURN_REQUESTED", "RESCHEDULED"];
 const REAL_SALE_STATUSES: PreorderStatus[] = ["PENDING", "CONFIRMED", "DISPATCHED"];
 
-export type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
+export type DashboardData = Awaited<ReturnType<typeof getDashboardRawData>>;
 
-export async function getDashboardData() {
+async function getDashboardRawData() {
   const today = startOfDay(new Date());
   const weekStart = addDays(today, -6);
   const openPreorderWhere: Prisma.PreorderWhereInput = {
@@ -138,6 +139,17 @@ export async function getDashboardData() {
     catalogCount: productCount,
   };
 }
+
+export const getDashboardData = unstable_cache(
+  async () => {
+    return getDashboardRawData();
+  },
+  ["dashboard-data"],
+  {
+    revalidate: 15, // revalidate every 15 seconds
+    tags: ["dashboard"],
+  }
+);
 
 function buildShiftProduction(rows: Array<{ shift: string; producedQuantity: unknown; outputs: Array<{ producedQuantity: unknown }> }>) {
   const totals = new Map<string, number>();

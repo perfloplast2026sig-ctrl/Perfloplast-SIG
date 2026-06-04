@@ -20,7 +20,7 @@ function createAdapter() {
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ""),
     // Serverless: fewer connections, faster startup
-    connectionLimit: isRemote ? 1 : 5,
+    connectionLimit: isRemote ? 3 : 5,
     // SSL required for Google Cloud SQL
     ...(isRemote && { ssl: { rejectUnauthorized: false } }),
   });

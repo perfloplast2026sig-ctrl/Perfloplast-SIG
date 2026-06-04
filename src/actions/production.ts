@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProductionManager } from "@/services/auth";
 import { createProductionEntry, updateShiftSchedules } from "@/services/production";
@@ -18,6 +18,7 @@ export async function createProductionEntryAction(formData: FormData) {
     });
     revalidatePath("/produccion");
     revalidatePath("/inventario");
+    revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/produccion?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo registrar la produccion.")}`);
   }
@@ -34,6 +35,7 @@ export async function updateShiftSchedulesAction(formData: FormData) {
       endTime: String(formData.get(`${name}.endTime`) || ""),
     })));
     revalidatePath("/produccion");
+    revalidateTag("dashboard", "default");
   } catch (error) {
     redirect(`/produccion?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo guardar la configuracion de turnos.")}`);
   }
