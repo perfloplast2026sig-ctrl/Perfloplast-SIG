@@ -35,4 +35,4 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "npm start -- -p ${PORT:-8080}"]
+CMD ["sh", "-c", "npm run db:deploy && npm start -- -p ${PORT:-8080}"]
