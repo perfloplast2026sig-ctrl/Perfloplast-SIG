@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { PaginatedDataTable } from "./paginated-data-table";
 
 export type Column<T> = {
@@ -12,7 +12,7 @@ export function DataTable<T>({ columns, data, pageSize = 10 }: { columns: Array<
     <PaginatedDataTable
       columns={columns.map((column) => ({ header: column.header, align: column.align }))}
       pageSize={pageSize}
-      rows={data.map((item, index) => ({ key: String(index), cells: columns.map((column) => column.cell(item)) }))}
+      rows={data.map((item, index) => ({ key: String(index), cells: columns.map((column) => <Fragment key={column.header}>{column.cell(item)}</Fragment>) }))}
     />
   );
 }
