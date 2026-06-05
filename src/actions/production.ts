@@ -18,9 +18,11 @@ export async function createProductionEntryAction(formData: FormData) {
     });
     revalidatePath("/produccion");
     revalidatePath("/inventario");
+    revalidatePath("/reportes");
     revalidateTag("production", "default");
     revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
   } catch (error) {
     redirect(`/produccion?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo registrar la produccion.")}`);
   }
@@ -40,6 +42,7 @@ export async function updateShiftSchedulesAction(formData: FormData) {
     revalidateTag("production", "default");
     revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
   } catch (error) {
     redirect(`/produccion?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo guardar la configuracion de turnos.")}`);
   }

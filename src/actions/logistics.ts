@@ -17,10 +17,12 @@ export async function createDispatchAction(formData: FormData) {
     revalidatePath("/logistica");
     revalidatePath("/preventas");
     revalidatePath("/facturas");
+    revalidatePath("/reportes");
     revalidateTag("logistics", "default");
     revalidateTag("preorders", "default");
     revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo crear el despacho.")}`);
   }
@@ -51,10 +53,12 @@ export async function updateDispatchStatusAction(formData: FormData) {
     revalidatePath("/preventas");
     revalidatePath("/inventario");
     revalidatePath("/facturas");
+    revalidatePath("/reportes");
     revalidateTag("logistics", "default");
     revalidateTag("preorders", "default");
     revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo actualizar el despacho.")}`);
   }
@@ -77,6 +81,7 @@ export async function requestDispatchReturnAction(formData: FormData) {
     revalidateTag("preorders", "default");
     revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo registrar la devolucion.")}`);
   }
@@ -98,6 +103,7 @@ export async function resolveDispatchReturnAction(formData: FormData) {
     revalidateTag("preorders", "default");
     revalidateTag("inventory", "default");
     revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
   } catch (error) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo resolver la devolucion.")}`);
   }

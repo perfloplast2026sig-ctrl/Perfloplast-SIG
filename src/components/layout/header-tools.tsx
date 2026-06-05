@@ -86,23 +86,25 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
         </button>
 
         {showNotifications ? (
-          <div className="absolute right-0 top-12 z-50 w-[360px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-w-[calc(100vw-2rem)] sm:rounded-3xl">
+          <div className="fixed left-2 right-2 top-16 z-50 max-h-[72dvh] overflow-hidden rounded-2xl border bg-card shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[360px] sm:max-w-[calc(100vw-2rem)] sm:rounded-3xl">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <p className="font-semibold">Notificaciones</p>
               <button className="grid size-7 place-items-center rounded-full border bg-card-muted" onClick={() => setShowNotifications(false)} type="button"><X size={14} /></button>
             </div>
-            {notifications.length === 0 ? <p className="p-4 text-sm text-muted">No hay alertas activas.</p> : null}
-            {notifications.map((item, index) => (
-              <Link key={`${item.title}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={() => setShowNotifications(false)}>
-                <div className="flex gap-3">
-                  <span className={`mt-1 size-2.5 rounded-full ${toneClass[item.tone]}`} />
-                  <div>
-                    <p className="font-semibold">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-muted">{item.detail}</p>
+            <div className="max-h-[calc(72dvh-54px)] overflow-y-auto overscroll-contain">
+              {notifications.length === 0 ? <p className="p-4 text-sm text-muted">No hay alertas activas.</p> : null}
+              {notifications.map((item, index) => (
+                <Link key={`${item.title}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={() => setShowNotifications(false)}>
+                  <div className="flex gap-3">
+                    <span className={`mt-1 size-2.5 shrink-0 rounded-full ${toneClass[item.tone]}`} />
+                    <div className="min-w-0">
+                      <p className="break-words font-semibold">{item.title}</p>
+                      <p className="mt-1 break-words text-xs leading-5 text-muted">{item.detail}</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
