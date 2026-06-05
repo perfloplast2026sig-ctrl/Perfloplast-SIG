@@ -11,16 +11,17 @@ function createAdapter() {
   }
 
   const url = new URL(databaseUrl);
-  const isRemote = url.hostname !== "localhost" && url.hostname !== "127.0.0.1";
+  const host = url.hostname === "localhost" ? "127.0.0.1" : url.hostname;
+  const isRemote = host !== "127.0.0.1";
 
   return new PrismaMariaDb({
-    host: url.hostname,
+    host,
     port: Number(url.port || 3306),
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ""),
     // Serverless: fewer connections, faster startup
-    connectionLimit: isRemote ? 3 : 5,
+    connectionLimit: isRemote ? 3 : 10,
     // SSL required for Google Cloud SQL
     ...(isRemote && { ssl: { rejectUnauthorized: false } }),
   });

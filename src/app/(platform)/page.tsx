@@ -56,7 +56,7 @@ export default async function DashboardPage() {
         </SectionCard>
 
         <SectionCard title="Movimientos recientes">
-          <div className="space-y-3">
+          <div className="max-h-[560px] space-y-3 overflow-y-auto overscroll-contain pr-1">
             {dashboard.movements.map((movement) => (
               <DashboardMovementCard key={movement.code} movement={movement} />
             ))}
@@ -75,7 +75,7 @@ function DashboardMovementCard({ movement }: { movement: DashboardMovement }) {
   return (
     <article className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-xl ${tone.card}`}>
       <div className="absolute -right-8 -top-8 size-20 rounded-full bg-current opacity-10 blur-2xl transition duration-500 group-hover:scale-125 group-hover:opacity-20" />
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${tone.badge}`}>
@@ -83,12 +83,12 @@ function DashboardMovementCard({ movement }: { movement: DashboardMovement }) {
             </span>
             <span className="rounded-full border bg-card/70 px-3 py-1 text-xs font-semibold text-muted">{movement.category}</span>
           </div>
-          <p className="font-black">{movement.product}</p>
+          <p className="break-words font-black">{movement.product}</p>
           <p className="mt-1 text-sm text-muted">{movement.route}</p>
           <p className="mt-2 text-xs text-muted">{movement.reason}</p>
-          <p className="mt-3 text-xs text-muted"><span className="font-mono font-semibold">{movement.code}</span> · {movement.user} · {movement.time}</p>
+          <p className="mt-3 break-words text-xs text-muted"><span className="font-mono font-semibold">{movement.code}</span> · {movement.user} · {movement.time}</p>
         </div>
-        <div className={`shrink-0 rounded-2xl border bg-card/75 px-4 py-3 text-right shadow-sm ${tone.value}`}>
+        <div className={`w-full rounded-2xl border bg-card/75 px-4 py-3 text-right shadow-sm sm:w-auto sm:shrink-0 ${tone.value}`}>
           <p className="text-lg font-black">{movement.amount}</p>
         </div>
       </div>

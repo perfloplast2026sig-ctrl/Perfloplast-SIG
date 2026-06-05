@@ -33,7 +33,7 @@ async function getDashboardRawData() {
     recentMovements,
     salesRows,
     productionRows,
-    productionOutputs,
+    productionOutputTotal,
     shiftRows,
     topFinishedStockRows,
   ] = await Promise.all([
@@ -69,9 +69,9 @@ async function getDashboardRawData() {
       select: { createdAt: true, producedQuantity: true, outputs: { select: { producedQuantity: true } } },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.productionOrder.findMany({
-      where: { status: { not: "CANCELLED" } },
-      select: { producedQuantity: true, outputs: { select: { producedQuantity: true } } },
+    prisma.productionOutput.aggregate({
+      _sum: { producedQuantity: true },
+      where: { productionOrder: { status: { not: "CANCELLED" } } },
     }),
     prisma.productionOrder.findMany({
       where: { createdAt: { gte: weekStart }, status: { not: "CANCELLED" } },
@@ -95,7 +95,7 @@ async function getDashboardRawData() {
   const totalForPercentage = Math.max(realTotalStock, 1);
   const scheduledDispatches = dispatchStats.filter((row) => OPEN_DISPATCH_STATUSES.includes(row.status)).reduce((sum, row) => sum + row._count, 0);
   const todayDispatches = await prisma.dispatch.count({ where: { ...openDispatchWhere, scheduledAt: { gte: today } } });
-  const producedUnits = productionOutputs.reduce((sum, order) => sum + productionQuantity(order), 0);
+  const producedUnits = Number(productionOutputTotal._sum.producedQuantity || 0);
 
   return {
     kpis: [

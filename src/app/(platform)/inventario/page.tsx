@@ -77,7 +77,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <FinishedProductsBrowser products={catalogProducts} />
 
       <SectionCard title="Movimientos recientes" className="mt-6">
-        <div className="space-y-3">
+        <div className="max-h-[560px] space-y-3 overflow-y-auto overscroll-contain pr-1">
           {movements.length === 0 ? <p className="rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Aun no hay movimientos registrados.</p> : null}
           {movements.map((movement) => (
             <RecentMovementCard key={movement.id} movement={movement} />
@@ -104,12 +104,12 @@ function RecentMovementCard({ movement }: { movement: Awaited<ReturnType<typeof 
             <span className="rounded-full border bg-card/70 px-3 py-1 text-xs font-semibold text-muted">{movement.category}</span>
             {movement.reference ? <span className="rounded-full border bg-card/70 px-3 py-1 font-mono text-xs font-semibold text-muted">{movement.reference}</span> : null}
           </div>
-          <p className="font-black">{movement.product} · {movement.color}</p>
+          <p className="break-words font-black">{movement.product} · {movement.color}</p>
           <p className="mt-1 text-sm text-muted">{movement.from} hacia {movement.to}</p>
           <p className="mt-2 text-xs text-muted">{movement.reason}</p>
-          <p className="mt-3 text-xs text-muted"><span className="font-mono font-semibold">{movement.code}</span> · {movement.user} · {movement.date}</p>
+          <p className="mt-3 break-words text-xs text-muted"><span className="font-mono font-semibold">{movement.code}</span> · {movement.user} · {movement.date}</p>
         </div>
-        <div className={`shrink-0 rounded-2xl border bg-card/75 px-4 py-3 text-right shadow-sm ${tone.value}`}>
+        <div className={`w-full rounded-2xl border bg-card/75 px-4 py-3 text-right shadow-sm sm:w-auto sm:shrink-0 ${tone.value}`}>
           <p className="text-xl font-black">{movement.sign}{Number(movement.quantity).toLocaleString("es-GT")}</p>
           <p className="text-xs font-semibold text-muted">{movement.unit}</p>
         </div>

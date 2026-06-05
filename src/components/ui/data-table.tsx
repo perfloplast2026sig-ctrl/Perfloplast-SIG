@@ -9,11 +9,11 @@ export type Column<T> = {
 export function DataTable<T>({ columns, data }: { columns: Array<Column<T>>; data: T[] }) {
   return (
     <div className="overflow-hidden rounded-2xl border">
-      <div className="grid gap-3 bg-card p-3 md:hidden">
+      <div className="grid max-h-[68vh] gap-3 overflow-y-auto overscroll-contain bg-card p-3 md:hidden">
         {data.length === 0 ? <p className="p-4 text-sm text-muted">Sin registros.</p> : null}
         {data.map((item, index) => <MobileRecord key={index} columns={columns} item={item} />)}
       </div>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden max-h-[70vh] overflow-auto md:block">
         <table className="min-w-full divide-y divide-border text-sm">
           <thead className="bg-card-muted/80 text-left text-xs font-semibold uppercase tracking-[0.12em] text-muted">
             <tr>
@@ -66,7 +66,7 @@ function MobileRecord<T>({ columns, item }: { columns: Array<Column<T>>; item: T
       ) : null}
 
       {detailColumns.length > 0 ? (
-        <dl className="mt-3 grid grid-cols-2 gap-2">
+        <dl className="mt-3 grid grid-cols-1 gap-2 min-[390px]:grid-cols-2">
           {detailColumns.map((column) => (
             <div key={column.header} className="min-w-0 rounded-xl border bg-card/70 px-3 py-2">
               <dt className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">{column.header}</dt>
@@ -77,7 +77,7 @@ function MobileRecord<T>({ columns, item }: { columns: Array<Column<T>>; item: T
       ) : null}
 
       {actionColumn ? (
-        <div className="mt-3 flex justify-end border-t pt-3">
+        <div className="mt-3 flex flex-wrap justify-end gap-2 border-t pt-3">
           {actionColumn.cell(item)}
         </div>
       ) : null}

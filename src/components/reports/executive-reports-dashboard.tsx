@@ -128,16 +128,16 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
           <ActivityReportCreateModal />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
           {reports.kpis.map((kpi, index) => {
             const Icon = kpiIcons[index] || BarChart3;
             return (
-              <div key={kpi.label} className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-4 shadow-[0_18px_48px_rgba(20,36,31,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(20,36,31,0.13)] ${kpiColors[index]}`}>
-                <div className="absolute right-3 top-3 grid size-10 place-items-center rounded-2xl bg-white/75 shadow-sm transition group-hover:scale-105 dark:bg-white/10">
-                  <Icon size={19} />
+              <div key={kpi.label} className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3 shadow-[0_18px_48px_rgba(20,36,31,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(20,36,31,0.13)] sm:p-4 ${kpiColors[index]}`}>
+                <div className="absolute right-2.5 top-2.5 grid size-8 place-items-center rounded-2xl bg-white/75 shadow-sm transition group-hover:scale-105 sm:right-3 sm:top-3 sm:size-10 dark:bg-white/10">
+                  <Icon size={17} />
                 </div>
-                <p className="max-w-28 text-sm font-bold text-muted">{kpi.label}</p>
-                <p className="mt-5 text-3xl font-black text-foreground">{kpi.value}</p>
+                <p className="max-w-24 pr-7 text-xs font-bold leading-4 text-muted sm:max-w-28 sm:pr-0 sm:text-sm">{kpi.label}</p>
+                <p className="mt-4 break-words text-xl font-black text-foreground sm:mt-5 sm:text-3xl">{kpi.value}</p>
                 <p className="mt-2 text-xs font-medium text-muted">{kpi.detail}</p>
                 <MiniSparkline index={index} />
               </div>
@@ -225,7 +225,7 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
           <div className="rounded-[24px] border bg-card p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">Rendimiento</p>
             <h2 className="text-2xl font-black">Vendedores</h2>
-            <div className="mt-5 space-y-4">
+            <div className="mt-5 max-h-[430px] space-y-4 overflow-y-auto overscroll-contain pr-1">
               {filteredSellers.length === 0 ? <EmptyState text="Sin ventas para los filtros seleccionados." /> : null}
               {filteredSellers.map((seller) => (
                 <div key={seller.seller} className="rounded-2xl border bg-card-muted/35 p-4">
@@ -247,7 +247,7 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
           <div className="rounded-[24px] border bg-card p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">Productos</p>
             <h2 className="text-2xl font-black">Top vendidos</h2>
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto overscroll-contain pr-1">
               {topProducts.length === 0 ? <EmptyState text="Sin productos para los filtros." /> : null}
               {topProducts.slice(0, 5).map((product) => (
                 <div key={product.name} className="rounded-2xl border bg-card-muted/30 p-3">
@@ -266,14 +266,14 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
           <div className="rounded-[24px] border bg-card p-5 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">Auditoria</p>
             <h2 className="text-2xl font-black">Movimientos recientes</h2>
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto overscroll-contain pr-1">
               {topRows.slice(0, 5).map((row) => (
-                <div key={row.id} className="flex items-center justify-between gap-3 rounded-2xl border bg-card-muted/30 p-3 text-sm">
-                  <div>
+                <div key={row.id} className="flex flex-col gap-3 rounded-2xl border bg-card-muted/30 p-3 text-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                  <div className="min-w-0">
                     <p className="font-bold">{row.code}</p>
-                    <p className="text-xs text-muted">{row.client} - {row.status}</p>
+                    <p className="break-words text-xs text-muted">{row.client} - {row.status}</p>
                   </div>
-                  <strong>{row.totalLabel}</strong>
+                  <strong className="shrink-0">{row.totalLabel}</strong>
                 </div>
               ))}
               {topRows.length === 0 ? <EmptyState text="Sin movimientos para estos filtros." /> : null}
@@ -290,6 +290,10 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
             <span className="rounded-full bg-card-muted px-4 py-2 text-sm font-semibold text-muted">{filteredRows.length} registros</span>
           </div>
           <div className="mt-5 overflow-hidden rounded-2xl border">
+            <div className="grid max-h-[68vh] gap-3 overflow-y-auto overscroll-contain bg-card p-3 md:hidden">
+              {topRows.map((row) => <ReportMobileRow key={row.id} row={row} />)}
+            </div>
+            <div className="hidden max-h-[70vh] overflow-auto md:block">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-card-muted text-xs uppercase tracking-[0.18em] text-muted">
                 <tr>
@@ -316,6 +320,7 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
                 ))}
               </tbody>
             </table>
+            </div>
             {topRows.length === 0 ? <EmptyState text="No hay registros para mostrar." /> : null}
           </div>
         </div>
@@ -325,6 +330,37 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
         <ReportPrintDocument exportSections={exportSections} generatedAt={reports.generatedAtLabel} reports={reports} state={state} rows={filteredRows} sellers={filteredSellers} user={user} topProducts={topProducts} />
       </div>
     </>
+  );
+}
+
+function ReportMobileRow({ row }: { row: ReportsData["salesRows"][number] }) {
+  return (
+    <article className="rounded-2xl border bg-card-muted/30 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-muted">Codigo</p>
+          <p className="mt-1 break-words font-mono text-sm font-black">{row.code}</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">{row.status}</span>
+      </div>
+      <div className="mt-3 rounded-2xl border bg-card px-3 py-2">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-muted">Total</p>
+        <p className="mt-1 text-lg font-black">{row.totalLabel}</p>
+      </div>
+      <dl className="mt-3 grid grid-cols-1 gap-2 min-[390px]:grid-cols-2">
+        {[
+          ["Cliente", row.client],
+          ["Vendedor", row.seller],
+          ["Bodega", row.warehouse],
+          ["Fecha", row.dateLabel],
+        ].map(([label, value]) => (
+          <div key={label} className="min-w-0 rounded-xl border bg-card/70 px-3 py-2">
+            <dt className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">{label}</dt>
+            <dd className="mt-1 break-words text-sm font-semibold">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </article>
   );
 }
 

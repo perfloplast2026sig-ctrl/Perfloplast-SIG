@@ -67,7 +67,7 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
         <p className="m-5 rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Aun no hay facturas generadas.</p>
       ) : (
         <>
-          <div className="invoice-no-print divide-y divide-border md:hidden">
+          <div className="invoice-no-print max-h-[68vh] divide-y divide-border overflow-y-auto overscroll-contain md:hidden">
             {invoices.map((invoice) => (
               <article key={invoice.id} className={selectedInvoice?.id === invoice.id ? "bg-emerald-500/5 p-4" : "bg-card p-4"}>
                 <div className="flex items-start justify-between gap-3">
@@ -98,7 +98,7 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
             ))}
           </div>
 
-          <div className="invoice-no-print hidden overflow-x-auto md:block">
+          <div className="invoice-no-print hidden max-h-[70vh] overflow-auto md:block">
             <table className="w-full min-w-[920px] text-sm">
               <thead className="bg-card-muted/70 text-left text-xs uppercase tracking-[0.12em] text-muted">
                 <tr>
