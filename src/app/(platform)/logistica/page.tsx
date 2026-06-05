@@ -10,13 +10,14 @@ import { RecordDetailButton } from "@/components/ui/record-detail-button";
 import { SectionCard } from "@/components/ui/section-card";
 import { requireCurrentUser } from "@/services/auth";
 import { getLogisticsModuleData } from "@/services/logistics";
+import Link from "next/link";
 
 export default async function LogisticsPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (user.role.name === "Vendedor") redirect("/preventas");
   if (!["Super admin", "Administrador", "Piloto", "Bodeguero"].includes(user.role.name)) redirect("/");
-  const { preorders, drivers, dispatches, returnRecords, latestLocations, latestSellerLocations, deliveryMapOrders } = await getLogisticsModuleData(user);
+  const { preorders, drivers, dispatches, latestLocations, latestSellerLocations, deliveryMapOrders } = await getLogisticsModuleData(user);
   const canSeeMap = ["Super admin", "Administrador"].includes(user.role.name);
   const isDriver = user.role.name === "Piloto";
   const visibleDispatches = dispatches;
@@ -31,7 +32,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
       <PageHeading
         title="Logistica y despachos"
         description="Crea despachos desde preventas, asigna piloto, controla valor de carga, entrega y rastreo GPS administrativo."
-        actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Logistica" subtitle="Despachos y rutas registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
+        actions={<div className="flex flex-wrap items-center gap-2"><Link className="inline-flex h-11 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/logistica/devoluciones">Ver devoluciones</Link><OperationalReportExport title="Logistica" subtitle="Despachos y rutas registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Despachos", value: String(visibleDispatches.length), detail: "Registros incluidos" },
           { label: "Activos", value: String(active), detail: "Pendientes o en ruta" },
           { label: "Entregados", value: String(delivered), detail: "Cerrados correctamente" },
@@ -74,22 +75,6 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
             { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
             { header: "Accion", cell: (item) => <div className="flex items-center gap-2"><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></div> },
           ]}
-        />
-      </SectionCard>
-
-      <SectionCard title="Registro de devoluciones" eyebrow="Productos, motivo y resolucion" className="mt-6">
-        <DataTable
-          data={returnRecords}
-          columns={[
-            { header: "Fecha", cell: (item) => <span className="text-muted">{item.requestedAt}</span> },
-            { header: "Despacho", cell: (item) => <div><p className="font-mono text-xs font-semibold">{item.dispatch}</p><p className="text-xs text-muted">{item.preorder}</p></div> },
-            { header: "Cliente", cell: (item) => item.client },
-            { header: "Producto", cell: (item) => <div><p className="font-medium">{item.product}</p><p className="text-xs text-muted">{item.color}</p></div> },
-            { header: "Cantidad", align: "right", cell: (item) => <span className="font-semibold">{item.quantity}</span> },
-            { header: "Motivo", cell: (item) => <p className="max-w-64 break-words text-sm text-muted">{item.reason}</p> },
-            { header: "Resolucion", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} /><p className="mt-1 text-xs text-muted">{item.resolvedAt}</p></div> },
-          ]}
-          pageSize={8}
         />
       </SectionCard>
 

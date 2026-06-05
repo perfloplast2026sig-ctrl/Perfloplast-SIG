@@ -8,6 +8,7 @@ type DispatchRow = {
   id: string;
   statusKey: string;
   latestReturnReason: string | null;
+  items: Array<{ id: string; product: string; color: string; quantity: string }>;
 };
 
 export function DispatchStatusActions({ dispatch, roleName }: { dispatch: DispatchRow; roleName: string }) {
@@ -51,6 +52,25 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
                 <span className="mb-2 block text-sm font-medium">Motivo</span>
                 <textarea className="min-h-28 w-full rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent" name="reason" placeholder="Cliente ausente, producto rechazado, direccion incorrecta..." required />
               </label>
+              <div>
+                <p className="mb-2 text-sm font-medium">Productos devueltos</p>
+                <div className="max-h-64 space-y-2 overflow-y-auto rounded-2xl border bg-card-muted/30 p-2">
+                  {dispatch.items.map((item) => (
+                    <div key={item.id} className="grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-[1fr_8rem] sm:items-center">
+                      <div className="min-w-0">
+                        <p className="font-semibold">{item.product}</p>
+                        <p className="text-xs text-muted">{item.color} - despachado: {item.quantity}</p>
+                      </div>
+                      <label className="text-xs font-medium text-muted">
+                        Cantidad
+                        <input name="dispatchItemId" type="hidden" value={item.id} />
+                        <input className="mt-1 h-10 w-full rounded-xl border bg-card px-3 text-sm font-semibold outline-none focus:border-accent" inputMode="decimal" name="returnQuantity" type="number" min="0" step="0.001" defaultValue={parseQuantity(item.quantity)} />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-muted">Deja la cantidad completa para devolucion total. Escribe 0 en productos que no fueron devueltos.</p>
+              </div>
               <div className="flex justify-end gap-3">
                 <button className="inline-flex h-10 items-center rounded-full border bg-card px-4 text-sm font-medium" onClick={() => setReturnOpen(false)} type="button">Cancelar</button>
                 <button className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground" type="submit"><RotateCcw size={16} />Registrar</button>
@@ -61,6 +81,10 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
       ) : null}
     </div>
   );
+}
+
+function parseQuantity(value: string) {
+  return Number(value.replace(/[^\d.-]/g, "") || 0);
 }
 
 function WaitingBadge({ label }: { label: string }) {

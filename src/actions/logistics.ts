@@ -73,6 +73,10 @@ export async function requestDispatchReturnAction(formData: FormData) {
       dispatchId: String(formData.get("dispatchId") || ""),
       reason: String(formData.get("reason") || ""),
       driverId: user.id,
+      items: formData.getAll("dispatchItemId").map((dispatchItemId, index) => ({
+        dispatchItemId: String(dispatchItemId || ""),
+        quantity: String(formData.getAll("returnQuantity")[index] || "0"),
+      })),
     });
     revalidatePath("/logistica");
     revalidatePath("/");

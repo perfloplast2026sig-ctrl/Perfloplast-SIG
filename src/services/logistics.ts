@@ -8,7 +8,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
   const isDriver = viewer?.role.name === "Piloto";
   const dispatchWhere: Prisma.DispatchWhereInput = isDriver ? { responsibleId: viewer.id } : {};
 
-  const [preorders, drivers, dispatches, returnRows, latestLocations, latestSellerLocations] = await Promise.all([
+  const [preorders, drivers, dispatches, latestLocations, latestSellerLocations] = await Promise.all([
     prisma.preorder.findMany({
       where: isDriver ? { id: "__none__" } : { status: { in: ["PENDING", "CONFIRMED"] }, dispatches: { none: {} } },
       include: { client: true, items: { include: { product: true } } },
@@ -20,20 +20,6 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       include: { preorder: { include: { client: true, items: { include: { product: true } } } }, responsible: true, items: { include: { product: true } }, returns: { where: { resolvedAt: null }, orderBy: { createdAt: "desc" }, take: 1 } },
       orderBy: { createdAt: "desc" },
       take: 30,
-    }),
-    prisma.dispatchReturn.findMany({
-      where: isDriver ? { dispatch: { responsibleId: viewer.id } } : {},
-      include: {
-        driver: true,
-        dispatch: {
-          include: {
-            preorder: { include: { client: true } },
-            items: { include: { product: true } },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
     }),
     getLatestUserLocations("Piloto", isDriver ? viewer.id : undefined),
     isDriver ? Promise.resolve([]) : getLatestUserLocations("Vendedor"),
@@ -84,6 +70,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       load: `${dispatch.items.reduce((sum, item) => sum + Number(item.quantity), 0)} un`,
       value: formatGTQ(dispatch.preorder?.totalGTQ || 0),
       items: dispatch.items.map((item) => ({
+        id: item.id,
         product: productTitle(item.product),
         color: item.product.color || "Sin color",
         quantity: item.quantity.toString(),
@@ -93,20 +80,6 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       latestReturnReason: dispatch.returns[0]?.reason || null,
       latestReturnResolution: dispatch.returns[0]?.resolution || null,
     })),
-    returnRecords: returnRows.flatMap((row) => row.dispatch.items.map((item) => ({
-      id: `${row.id}-${item.id}`,
-      dispatch: row.dispatch.code,
-      preorder: row.dispatch.preorder?.code || "Sin preventa",
-      client: row.dispatch.preorder?.client.name || "Sin cliente",
-      driver: row.driver.name,
-      product: productTitle(item.product),
-      color: item.product.color || "Sin color",
-      quantity: `${Number(item.quantity).toLocaleString("es-GT")} un`,
-      reason: row.reason,
-      status: returnStatusLabel(row.resolution, row.resolvedAt),
-      requestedAt: formatDateTime(row.createdAt),
-      resolvedAt: row.resolvedAt ? formatDateTime(row.resolvedAt) : "Pendiente",
-    }))),
     latestLocations,
     latestSellerLocations,
     deliveryMapOrders: dispatches.map((dispatch) => ({
@@ -119,6 +92,62 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       longitude: dispatch.destinationLongitude ? Number(dispatch.destinationLongitude) : null,
     })),
   };
+}
+
+export async function getDispatchReturnRegistryData(viewer?: Viewer) {
+  const isDriver = viewer?.role.name === "Piloto";
+  const rows = await prisma.dispatchReturn.findMany({
+    where: isDriver ? { dispatch: { responsibleId: viewer.id } } : {},
+    include: {
+      driver: true,
+      items: { include: { dispatchItem: { include: { product: true } } } },
+      dispatch: {
+        include: {
+          preorder: { include: { client: true } },
+          items: { include: { product: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 80,
+  });
+
+  return rows.map((row) => {
+    const registeredItems = row.items.length > 0
+      ? row.items.map((item) => ({
+          id: item.id,
+          product: productTitle(item.dispatchItem.product),
+          color: item.dispatchItem.product.color || "Sin color",
+          quantity: `${Number(item.quantity).toLocaleString("es-GT")} un`,
+          returnedQuantity: Number(item.quantity),
+          dispatchedQuantity: Number(item.dispatchItem.quantity),
+        }))
+      : row.dispatch.items.map((item) => ({
+          id: item.id,
+          product: productTitle(item.product),
+          color: item.product.color || "Sin color",
+          quantity: `${Number(item.quantity).toLocaleString("es-GT")} un`,
+          returnedQuantity: Number(item.quantity),
+          dispatchedQuantity: Number(item.quantity),
+        }));
+    const dispatchedTotal = row.dispatch.items.reduce((sum, item) => sum + Number(item.quantity), 0);
+    const returnedTotal = registeredItems.reduce((sum, item) => sum + item.returnedQuantity, 0);
+    const isFullReturn = dispatchedTotal > 0 && returnedTotal >= dispatchedTotal;
+
+    return {
+      id: row.id,
+      dispatch: row.dispatch.code,
+      preorder: row.dispatch.preorder?.code || "Sin preventa",
+      client: row.dispatch.preorder?.client.name || "Sin cliente",
+      driver: row.driver.name,
+      reason: row.reason,
+      status: returnStatusLabel(row.resolution, row.resolvedAt),
+      scope: isFullReturn ? "Devolucion total" : "Devolucion parcial",
+      requestedAt: formatDateTime(row.createdAt),
+      resolvedAt: row.resolvedAt ? formatDateTime(row.resolvedAt) : "Pendiente",
+      products: registeredItems,
+    };
+  });
 }
 
 const getLogisticsModuleDataCached = unstable_cache(
@@ -299,12 +328,26 @@ export async function updateDispatchStatus(input: { dispatchId: string; status: 
   });
 }
 
-export async function requestDispatchReturn(input: { dispatchId: string; reason: string; driverId: string }) {
+export async function requestDispatchReturn(input: { dispatchId: string; reason: string; driverId: string; items: Array<{ dispatchItemId: string; quantity: string }> }) {
   if (!input.dispatchId || !input.reason.trim()) throw new Error("Indica el motivo de la devolucion.");
 
-  const dispatch = await prisma.dispatch.findUnique({ where: { id: input.dispatchId } });
+  const dispatch = await prisma.dispatch.findUnique({ where: { id: input.dispatchId }, include: { items: true } });
   if (!dispatch) throw new Error("Despacho no encontrado.");
   if (dispatch.responsibleId !== input.driverId) throw new Error("Este despacho no esta asignado a tu usuario.");
+
+  const requestedItems = input.items
+    .map((item) => ({ dispatchItemId: item.dispatchItemId, quantity: Number(item.quantity || 0) }))
+    .filter((item) => item.dispatchItemId && Number.isFinite(item.quantity) && item.quantity > 0);
+  const returnItems = requestedItems.length > 0
+    ? requestedItems
+    : dispatch.items.map((item) => ({ dispatchItemId: item.id, quantity: Number(item.quantity) }));
+
+  if (returnItems.length === 0) throw new Error("Indica al menos un producto devuelto.");
+  for (const item of returnItems) {
+    const dispatchItem = dispatch.items.find((row) => row.id === item.dispatchItemId);
+    if (!dispatchItem) throw new Error("Producto devuelto no pertenece al despacho.");
+    if (item.quantity > Number(dispatchItem.quantity)) throw new Error("La cantidad devuelta no puede superar la cantidad despachada.");
+  }
 
   return prisma.$transaction(async (tx) => {
     await tx.dispatchReturn.create({
@@ -312,6 +355,12 @@ export async function requestDispatchReturn(input: { dispatchId: string; reason:
         dispatchId: input.dispatchId,
         driverId: input.driverId,
         reason: input.reason.trim(),
+        items: {
+          create: returnItems.map((item) => ({
+            dispatchItemId: item.dispatchItemId,
+            quantity: item.quantity,
+          })),
+        },
       },
     });
     return tx.dispatch.update({ where: { id: input.dispatchId }, data: { status: "RETURN_REQUESTED" } });

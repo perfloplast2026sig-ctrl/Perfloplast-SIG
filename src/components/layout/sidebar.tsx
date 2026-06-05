@@ -48,7 +48,7 @@ export function Sidebar({ role }: { role: Role }) {
         <nav className="space-y-1.5">
           {visibleNavigation.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.name}
@@ -71,7 +71,7 @@ export function Sidebar({ role }: { role: Role }) {
         <div className="mobile-nav-scroll flex gap-1 overflow-x-auto overscroll-x-contain pb-1">
         {visibleNavigation.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.name}

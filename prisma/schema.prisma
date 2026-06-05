@@ -410,11 +410,26 @@ model DispatchReturn {
   reason      String   @db.VarChar(255)
   resolution  String?  @db.VarChar(80)
   resolvedAt  DateTime?
+  items       DispatchReturnItem[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([dispatchId])
   @@index([driverId])
+}
+
+model DispatchReturnItem {
+  id               String         @id @default(cuid())
+  dispatchReturnId String
+  dispatchReturn   DispatchReturn @relation(fields: [dispatchReturnId], references: [id])
+  dispatchItemId   String
+  dispatchItem     DispatchItem   @relation(fields: [dispatchItemId], references: [id])
+  quantity         Decimal        @db.Decimal(14, 3)
+  createdAt        DateTime       @default(now())
+
+  @@unique([dispatchReturnId, dispatchItemId])
+  @@index([dispatchReturnId])
+  @@index([dispatchItemId])
 }
 
 model Invoice {
@@ -454,6 +469,7 @@ model DispatchItem {
   product            Product             @relation(fields: [productId], references: [id])
   preorderItem       PreorderItem?        @relation(fields: [preorderItemId], references: [id])
   inventoryMovements InventoryMovement[]
+  returnItems        DispatchReturnItem[]
 
   @@index([dispatchId])
   @@index([productId])
