@@ -59,7 +59,7 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
       change: formatGTQ(Math.max(0, Number(preorder.amountReceivedGTQ) - Number(preorder.totalGTQ))),
       dateKey: preorder.createdAt.toISOString().slice(0, 10),
       date: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(preorder.createdAt),
-      status: preorder.status === "QUOTE" ? { label: "Cotizacion", tone: "info" as const } : preorder.status === "CONFIRMED" ? { label: "Confirmada", tone: "success" as const } : { label: "Pendiente", tone: "warning" as const },
+      status: statusLabel(preorder.status),
       quoteWhatsappUrl: preorder.status === "QUOTE" ? buildQuoteWhatsappUrl(preorder.client.phone || "", preorder.code, preorder.client.name, preorder.totalGTQ) : "",
       items: preorder.items.map((item) => ({
         product: productTitle(item.product),
@@ -251,6 +251,18 @@ function normalizeGuatemalaPhone(value: string) {
   if (clean.length === 8) return `502${clean}`;
   if (clean.length === 11 && clean.startsWith("502")) return clean;
   return "";
+}
+
+function statusLabel(status: string) {
+  const labels = {
+    QUOTE: { label: "Cotizacion", tone: "info" as const },
+    PENDING: { label: "Pendiente", tone: "warning" as const },
+    CONFIRMED: { label: "Confirmada", tone: "success" as const },
+    DISPATCHED: { label: "Entregada", tone: "success" as const },
+    CANCELLED: { label: "Cancelada", tone: "danger" as const },
+  };
+
+  return labels[status as keyof typeof labels] || { label: status, tone: "neutral" as const };
 }
 
 function formatGTQ(value: Prisma.Decimal | number) {

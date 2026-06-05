@@ -253,7 +253,7 @@ function statusLabel(status: string) {
   const labels: Record<string, string> = {
     PENDING: "Pendiente",
     CONFIRMED: "Confirmada",
-    DELIVERED: "Entregada",
+    DISPATCHED: "Entregada",
     CANCELLED: "Cancelada",
     QUOTE: "Cotizacion",
   };
