@@ -17,7 +17,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
     prisma.user.findMany({ where: isDriver ? { id: viewer.id, isActive: true, role: { name: "Piloto" } } : { isActive: true, role: { name: "Piloto" } }, orderBy: { name: "asc" } }),
     prisma.dispatch.findMany({
       where: dispatchWhere,
-      include: { preorder: { include: { client: true, items: { include: { product: true } } } }, responsible: true, items: { include: { product: true } }, returns: { orderBy: { createdAt: "desc" }, take: 1 } },
+      include: { preorder: { include: { client: true, items: { include: { product: true } } } }, responsible: true, items: { include: { product: true } }, returns: { where: { resolvedAt: null }, orderBy: { createdAt: "desc" }, take: 1 } },
       orderBy: { createdAt: "desc" },
       take: 30,
     }),

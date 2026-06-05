@@ -1,6 +1,5 @@
 import type { PreorderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
 
 const GT_TIME_ZONE = "America/Guatemala";
 const OPEN_DISPATCH_STATUSES = ["SCHEDULED", "LOADED", "IN_ROUTE", "RETURN_REQUESTED", "RESCHEDULED"];
@@ -140,16 +139,9 @@ async function getDashboardRawData() {
   };
 }
 
-export const getDashboardData = unstable_cache(
-  async () => {
-    return getDashboardRawData();
-  },
-  ["dashboard-data"],
-  {
-    revalidate: 15, // revalidate every 15 seconds
-    tags: ["dashboard"],
-  }
-);
+export async function getDashboardData() {
+  return getDashboardRawData();
+}
 
 function buildShiftProduction(rows: Array<{ shift: string; producedQuantity: unknown; outputs: Array<{ producedQuantity: unknown }> }>) {
   const totals = new Map<string, number>();
