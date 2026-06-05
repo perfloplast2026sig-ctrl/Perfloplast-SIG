@@ -8,7 +8,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
   const isDriver = viewer?.role.name === "Piloto";
   const dispatchWhere: Prisma.DispatchWhereInput = isDriver ? { responsibleId: viewer.id } : {};
 
-  const [preorders, drivers, dispatches, latestLocations, latestSellerLocations] = await Promise.all([
+  const [preorders, drivers, dispatches, returnRows, latestLocations, latestSellerLocations] = await Promise.all([
     prisma.preorder.findMany({
       where: isDriver ? { id: "__none__" } : { status: { in: ["PENDING", "CONFIRMED"] }, dispatches: { none: {} } },
       include: { client: true, items: { include: { product: true } } },
@@ -20,6 +20,20 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       include: { preorder: { include: { client: true, items: { include: { product: true } } } }, responsible: true, items: { include: { product: true } }, returns: { where: { resolvedAt: null }, orderBy: { createdAt: "desc" }, take: 1 } },
       orderBy: { createdAt: "desc" },
       take: 30,
+    }),
+    prisma.dispatchReturn.findMany({
+      where: isDriver ? { dispatch: { responsibleId: viewer.id } } : {},
+      include: {
+        driver: true,
+        dispatch: {
+          include: {
+            preorder: { include: { client: true } },
+            items: { include: { product: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
     }),
     getLatestUserLocations("Piloto", isDriver ? viewer.id : undefined),
     isDriver ? Promise.resolve([]) : getLatestUserLocations("Vendedor"),
@@ -79,6 +93,20 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       latestReturnReason: dispatch.returns[0]?.reason || null,
       latestReturnResolution: dispatch.returns[0]?.resolution || null,
     })),
+    returnRecords: returnRows.flatMap((row) => row.dispatch.items.map((item) => ({
+      id: `${row.id}-${item.id}`,
+      dispatch: row.dispatch.code,
+      preorder: row.dispatch.preorder?.code || "Sin preventa",
+      client: row.dispatch.preorder?.client.name || "Sin cliente",
+      driver: row.driver.name,
+      product: productTitle(item.product),
+      color: item.product.color || "Sin color",
+      quantity: `${Number(item.quantity).toLocaleString("es-GT")} un`,
+      reason: row.reason,
+      status: returnStatusLabel(row.resolution, row.resolvedAt),
+      requestedAt: formatDateTime(row.createdAt),
+      resolvedAt: row.resolvedAt ? formatDateTime(row.resolvedAt) : "Pendiente",
+    }))),
     latestLocations,
     latestSellerLocations,
     deliveryMapOrders: dispatches.map((dispatch) => ({
@@ -357,6 +385,17 @@ function statusLabel(status: string) {
     CANCELLED: { label: "Cancelado", tone: "danger" as const },
   };
   return labels[status as keyof typeof labels] || { label: status, tone: "neutral" as const };
+}
+
+function returnStatusLabel(resolution: string | null, resolvedAt: Date | null) {
+  if (!resolvedAt) return { label: "Pendiente", tone: "warning" as const };
+  if (resolution === "RETURNED_TO_WAREHOUSE") return { label: "A bodega", tone: "info" as const };
+  if (resolution === "RESCHEDULED") return { label: "Reasignada", tone: "success" as const };
+  return { label: "Resuelta", tone: "success" as const };
+}
+
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function buildMovementCode(prefix: string) {
