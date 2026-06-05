@@ -782,8 +782,7 @@ function SalesTrend({ days, rows }: { days: ReportsData["reportDays"]; rows: Rep
           const x = xFor(index);
           const y = yFor(point.total);
           return (
-            <g key={point.label}>
-              <title>{point.label}: {formatGTQ(point.total)}</title>
+            <g key={point.key} aria-label={`${point.label}: ${formatGTQ(point.total)}`}>
               <circle className="report-trend-dot" style={{ animationDelay: `${index * 80}ms` }} cx={x} cy={y} r="7" fill="#10b981" stroke="white" strokeWidth="4" />
               <circle cx={x} cy={y} r="18" fill="#10b981" opacity={point.total > 0 ? "0.14" : "0"} />
               {point.total > 0 ? <text x={x} y={Math.max(16, y - 16)} textAnchor="middle" className="fill-emerald-600 text-[13px] font-black dark:fill-emerald-300">{formatCompactNumber(point.total)}</text> : null}
