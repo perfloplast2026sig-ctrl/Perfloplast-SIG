@@ -3,46 +3,55 @@
 import { useEffect, useState } from "react";
 import { Download, Share2, X, PlusSquare } from "lucide-react";
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
+type NavigatorWithStandalone = Navigator & {
+  standalone?: boolean;
+};
+
+function isIOSDevice() {
+  return /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+}
+
 export function PwaInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstruction, setShowIOSInstruction] = useState(false);
 
   useEffect(() => {
     // Check if already running in standalone mode (PWA)
     const isStandalone = 
       window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as any).standalone === true;
+      (navigator as NavigatorWithStandalone).standalone === true;
 
     if (isStandalone) return;
-
-    // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const detectIOS = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(detectIOS);
 
     // Listen for beforeinstallprompt event (Android / Chrome / Edge / Brave / Samsung)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // If iOS and not standalone, show the install option
-    if (detectIOS && !isStandalone) {
-      setShowPrompt(true);
+    let animationFrame = 0;
+    if (isIOSDevice()) {
+      animationFrame = window.requestAnimationFrame(() => setShowPrompt(true));
     }
 
     return () => {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    if (isIOS) {
+    if (isIOSDevice()) {
       setShowIOSInstruction(true);
       return;
     }

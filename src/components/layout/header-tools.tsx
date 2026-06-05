@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Bell, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import useSWR from "swr";
 
 type Notification = {
   title: string;
@@ -24,10 +25,25 @@ const toneClass = {
   info: "bg-sky-500",
 };
 
+async function fetchNotifications(url: string) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar las notificaciones.");
+  }
+
+  return response.json() as Promise<Notification[]>;
+}
+
 export function HeaderTools({ notifications, searchItems }: { notifications: Notification[]; searchItems: SearchItem[] }) {
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { data: liveNotifications = notifications } = useSWR<Notification[]>("/api/header/notifications", fetchNotifications, {
+    fallbackData: notifications,
+    refreshInterval: 15000,
+    revalidateOnFocus: true,
+  });
   const results = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return [];
@@ -82,7 +98,7 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
           }}
         >
           <Bell size={18} />
-          {notifications.length > 0 ? <span className="absolute right-2 top-2 grid size-4 place-items-center rounded-full bg-danger text-[9px] font-bold text-white">{Math.min(notifications.length, 9)}</span> : null}
+          {liveNotifications.length > 0 ? <span className="absolute right-2 top-2 grid size-4 place-items-center rounded-full bg-danger text-[9px] font-bold text-white">{Math.min(liveNotifications.length, 9)}</span> : null}
         </button>
 
         {showNotifications ? (
@@ -92,8 +108,8 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
               <button className="grid size-7 place-items-center rounded-full border bg-card-muted" onClick={() => setShowNotifications(false)} type="button"><X size={14} /></button>
             </div>
             <div className="max-h-[calc(72dvh-54px)] overflow-y-auto overscroll-contain">
-              {notifications.length === 0 ? <p className="p-4 text-sm text-muted">No hay alertas activas.</p> : null}
-              {notifications.map((item, index) => (
+              {liveNotifications.length === 0 ? <p className="p-4 text-sm text-muted">No hay alertas activas.</p> : null}
+              {liveNotifications.map((item, index) => (
                 <Link key={`${item.title}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={() => setShowNotifications(false)}>
                   <div className="flex gap-3">
                     <span className={`mt-1 size-2.5 shrink-0 rounded-full ${toneClass[item.tone]}`} />
