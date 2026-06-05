@@ -50,20 +50,20 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl overflow-hidden rounded-3xl border bg-card shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b p-5">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-2 sm:items-center sm:p-4">
+          <div className="max-h-[96dvh] w-full max-w-2xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-h-[92vh] sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b bg-card p-4 sm:p-5">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Conteo fisico</p>
-                <h3 className="mt-1 text-2xl font-semibold tracking-tight">Ajustar stock</h3>
+                <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">Ajustar stock</h3>
                 <p className="mt-1 text-sm text-muted">Corrige diferencias por error de produccion, conteo o merma. El sistema crea un movimiento Kardex auditado.</p>
               </div>
-              <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
+              <button aria-label="Cerrar" className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>
 
-            <form action={adjustFinishedStockAction} className="grid gap-4 p-5">
+            <form action={adjustFinishedStockAction} className="grid max-h-[calc(96dvh-108px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-126px)] sm:p-5">
               {selected ? (
                 <>
                   <input name="productId" type="hidden" value={selected.productId} />
@@ -127,8 +127,8 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
               </div>
 
               <div className="flex flex-wrap justify-end gap-2">
-                <Button onClick={() => setIsOpen(false)} type="button" variant="secondary">Cancelar</Button>
-                <Button disabled={!selected || options.length === 0} type="submit">Guardar ajuste</Button>
+                <Button className="w-full sm:w-auto" onClick={() => setIsOpen(false)} type="button" variant="secondary">Cancelar</Button>
+                <Button className="w-full sm:w-auto" disabled={!selected || options.length === 0} type="submit">Guardar ajuste</Button>
               </div>
             </form>
           </div>

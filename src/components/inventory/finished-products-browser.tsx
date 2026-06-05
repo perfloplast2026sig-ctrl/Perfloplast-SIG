@@ -59,6 +59,8 @@ const emptyFilters: FilterState = {
 export function FinishedProductsBrowser({ products }: { products: FinishedProduct[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const productGroups = useMemo(() => buildProductGroups(products), [products]);
   const [selectedId, setSelectedId] = useState(productGroups[0]?.id || "");
   const [editingId, setEditingId] = useState("");
@@ -81,6 +83,10 @@ export function FinishedProductsBrowser({ products }: { products: FinishedProduc
       return matchesQuery && matchesProduct && matchesModel && matchesColor;
     });
   }, [filters, productGroups]);
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const pagedProducts = filteredProducts.slice(start, start + pageSize);
 
   const selectedProduct = filteredProducts.find((product) => product.id === selectedId) || filteredProducts[0] || productGroups[0];
   const isEditing = selectedProduct?.id === editingId;
@@ -127,7 +133,7 @@ export function FinishedProductsBrowser({ products }: { products: FinishedProduc
 
               <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
                 <div className="overflow-hidden rounded-2xl border">
-                  <div className="overflow-x-auto">
+                  <div className="max-h-[70vh] overflow-auto">
                     <table className="min-w-[940px] divide-y divide-border text-sm">
                       <thead className="bg-card-muted/80 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                         <tr>
@@ -141,7 +147,7 @@ export function FinishedProductsBrowser({ products }: { products: FinishedProduc
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border bg-card">
-                        {filteredProducts.map((product) => (
+                        {pagedProducts.map((product) => (
                           <tr key={product.id} className={`transition hover:bg-card-muted/60 ${selectedProduct?.id === product.id ? "bg-card-muted/70" : ""}`}>
                             <td className="px-4 py-3">
                               <button className="flex min-w-[230px] items-center gap-3 text-left" onClick={() => { setSelectedId(product.id); setEditingId(""); }} type="button">
@@ -168,9 +174,13 @@ export function FinishedProductsBrowser({ products }: { products: FinishedProduc
                       </tbody>
                     </table>
                   </div>
-                  <div className="flex flex-col gap-1 border-t bg-card-muted/45 px-4 py-3 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-                    <span>Mostrando {filteredProducts.length} de {productGroups.length} productos</span>
-                    <span>Selecciona una fila para ver el detalle</span>
+                  <div className="flex flex-col gap-3 border-t bg-card-muted/45 px-4 py-3 text-xs font-semibold text-muted sm:flex-row sm:items-center sm:justify-between">
+                    <span>Mostrando {filteredProducts.length === 0 ? 0 : start + 1}-{Math.min(start + pageSize, filteredProducts.length)} de {filteredProducts.length} productos filtrados</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} type="button">Anterior</button>
+                      <span>Pagina {currentPage} de {totalPages}</span>
+                      <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} type="button">Siguiente</button>
+                    </div>
                   </div>
                 </div>
 

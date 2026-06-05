@@ -60,17 +60,17 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
-          <div className="max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-3xl border bg-card shadow-2xl">
-            <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-2 sm:items-center sm:p-4">
+          <div className="max-h-[96dvh] w-full max-w-6xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-h-[92vh] sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card px-4 py-3 sm:px-5 sm:py-4">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Registro real</p>
-                <h3 className="mt-1 text-xl font-semibold">Nueva preventa</h3>
+                <h3 className="mt-1 text-lg font-semibold sm:text-xl">Nueva preventa</h3>
               </div>
-              <button className="inline-flex size-9 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button aria-label="Cerrar" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
             </div>
 
-            <form action={createPreorderAction} className="grid max-h-[calc(92vh-73px)] gap-4 overflow-y-auto p-5">
+            <form action={createPreorderAction} className="grid max-h-[calc(96dvh-67px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-73px)] sm:p-5">
               <input name="saleLatitude" type="hidden" value={gps.latitude} />
               <input name="saleLongitude" type="hidden" value={gps.longitude} />
               <input name="saleAccuracy" type="hidden" value={gps.accuracy} />
@@ -146,7 +146,7 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
               </div>
 
               <div className="flex justify-end">
-                <Button type="submit"><Receipt size={16} /> {mode === "quote" ? "Generar cotizacion PDF" : "Crear preventa"}</Button>
+                <Button className="w-full sm:w-auto" type="submit"><Receipt size={16} /> {mode === "quote" ? "Generar cotizacion PDF" : "Crear preventa"}</Button>
               </div>
             </form>
           </div>

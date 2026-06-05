@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 
 export type Column<T> = {
   header: string;
@@ -6,12 +9,22 @@ export type Column<T> = {
   align?: "left" | "right";
 };
 
-export function DataTable<T>({ columns, data }: { columns: Array<Column<T>>; data: T[] }) {
+export function DataTable<T>({ columns, data, pageSize = 10 }: { columns: Array<Column<T>>; data: T[]; pageSize?: number }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const pagedData = useMemo(() => data.slice(start, start + pageSize), [data, pageSize, start]);
+
+  function goToPage(nextPage: number) {
+    setPage(Math.max(1, Math.min(totalPages, nextPage)));
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border">
       <div className="grid max-h-[68vh] gap-3 overflow-y-auto overscroll-contain bg-card p-3 md:hidden">
         {data.length === 0 ? <p className="p-4 text-sm text-muted">Sin registros.</p> : null}
-        {data.map((item, index) => <MobileRecord key={index} columns={columns} item={item} />)}
+        {pagedData.map((item, index) => <MobileRecord key={start + index} columns={columns} item={item} />)}
       </div>
       <div className="hidden max-h-[70vh] overflow-auto md:block">
         <table className="min-w-full divide-y divide-border text-sm">
@@ -25,8 +38,8 @@ export function DataTable<T>({ columns, data }: { columns: Array<Column<T>>; dat
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
-            {data.map((item, index) => (
-              <tr key={index} className="transition-colors hover:bg-card-muted/60">
+            {pagedData.map((item, index) => (
+              <tr key={start + index} className="transition-colors hover:bg-card-muted/60">
                 {columns.map((column) => (
                   <td key={column.header} className={`px-4 py-4 align-top ${column.align === "right" ? "text-right" : "text-left"}`}>
                     {column.cell(item)}
@@ -37,8 +50,39 @@ export function DataTable<T>({ columns, data }: { columns: Array<Column<T>>; dat
           </tbody>
         </table>
       </div>
+      <PaginationFooter currentPage={currentPage} end={Math.min(start + pageSize, data.length)} goToPage={goToPage} pageSize={pageSize} start={data.length === 0 ? 0 : start + 1} total={data.length} totalPages={totalPages} />
     </div>
   );
+}
+
+function PaginationFooter({ currentPage, end, goToPage, pageSize, start, total, totalPages }: { currentPage: number; end: number; goToPage: (page: number) => void; pageSize: number; start: number; total: number; totalPages: number }) {
+  if (total <= pageSize) {
+    return <div className="border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted">{total} registros</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted sm:flex-row sm:items-center sm:justify-between">
+      <span>Mostrando {start}-{end} de {total}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} type="button">Anterior</button>
+        {pageNumbers(currentPage, totalPages).map((item) => item === "..." ? (
+          <span key={`${item}-${currentPage}`} className="px-1">...</span>
+        ) : (
+          <button key={item} className={`min-w-8 rounded-full border px-3 py-1.5 transition ${item === currentPage ? "bg-accent text-accent-foreground" : "bg-card hover:bg-card-muted"}`} onClick={() => goToPage(item)} type="button">{item}</button>
+        ))}
+        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} type="button">Siguiente</button>
+      </div>
+    </div>
+  );
+}
+
+function pageNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
+  const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+  return Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b)
+    .flatMap((page, index, rows) => index > 0 && page - rows[index - 1] > 1 ? ["..." as const, page] : [page]);
 }
 
 function MobileRecord<T>({ columns, item }: { columns: Array<Column<T>>; item: T }) {

@@ -7,6 +7,12 @@ import type { InvoiceRecord } from "@/services/invoices";
 
 export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
   const [selectedId, setSelectedId] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(invoices.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const pagedInvoices = useMemo(() => invoices.slice(start, start + pageSize), [invoices, start]);
   const selectedInvoice = useMemo(() => selectedId ? invoices.find((invoice) => invoice.id === selectedId) || null : null, [invoices, selectedId]);
 
   const printInvoice = (invoiceId: string) => {
@@ -68,7 +74,7 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
       ) : (
         <>
           <div className="invoice-no-print max-h-[68vh] divide-y divide-border overflow-y-auto overscroll-contain md:hidden">
-            {invoices.map((invoice) => (
+            {pagedInvoices.map((invoice) => (
               <article key={invoice.id} className={selectedInvoice?.id === invoice.id ? "bg-emerald-500/5 p-4" : "bg-card p-4"}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -112,7 +118,7 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {invoices.map((invoice) => (
+                {pagedInvoices.map((invoice) => (
                   <tr key={invoice.id} className={selectedInvoice?.id === invoice.id ? "bg-emerald-500/5" : "bg-card"}>
                     <td className="px-5 py-4"><span className="block size-4 rounded border bg-background" /></td>
                     <td className="px-5 py-4">
@@ -148,6 +154,8 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
             </table>
           </div>
 
+          <PaginationFooter currentPage={currentPage} end={Math.min(start + pageSize, invoices.length)} goToPage={setPage} start={invoices.length === 0 ? 0 : start + 1} total={invoices.length} totalPages={totalPages} />
+
           {selectedInvoice ? (
             <div className="border-t bg-card-muted/30 p-3 sm:p-5">
               <div className="invoice-no-print mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -166,6 +174,21 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
       )}
     </section>
     </>
+  );
+}
+
+function PaginationFooter({ currentPage, end, goToPage, start, total, totalPages }: { currentPage: number; end: number; goToPage: (page: number) => void; start: number; total: number; totalPages: number }) {
+  if (total <= 10) return <div className="invoice-no-print border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted">{total} registros</div>;
+
+  return (
+    <div className="invoice-no-print flex flex-col gap-3 border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted sm:flex-row sm:items-center sm:justify-between">
+      <span>Mostrando {start}-{end} de {total}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} type="button">Anterior</button>
+        <span>Pagina {currentPage} de {totalPages}</span>
+        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} type="button">Siguiente</button>
+      </div>
+    </div>
   );
 }
 

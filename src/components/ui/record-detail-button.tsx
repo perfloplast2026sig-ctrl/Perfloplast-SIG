@@ -38,23 +38,23 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-          <div className="max-h-[94vh] w-full max-w-4xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:rounded-3xl">
-            <div className="flex items-start justify-between gap-3 border-b p-4 sm:p-5">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-2 sm:items-center sm:p-4">
+          <div className="max-h-[96dvh] w-full max-w-4xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-h-[94vh] sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card p-4 sm:p-5">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted">Detalle del registro</p>
                 <h3 className="mt-1 break-words text-xl font-black tracking-tight sm:text-2xl">{detail.title}</h3>
                 <p className="mt-1 text-sm text-muted">{detail.subtitle}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                {detail.badge ? <span className="rounded-full bg-card-muted px-3 py-1 text-xs font-bold text-muted">{detail.badge}</span> : null}
-                <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setOpen(false)} type="button">
+                {detail.badge ? <span className="hidden rounded-full bg-card-muted px-3 py-1 text-xs font-bold text-muted min-[420px]:inline-flex">{detail.badge}</span> : null}
+                <button aria-label="Cerrar" className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setOpen(false)} type="button">
                   <X size={18} />
                 </button>
               </div>
             </div>
 
-            <div className="max-h-[calc(94vh-84px)] overflow-y-auto p-4 sm:p-5">
+            <div className="max-h-[calc(96dvh-84px)] overflow-y-auto p-4 sm:max-h-[calc(94vh-84px)] sm:p-5">
               <div className="grid gap-4 md:grid-cols-2">
                 {detail.sections.map((section) => (
                   <section key={section.title} className="rounded-2xl border bg-card-muted/30 p-4">

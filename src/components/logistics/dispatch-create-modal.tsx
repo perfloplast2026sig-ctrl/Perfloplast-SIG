@@ -30,16 +30,16 @@ export function DispatchCreateModal({ preorders, drivers }: { preorders: Preorde
         <Plus size={16} /> Crear despacho
       </button>
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-3xl border bg-card shadow-2xl">
-            <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-2 sm:items-center sm:p-4">
+          <div className="max-h-[96dvh] w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-h-[92vh] sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card px-4 py-3 sm:px-5 sm:py-4">
+              <div className="min-w-0 pr-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Asignacion a piloto</p>
-                <h3 className="mt-1 text-xl font-semibold">Crear despacho desde preventa</h3>
+                <h3 className="mt-1 break-words text-lg font-semibold leading-tight sm:text-xl">Crear despacho desde preventa</h3>
               </div>
-              <button className="inline-flex size-9 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button aria-label="Cerrar" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
             </div>
-            <form action={createDispatchAction} className="grid max-h-[calc(92vh-73px)] gap-4 overflow-y-auto p-5">
+            <form action={createDispatchAction} className="grid max-h-[calc(96dvh-67px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-73px)] sm:p-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
                   <span className="mb-2 block text-sm font-medium">Orden de preventa</span>
@@ -85,7 +85,7 @@ export function DispatchCreateModal({ preorders, drivers }: { preorders: Preorde
                 <Field label="Lugar de entrega" name="destination" defaultValue={selected?.deliveryAddress || ""} placeholder="Direccion de entrega" required />
               </div>
 
-              <div className="flex justify-end"><Button type="submit">Crear despacho</Button></div>
+              <div className="flex justify-end"><Button className="w-full sm:w-auto" type="submit">Crear despacho</Button></div>
             </form>
           </div>
         </div>
