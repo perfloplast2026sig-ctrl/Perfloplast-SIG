@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUserManager } from "@/services/auth";
 import { createUser, resolvePasswordResetRequest, setUserActive, updateUser } from "@/services/users";
@@ -27,6 +27,7 @@ export async function createUserAction(formData: FormData) {
     });
 
     revalidatePath("/usuarios");
+    revalidateTag("users", "default");
   } catch (error) {
     redirect(`/usuarios?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo crear el usuario.")}`);
   }
@@ -42,6 +43,7 @@ export async function toggleUserStatusAction(formData: FormData) {
 
     await setUserActive(userId, nextActive);
     revalidatePath("/usuarios");
+    revalidateTag("users", "default");
   } catch (error) {
     redirect(`/usuarios?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo actualizar el usuario.")}`);
   }
@@ -66,6 +68,7 @@ export async function updateUserAction(formData: FormData) {
 
     revalidatePath("/usuarios");
     revalidatePath(`/usuarios/${userId}/editar`);
+    revalidateTag("users", "default");
   } catch (error) {
     redirect(`/usuarios/${userId}/editar?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo editar el usuario.")}`);
   }
@@ -80,6 +83,7 @@ export async function resolvePasswordResetRequestAction(formData: FormData) {
 
     await resolvePasswordResetRequest(requestId, user.id);
     revalidatePath("/usuarios");
+    revalidateTag("users", "default");
   } catch (error) {
     redirect(`/usuarios?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo cerrar la solicitud.")}`);
   }

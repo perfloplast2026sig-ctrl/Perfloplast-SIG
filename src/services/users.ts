@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 import { hashPassword } from "@/lib/password";
 import { CORPORATE_EMAIL_DOMAIN, isCorporateEmail, SYSTEM_ROLES } from "@/lib/constants";
 import { findPendingPasswordResetRequests, resolvePasswordResetRequest as resolveStoredPasswordResetRequest } from "@/services/password-reset-requests";
 import type { Role, UserRow } from "@/types";
 
-export async function getUserModuleData() {
+async function getUserModuleDataRaw() {
   const [dbUsers, dbRoles, resetRequests] = await Promise.all([
     prisma.user.findMany({
       include: { role: true },
@@ -57,6 +58,15 @@ export async function getUserModuleData() {
     },
   };
 }
+
+export const getUserModuleData = unstable_cache(
+  async () => getUserModuleDataRaw(),
+  ["users-data"],
+  {
+    revalidate: 10,
+    tags: ["users"],
+  },
+);
 
 export async function getUserEditData(userId: string) {
   const [user, roles] = await Promise.all([

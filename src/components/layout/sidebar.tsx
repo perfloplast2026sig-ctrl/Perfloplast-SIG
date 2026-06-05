@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { usePathname } from "next/navigation";
 import {
   Boxes,
   ClipboardList,
@@ -13,7 +12,6 @@ import {
   ReceiptText,
   ShieldCheck,
   Truck,
-  Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,20 +30,6 @@ const navigation: Array<{ name: string; href: string; icon: LucideIcon; roles: R
 
 export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  
-  // Custom navigation handler to provide instant visual response
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    if (pathname === href) return;
-    
-    // Start transition instantly
-    startTransition(() => {
-      router.push(href);
-    });
-  };
-
   const visibleNavigation = navigation.filter((item) => item.roles.includes(role));
 
   return (
@@ -66,22 +50,18 @@ export function Sidebar({ role }: { role: Role }) {
             const Icon = item.icon;
             const active = pathname === item.href;
             return (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
-                onClick={(e) => handleNavClick(e, item.href)}
+                prefetch
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted transition cursor-pointer",
                   active ? "bg-accent text-accent-foreground" : "hover:bg-card-muted hover:text-foreground",
                 )}
               >
-                {isPending && !active ? (
-                  <Loader2 size={18} className="animate-spin text-accent" />
-                ) : (
-                  <Icon size={18} />
-                )}
+                <Icon size={18} />
                 {item.name}
-              </a>
+              </Link>
             );
           })}
         </nav>
@@ -93,22 +73,18 @@ export function Sidebar({ role }: { role: Role }) {
           const Icon = item.icon;
           const active = pathname === item.href;
           return (
-            <a
+            <Link
               key={item.name}
               href={item.href}
-              onClick={(e) => handleNavClick(e, item.href)}
+              prefetch
               className={cn(
                 "flex min-w-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-1.5 text-[10px] font-semibold text-muted transition cursor-pointer",
                 active ? "bg-accent text-accent-foreground" : "hover:bg-card-muted hover:text-foreground",
               )}
             >
-              {isPending && !active ? (
-                <Loader2 size={17} className="animate-spin text-accent" />
-              ) : (
-                <Icon size={17} />
-              )}
+              <Icon size={17} />
               <span className="max-w-20 truncate">{item.name}</span>
-            </a>
+            </Link>
           );
         })}
         </div>
