@@ -22,6 +22,8 @@ function createAdapter() {
     database: url.pathname.replace(/^\//, ""),
     // Serverless: fewer connections, faster startup
     connectionLimit: isRemote ? 3 : 10,
+    // Local MySQL 8 can require RSA key retrieval when SSL is not enabled.
+    allowPublicKeyRetrieval: !isRemote,
     // SSL required for Google Cloud SQL
     ...(isRemote && { ssl: { rejectUnauthorized: false } }),
   });

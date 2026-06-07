@@ -1,6 +1,6 @@
 import { DispatchCreateModal } from "@/components/logistics/dispatch-create-modal";
 import { DispatchStatusActions } from "@/components/logistics/dispatch-status-actions";
-import { DriverMap } from "@/components/logistics/driver-map";
+import { LogisticsLiveMaps } from "@/components/logistics/logistics-live-maps";
 import { redirect } from "next/navigation";
 import { PageHeading } from "@/components/layout/page-heading";
 import { OperationalReportExport } from "@/components/reports/operational-report-export";
@@ -12,7 +12,7 @@ import { requireCurrentUser } from "@/services/auth";
 import { getLogisticsModuleData } from "@/services/logistics";
 import Link from "next/link";
 
-export default async function LogisticsPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string }> }) {
+export default async function LogisticsPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (user.role.name === "Vendedor") redirect("/preventas");
@@ -20,7 +20,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const { preorders, drivers, dispatches, latestLocations, latestSellerLocations, deliveryMapOrders } = await getLogisticsModuleData(user);
   const canSeeMap = ["Super admin", "Administrador"].includes(user.role.name);
   const isDriver = user.role.name === "Piloto";
-  const visibleDispatches = dispatches;
+  const visibleDispatches = filterRows(dispatches, params.search, (dispatch) => [dispatch.code, dispatch.preorder, dispatch.invoice, dispatch.client, dispatch.driver, dispatch.destination, dispatch.status.label]);
   const driverOrders = deliveryMapOrders;
   const totalLoad = visibleDispatches.reduce((sum, dispatch) => sum + Number(dispatch.load.replace(/[^\d.-]/g, "") || 0), 0);
   const delivered = visibleDispatches.filter((dispatch) => dispatch.status.label === "Entregado").length;
@@ -60,6 +60,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Despacho creado correctamente.</div> : null}
+      {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {visibleDispatches.length} resultado(s).</div> : null}
 
       <SectionCard title="Despachos" eyebrow="Rutas, piloto y valoracion">
         <DataTable
@@ -78,29 +79,23 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
         />
       </SectionCard>
 
-      {canSeeMap ? (
-        <SectionCard title="Mapa de pilotos" eyebrow="Ultimo punto GPS en Guatemala" className="mt-6">
-          <DriverMap points={latestLocations} label="pilotos" orders={deliveryMapOrders} />
-        </SectionCard>
-      ) : null}
-
-      {isDriver ? (
-        <SectionCard title="Mapa de mis pedidos" eyebrow="Entregas asignadas" className="mt-6">
-          <DriverMap points={[]} label="pedidos" orders={driverOrders} />
-        </SectionCard>
-      ) : null}
-
-      {canSeeMap ? (
-        <SectionCard title="Mapa de vendedores" eyebrow="Ubicacion comercial en Guatemala" className="mt-6">
-          <DriverMap points={latestSellerLocations} label="vendedores" />
-        </SectionCard>
-      ) : null}
+      <LogisticsLiveMaps canSeeMap={canSeeMap} initialData={{ latestLocations, latestSellerLocations, deliveryMapOrders: driverOrders }} isDriver={isDriver} />
     </>
   );
 }
 
 function formatOperationalDate(date: Date) {
   return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
+}
+
+function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
+  const term = normalizeSearch(query || "");
+  if (!term) return rows;
+  return rows.filter((row) => normalizeSearch(fields(row).join(" ")).includes(term));
+}
+
+function normalizeSearch(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {

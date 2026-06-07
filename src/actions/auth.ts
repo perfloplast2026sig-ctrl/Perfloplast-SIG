@@ -1,8 +1,9 @@
 "use server";
 
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { createSession, destroySession } from "@/lib/session";
+import { createSession, destroySession, getSessionUserId } from "@/lib/session";
 import { verifyPassword } from "@/lib/password";
 import { CORPORATE_EMAIL_DOMAIN, isCorporateEmail } from "@/lib/constants";
 import { assertLoginAllowed, clearFailedLogins, registerFailedLogin } from "@/lib/login-attempts";
@@ -30,12 +31,22 @@ export async function loginAction(formData: FormData) {
   }
 
   clearFailedLogins(email);
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
+    prisma.auditLog.create({ data: { userId: user.id, action: "AUTH_LOGIN", entity: "User", entityId: user.id } }),
+  ]);
   await createSession(user.id);
+  revalidateTag("logistics", "default");
   redirect("/");
 }
 
 export async function logoutAction() {
+  const userId = await getSessionUserId();
+  if (userId) {
+    await prisma.auditLog.create({ data: { userId, action: "AUTH_LOGOUT", entity: "User", entityId: userId } });
+    revalidatePath("/logistica");
+    revalidateTag("logistics", "default");
+  }
   await destroySession();
   redirect("/login");
 }

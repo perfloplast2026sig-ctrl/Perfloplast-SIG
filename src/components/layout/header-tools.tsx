@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bell, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import useSWR from "swr";
@@ -36,6 +37,7 @@ async function fetchNotifications(url: string) {
 }
 
 export function HeaderTools({ notifications, searchItems }: { notifications: Notification[]; searchItems: SearchItem[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -45,9 +47,9 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
     revalidateOnFocus: true,
   });
   const results = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    const term = normalizeSearch(query);
     if (!term) return [];
-    return searchItems.filter((item) => `${item.label} ${item.detail} ${item.type}`.toLowerCase().includes(term)).slice(0, 8);
+    return searchItems.filter((item) => normalizeSearch(`${item.label} ${item.detail} ${item.type}`).includes(term)).slice(0, 8);
   }, [query, searchItems]);
 
   return (
@@ -62,6 +64,15 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
             setShowNotifications(false);
           }}
           onFocus={() => setShowSearch(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && results[0]) {
+              event.preventDefault();
+              setShowSearch(false);
+              setQuery("");
+              router.push(results[0].href);
+            }
+            if (event.key === "Escape") setShowSearch(false);
+          }}
           placeholder="Buscar..."
           value={query}
         />
@@ -73,7 +84,7 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
             </div>
             {results.length === 0 ? <p className="p-4 text-sm text-muted">Sin resultados.</p> : null}
             {results.map((item, index) => (
-              <Link key={`${item.type}-${item.label}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={() => setShowSearch(false)}>
+              <Link key={`${item.type}-${item.label}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={() => { setShowSearch(false); setQuery(""); }}>
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-semibold">{item.label}</p>
@@ -126,4 +137,8 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
       </div>
     </>
   );
+}
+
+function normalizeSearch(value: string) {
+  return value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }

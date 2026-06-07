@@ -12,9 +12,10 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
   const canSeeProduction = roleName ? ["Super admin", "Administrador", "Bodeguero"].includes(roleName) : false;
   const canSeePreorders = roleName ? ["Super admin", "Administrador", "Vendedor"].includes(roleName) : false;
   const canSeeDispatches = roleName ? ["Super admin", "Administrador", "Piloto", "Bodeguero"].includes(roleName) : false;
+  const canSeeInvoices = roleName ? ["Super admin", "Administrador", "Contaduria", "Vendedor"].includes(roleName) : false;
   const preorderScope: Prisma.PreorderWhereInput = roleName === "Vendedor" ? { createdById: user?.id } : {};
   const dispatchScope: Prisma.DispatchWhereInput = roleName === "Piloto" ? { responsibleId: user?.id } : {};
-  const [lowStock, pendingPreorders, activeProduction, openDispatches, products, preorders, clients, dispatches, resetRequests] = await Promise.all([
+  const [lowStock, pendingPreorders, activeProduction, openDispatches, products, preorders, clients, dispatches, invoices, productionOrders, users, resetRequests] = await Promise.all([
     canSeeInventory ? prisma.stockBalance.findMany({
       include: { product: true, location: true },
       take: 25,
@@ -51,6 +52,9 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
     }) : Promise.resolve([]),
     ["Super admin", "Administrador", "Contaduria"].includes(roleName || "") ? prisma.client.findMany({ orderBy: { createdAt: "desc" }, take: 40 }) : Promise.resolve([]),
     canSeeDispatches ? prisma.dispatch.findMany({ where: dispatchScope, include: { preorder: { include: { client: true } } }, orderBy: { createdAt: "desc" }, take: 40 }) : Promise.resolve([]),
+    canSeeInvoices ? prisma.invoice.findMany({ where: roleName === "Vendedor" ? { preorder: { createdById: user?.id } } : {}, include: { preorder: { include: { client: true } } }, orderBy: { issuedAt: "desc" }, take: 40 }) : Promise.resolve([]),
+    canSeeProduction ? prisma.productionOrder.findMany({ include: { responsible: true, outputs: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 40 }) : Promise.resolve([]),
+    canManageUsers ? prisma.user.findMany({ include: { role: true }, orderBy: { createdAt: "desc" }, take: 40 }) : Promise.resolve([]),
     canManageUsers ? findPendingPasswordResetRequests(5) : Promise.resolve([]),
   ]);
 
@@ -95,26 +99,44 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
       ...products.map((product) => ({
         label: productTitle(product),
         detail: product.sku,
-        href: "/inventario",
+        href: `/inventario?search=${encodeURIComponent(`${product.sku} ${productTitle(product)}`)}`,
         type: "Producto",
       })),
       ...preorders.map((preorder) => ({
         label: preorder.code,
         detail: preorder.client.name,
-        href: "/preventas",
+        href: `/preventas?search=${encodeURIComponent(preorder.code)}`,
         type: "Preventa",
       })),
       ...clients.map((client) => ({
         label: client.name,
         detail: client.taxId || client.phone || "Cliente",
-        href: "/preventas",
+        href: `/preventas?search=${encodeURIComponent(client.name)}`,
         type: "Cliente",
       })),
       ...dispatches.map((dispatch) => ({
         label: dispatch.code,
         detail: dispatch.preorder?.client.name || dispatch.destination,
-        href: "/logistica",
+        href: `/logistica?search=${encodeURIComponent(dispatch.code)}`,
         type: "Despacho",
+      })),
+      ...invoices.map((invoice) => ({
+        label: invoice.number,
+        detail: `${invoice.preorder.code} - ${invoice.preorder.client.name}`,
+        href: `/facturas?search=${encodeURIComponent(invoice.number)}`,
+        type: "Factura",
+      })),
+      ...productionOrders.map((order) => ({
+        label: order.code,
+        detail: `${formatProductionProducts(order.outputs)} - ${order.responsible.name}`,
+        href: `/produccion?search=${encodeURIComponent(order.code)}`,
+        type: "Produccion",
+      })),
+      ...users.map((row) => ({
+        label: row.name,
+        detail: `${row.email} - ${row.role.name}`,
+        href: `/usuarios?search=${encodeURIComponent(row.email)}`,
+        type: "Usuario",
       })),
     ],
   };
@@ -132,4 +154,10 @@ export const getHeaderData = unstable_cache(
 function productTitle(product: { name: string; modelName: string | null; color: string | null }) {
   const model = product.modelName && product.modelName.toLowerCase() !== "general" ? product.modelName : product.name;
   return product.color ? `${model} - ${product.color}` : model;
+}
+
+function formatProductionProducts(outputs: Array<{ product: { name: string; modelName: string | null } }>) {
+  if (outputs.length === 0) return "Sin productos";
+  const names = outputs.map((output) => output.product.modelName && output.product.modelName.toLowerCase() !== "general" ? output.product.modelName : output.product.name);
+  return Array.from(new Set(names)).slice(0, 2).join(", ");
 }

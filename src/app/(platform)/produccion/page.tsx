@@ -9,12 +9,13 @@ import { requireProductionManager } from "@/services/auth";
 import { getProductionModuleData } from "@/services/production";
 import { ClipboardList, Clock3, Factory, Warehouse } from "lucide-react";
 
-export default async function ProductionPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string }> }) {
+export default async function ProductionPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireProductionManager();
   const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules } = await getProductionModuleData();
   const totalProduced = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
   const registered = orders.filter((order) => order.status.label === "Registrada").length;
+  const filteredOrders = filterRows(orders, params.search, (order) => [order.code, order.product, order.warehouse, order.shift, order.schedule, order.responsible, order.status.label]);
   const warehousesUsed = new Set(orders.map((order) => order.warehouse).filter(Boolean)).size;
   const generatedAt = formatOperationalDate(new Date());
 
@@ -50,6 +51,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Produccion registrada y stock actualizado.</div> : null}
       {params.updated === "shifts" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Turnos actualizados correctamente.</div> : null}
+      {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredOrders.length} resultado(s).</div> : null}
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <MiniKpi label="Produccion total" value={`${totalProduced.toLocaleString("es-GT")} un`} detail="Unidades registradas" icon={Factory} tone="emerald" />
@@ -63,7 +65,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       <div className="mt-6">
         <SectionCard title="Ordenes registradas" eyebrow="Produccion y entrada a bodega" action={<Badge label="Kardex automatico" tone="info" />}>
           <DataTable
-            data={orders}
+            data={filteredOrders}
             columns={[
               { header: "Orden", cell: (item) => <span className="font-mono text-xs font-semibold">{item.code}</span> },
               { header: "Productos", cell: (item) => <p className="max-w-[380px] whitespace-normal leading-6">{item.product}</p> },
@@ -83,6 +85,16 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
 
 function formatOperationalDate(date: Date) {
   return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
+}
+
+function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
+  const term = normalizeSearch(query || "");
+  if (!term) return rows;
+  return rows.filter((row) => normalizeSearch(fields(row).join(" ")).includes(term));
+}
+
+function normalizeSearch(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function MiniKpi({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof Factory; tone: "emerald" | "sky" | "violet" | "amber" }) {

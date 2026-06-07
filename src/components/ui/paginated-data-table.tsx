@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { PaginationControls } from "./pagination-controls";
 
 type DisplayColumn = {
   header: string;
@@ -114,25 +115,10 @@ function PaginationFooter({ currentPage, end, goToPage, pageSize, start, total, 
     <div className="flex flex-col gap-3 border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted sm:flex-row sm:items-center sm:justify-between">
       <span>Mostrando {start}-{end} de {total}</span>
       <div className="flex flex-wrap items-center gap-2">
-        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} type="button">Anterior</button>
-        {pageNumbers(currentPage, totalPages).map((item) => item === "..." ? (
-          <span key={`${item}-${currentPage}`} className="px-1">...</span>
-        ) : (
-          <button key={item} className={`min-w-8 rounded-full border px-3 py-1.5 transition ${item === currentPage ? "bg-accent text-accent-foreground" : "bg-card hover:bg-card-muted"}`} onClick={() => goToPage(item)} type="button">{item}</button>
-        ))}
-        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} type="button">Siguiente</button>
+        <PaginationControls currentPage={currentPage} onPageChange={goToPage} totalPages={totalPages} />
       </div>
     </div>
   );
-}
-
-function pageNumbers(currentPage: number, totalPages: number) {
-  if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
-  const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
-  return Array.from(pages)
-    .filter((page) => page >= 1 && page <= totalPages)
-    .sort((a, b) => a - b)
-    .flatMap((page, index, rows) => index > 0 && page - rows[index - 1] > 1 ? ["..." as const, page] : [page]);
 }
 
 function normalizedHeader(value: string) {

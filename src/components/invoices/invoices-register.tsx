@@ -3,16 +3,18 @@
 import Image from "next/image";
 import { Eye, FileSpreadsheet, MessageCircle, Printer, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import type { InvoiceRecord } from "@/services/invoices";
 
-export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
+export function InvoicesRegister({ initialSearch = "", invoices }: { initialSearch?: string; invoices: InvoiceRecord[] }) {
   const [selectedId, setSelectedId] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(invoices.length / pageSize));
+  const filteredInvoices = useMemo(() => filterInvoices(invoices, initialSearch), [initialSearch, invoices]);
+  const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * pageSize;
-  const pagedInvoices = useMemo(() => invoices.slice(start, start + pageSize), [invoices, start]);
+  const pagedInvoices = useMemo(() => filteredInvoices.slice(start, start + pageSize), [filteredInvoices, start]);
   const selectedInvoice = useMemo(() => selectedId ? invoices.find((invoice) => invoice.id === selectedId) || null : null, [invoices, selectedId]);
 
   const printInvoice = (invoiceId: string) => {
@@ -65,11 +67,12 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
           <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted sm:w-auto" onClick={exportExcel} type="button">
             <FileSpreadsheet size={16} /> Excel
           </button>
-          <p className="rounded-full bg-card-muted px-3 py-1 text-sm font-medium text-muted">{invoices.length} registros</p>
+          <p className="rounded-full bg-card-muted px-3 py-1 text-sm font-medium text-muted">{filteredInvoices.length} registros</p>
         </div>
       </div>
 
-      {invoices.length === 0 ? (
+      {initialSearch ? <p className="mx-5 mt-5 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {initialSearch}. Mostrando {filteredInvoices.length} resultado(s).</p> : null}
+      {filteredInvoices.length === 0 ? (
         <p className="m-5 rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Aun no hay facturas generadas.</p>
       ) : (
         <>
@@ -154,7 +157,7 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
             </table>
           </div>
 
-          <PaginationFooter currentPage={currentPage} end={Math.min(start + pageSize, invoices.length)} goToPage={setPage} start={invoices.length === 0 ? 0 : start + 1} total={invoices.length} totalPages={totalPages} />
+          <PaginationFooter currentPage={currentPage} end={Math.min(start + pageSize, filteredInvoices.length)} goToPage={setPage} start={filteredInvoices.length === 0 ? 0 : start + 1} total={filteredInvoices.length} totalPages={totalPages} />
 
           {selectedInvoice ? (
             <div className="border-t bg-card-muted/30 p-3 sm:p-5">
@@ -177,17 +180,23 @@ export function InvoicesRegister({ invoices }: { invoices: InvoiceRecord[] }) {
   );
 }
 
+function filterInvoices(invoices: InvoiceRecord[], query: string) {
+  const term = normalizeSearch(query);
+  if (!term) return invoices;
+  return invoices.filter((invoice) => normalizeSearch([invoice.number, invoice.preorder, invoice.client, invoice.taxId, invoice.phone, invoice.seller, invoice.total].join(" ")).includes(term));
+}
+
+function normalizeSearch(value: string) {
+  return value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function PaginationFooter({ currentPage, end, goToPage, start, total, totalPages }: { currentPage: number; end: number; goToPage: (page: number) => void; start: number; total: number; totalPages: number }) {
   if (total <= 10) return <div className="invoice-no-print border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted">{total} registros</div>;
 
   return (
     <div className="invoice-no-print flex flex-col gap-3 border-t bg-card-muted/35 px-4 py-3 text-xs font-semibold text-muted sm:flex-row sm:items-center sm:justify-between">
       <span>Mostrando {start}-{end} de {total}</span>
-      <div className="flex flex-wrap items-center gap-2">
-        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} type="button">Anterior</button>
-        <span>Pagina {currentPage} de {totalPages}</span>
-        <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} type="button">Siguiente</button>
-      </div>
+      <PaginationControls currentPage={currentPage} onPageChange={goToPage} totalPages={totalPages} />
     </div>
   );
 }

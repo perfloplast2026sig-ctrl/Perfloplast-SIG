@@ -7,6 +7,7 @@ import { syncCatalogProductsAction } from "@/actions/catalog";
 import { deactivateFinishedProductAction, updateFinishedProductAction } from "@/actions/inventory";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SectionCard } from "@/components/ui/section-card";
 
 type FinishedProduct = {
@@ -56,9 +57,9 @@ const emptyFilters: FilterState = {
   color: "Todos",
 };
 
-export function FinishedProductsBrowser({ products }: { products: FinishedProduct[] }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+export function FinishedProductsBrowser({ initialSearch = "", products }: { initialSearch?: string; products: FinishedProduct[] }) {
+  const [isOpen, setIsOpen] = useState(Boolean(initialSearch));
+  const [filters, setFilters] = useState<FilterState>({ ...emptyFilters, query: initialSearch });
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const productGroups = useMemo(() => buildProductGroups(products), [products]);
@@ -176,11 +177,7 @@ export function FinishedProductsBrowser({ products }: { products: FinishedProduc
                   </div>
                   <div className="flex flex-col gap-3 border-t bg-card-muted/45 px-4 py-3 text-xs font-semibold text-muted sm:flex-row sm:items-center sm:justify-between">
                     <span>Mostrando {filteredProducts.length === 0 ? 0 : start + 1}-{Math.min(start + pageSize, filteredProducts.length)} de {filteredProducts.length} productos filtrados</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} type="button">Anterior</button>
-                      <span>Pagina {currentPage} de {totalPages}</span>
-                      <button className="rounded-full border bg-card px-3 py-1.5 transition hover:bg-card-muted disabled:cursor-not-allowed disabled:opacity-45" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} type="button">Siguiente</button>
-                    </div>
+                    <PaginationControls currentPage={currentPage} onPageChange={setPage} totalPages={totalPages} />
                   </div>
                 </div>
 

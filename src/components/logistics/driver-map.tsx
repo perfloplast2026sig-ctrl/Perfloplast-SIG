@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { BriefcaseBusiness, LocateFixed, MapPin, Minus, Plus, Truck, X } from "lucide-react";
+import { BriefcaseBusiness, Clock3, LocateFixed, MapPin, Minus, Plus, Truck, X } from "lucide-react";
 
 type UserPoint = {
   driver: string;
@@ -10,6 +10,9 @@ type UserPoint = {
   longitude: number | null;
   accuracy: number | null;
   isOnline: boolean;
+  freshness: "online" | "recent" | "stale" | "missing" | "loggedOut";
+  freshnessLabel: string;
+  ageLabel: string;
   recordedAt: string;
 };
 
@@ -28,8 +31,10 @@ const TILE_SIZE = 256;
 export function DriverMap({ points, label = "pilotos", orders = [] }: { points: UserPoint[]; label?: string; orders?: OrderPoint[] }) {
   const located = points.filter((point) => point.latitude !== null && point.longitude !== null);
   const orderPoints = orders.filter((order) => order.latitude !== null && order.longitude !== null);
-  const [zoom, setZoom] = useState(8);
-  const [center, setCenter] = useState(CENTER);
+  const isOrdersOnly = label.toLowerCase().includes("pedido");
+  const defaultView = getInitialMapView(located, orderPoints);
+  const [zoom, setZoom] = useState(defaultView.zoom);
+  const [center, setCenter] = useState(defaultView.center);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const drag = useRef<{ x: number; y: number; center: typeof CENTER } | null>(null);
   const centerPixel = useMemo(() => latLngToWorldPixel(center.latitude, center.longitude, zoom), [center, zoom]);
@@ -40,6 +45,8 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
   const selectedOrder = orders.find((order) => `order:${order.code}` === selectedKey) || null;
   const userMarkerType = label.toLowerCase().includes("vendedor") ? "seller" : "driver";
   const showUserLegend = located.length > 0;
+  const totalSideItems = points.length + orders.length;
+  const layoutClass = totalSideItems <= 1 ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.46fr)]" : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.72fr)]";
 
   const focusUser = (point: UserPoint) => {
     if (point.latitude === null || point.longitude === null) return;
@@ -56,8 +63,8 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
   };
 
   const resetView = () => {
-    setCenter(CENTER);
-    setZoom(8);
+    setCenter(defaultView.center);
+    setZoom(defaultView.zoom);
     setSelectedKey(null);
   };
 
@@ -73,7 +80,7 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
   };
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]" style={{ isolation: "isolate" }}>
+    <div className={layoutClass} style={{ isolation: "isolate" }}>
       <div
         className="relative h-[460px] touch-none overflow-hidden rounded-2xl border bg-card-muted"
         onMouseDown={(event) => startDrag(event.clientX, event.clientY)}
@@ -91,6 +98,7 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
         
         <div className="absolute left-4 top-14 z-10 flex flex-wrap gap-2">
           {showUserLegend ? (userMarkerType === "seller" ? <LegendItem color="bg-sky-600" icon="seller" label="Vendedor" /> : <LegendItem color="bg-emerald-600" icon="truck" label="Piloto" />) : null}
+          {showUserLegend ? <LegendItem color="bg-amber-500" icon="clock" label="GPS viejo" /> : null}
           {orderPoints.length > 0 ? <LegendItem color="bg-rose-600" icon="delivery" label="Entrega" /> : null}
         </div>
         
@@ -102,7 +110,7 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
         </div>
         
         <div className="absolute bottom-4 left-4 z-10 rounded-2xl border border-white/20 bg-background/80 px-3 py-2 text-xs leading-5 text-foreground shadow-lg backdrop-blur-md">
-          {located.length > 0 ? "Arrastra el mapa para moverte. Ultimo punto guardado si se pierde senal." : "Arrastra el mapa para revisar las entregas asignadas."}
+          {located.length > 0 ? "Vista centrada en puntos activos. Usa el boton de mira para volver al encuadre." : "Arrastra el mapa para revisar las entregas asignadas."}
         </div>
 
         {tiles.map((tile) => {
@@ -173,7 +181,8 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
                       <div>
                         <p className="font-semibold text-foreground">{point.driver}</p>
                         <p className="text-muted-foreground">{point.recordedAt}</p>
-                        <p className={point.isOnline ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>{point.isOnline ? "En linea" : "Fuera de linea"}</p>
+                        <p className={pointStatusTextClass(point.freshness)}>{point.freshnessLabel} · {point.ageLabel}</p>
+                        {point.accuracy ? <p className="text-muted-foreground">Precision aprox. {Math.round(point.accuracy)} m</p> : null}
                       </div>
                       <span
                         aria-label="Cerrar detalle"
@@ -188,7 +197,7 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
                     </div>
                   </div>
                 ) : null}
-                <PinMarker online={point.isOnline} tone={userMarkerType} />
+                <PinMarker freshness={point.freshness} tone={userMarkerType} />
               </div>
             </button>
           );
@@ -196,23 +205,28 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
 
         {located.length === 0 && orderPoints.length === 0 ? (
           <div className="absolute inset-0 z-50 grid place-items-center">
-            <div className="rounded-2xl border border-white/20 bg-background/80 px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-md">Aun no hay puntos GPS de {label} registrados.</div>
+            <div className="rounded-2xl border border-white/20 bg-background/80 px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-md">
+              {isOrdersOnly ? "No hay entregas activas en el mapa." : `Aun no hay puntos GPS de ${label} registrados.`}
+            </div>
           </div>
         ) : null}
       </div>
 
       <div className="space-y-3">
         {points.map((point) => (
-          <button key={point.email} className={`w-full rounded-2xl border bg-card/50 hover:bg-card hover:shadow-md p-4 text-left transition-all ${selectedKey === `user:${point.email}` ? "ring-2 ring-accent shadow-md bg-card" : ""}`} onClick={() => focusUser(point)} type="button">
+          <button key={point.email} className={`w-full rounded-2xl border bg-card/50 p-4 text-left transition-all hover:bg-card hover:shadow-md ${pointBorderClass(point.freshness)} ${selectedKey === `user:${point.email}` ? "ring-2 ring-accent shadow-md bg-card" : ""}`} onClick={() => focusUser(point)} type="button">
             <div className="flex items-start justify-between gap-3">
               <div><p className="font-semibold">{point.driver}</p><p className="text-xs text-muted-foreground">{point.email}</p></div>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${point.latitude === null ? "bg-muted text-muted-foreground ring-1 ring-border" : "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400"}`}>{point.latitude === null ? "Sin GPS" : point.isOnline ? "En linea" : "Ultimo punto"}</span>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${pointStatusBadgeClass(point.freshness)}`}>{point.freshnessLabel}</span>
             </div>
             <p className="mt-3 text-sm">{point.latitude === null ? "Sin ubicacion registrada" : `${point.latitude}, ${point.longitude}`}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Ultimo punto: {point.recordedAt}</p>
+            <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+              <p>Ultimo punto: {point.recordedAt}</p>
+              <p>{point.ageLabel}{point.accuracy ? ` · Precision aprox. ${Math.round(point.accuracy)} m` : ""}</p>
+            </div>
           </button>
         ))}
-        {orders.length > 0 ? <p className="pt-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Pedidos del mapa</p> : null}
+        {orders.length > 0 ? <p className="pt-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Pedidos activos del mapa</p> : null}
         {orders.map((order) => (
           <button key={order.code} className={`w-full rounded-2xl border bg-card/50 hover:bg-card hover:shadow-md p-4 text-left transition-all ${selectedKey === `order:${order.code}` ? "ring-2 ring-accent shadow-md bg-card" : ""}`} onClick={() => focusOrder(order)} type="button">
             <div className="flex items-start justify-between gap-3">
@@ -222,6 +236,11 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
             <p className="mt-2 text-sm text-muted-foreground">{order.destination}</p>
           </button>
         ))}
+        {points.length === 0 && orders.length === 0 ? (
+          <div className="rounded-2xl border bg-card/60 p-4 text-sm text-muted-foreground shadow-sm">
+            {isOrdersOnly ? "Tus entregas completadas se archivan automaticamente y ya no aparecen aqui." : "No hay registros para mostrar."}
+          </div>
+        ) : null}
         {(selectedUser || selectedOrder) ? (
           <div className="rounded-2xl border bg-card p-4 shadow-lg ring-1 ring-black/5 dark:ring-white/5">
             <div className="flex items-start justify-between gap-3">
@@ -252,36 +271,94 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
   );
 }
 
-function PinMarker({ tone, online = true }: { tone: "driver" | "seller" | "delivery"; online?: boolean }) {
-  const styles = {
-    driver: online ? "bg-emerald-600 ring-emerald-600/30" : "bg-amber-500 ring-amber-500/30",
-    seller: online ? "bg-sky-600 ring-sky-600/30" : "bg-amber-500 ring-amber-500/30",
-    delivery: "bg-rose-600 ring-rose-600/30",
-  };
+function PinMarker({ tone, online = true, freshness = "online" }: { tone: "driver" | "seller" | "delivery"; online?: boolean; freshness?: UserPoint["freshness"] }) {
+  const styles = markerStyles(tone, freshness, online);
   const Icon = tone === "delivery" ? MapPin : tone === "seller" ? BriefcaseBusiness : Truck;
 
   return (
     <div className="relative mx-auto mt-1 flex flex-col items-center group">
       {/* Live pulsing effect for online markers or deliveries */}
-      {online && (
-        <span className={`absolute top-0 left-0 size-9 animate-ping rounded-full opacity-60 ${styles[tone].split(" ")[0]}`}></span>
+      {(tone === "delivery" || freshness === "online") && (
+        <span className={`absolute left-0 top-0 size-9 animate-ping rounded-full opacity-60 ${styles.split(" ")[0]}`}></span>
       )}
-      <div className={`grid size-9 place-items-center rounded-full border-2 border-white text-white shadow-xl ring-4 transition-transform group-hover:scale-110 ${styles[tone]}`}>
+      <div className={`grid size-9 place-items-center rounded-full border-2 border-white text-white shadow-xl ring-4 transition-transform group-hover:scale-110 ${styles}`}>
         <Icon size={17} />
       </div>
-      <div className={`-mt-1 h-3 w-3 rotate-45 border-b-2 border-r-2 border-white shadow-sm ${styles[tone].split(" ")[0]}`} />
+      <div className={`-mt-1 h-3 w-3 rotate-45 border-b-2 border-r-2 border-white shadow-sm ${styles.split(" ")[0]}`} />
     </div>
   );
 }
 
-function LegendItem({ color, icon, label }: { color: string; icon: "truck" | "seller" | "delivery"; label: string }) {
-  const Icon = icon === "delivery" ? MapPin : icon === "seller" ? BriefcaseBusiness : Truck;
+function LegendItem({ color, icon, label }: { color: string; icon: "truck" | "seller" | "delivery" | "clock"; label: string }) {
+  const Icon = icon === "delivery" ? MapPin : icon === "seller" ? BriefcaseBusiness : icon === "clock" ? Clock3 : Truck;
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-xs font-semibold shadow-sm">
       <span className={`grid size-5 place-items-center rounded-full text-white ${color}`}><Icon size={12} /></span>
       {label}
     </span>
   );
+}
+
+function markerStyles(tone: "driver" | "seller" | "delivery", freshness: UserPoint["freshness"], online: boolean) {
+  if (tone === "delivery") return "bg-rose-600 ring-rose-600/30";
+  if (!online || freshness === "missing" || freshness === "loggedOut") return "bg-slate-500 ring-slate-500/30";
+  if (freshness === "stale") return "bg-red-600 ring-red-600/30";
+  if (freshness === "recent") return "bg-amber-500 ring-amber-500/30";
+  return tone === "seller" ? "bg-sky-600 ring-sky-600/30" : "bg-emerald-600 ring-emerald-600/30";
+}
+
+function pointStatusBadgeClass(freshness: UserPoint["freshness"]) {
+  const classes = {
+    online: "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400",
+    recent: "bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-300",
+    stale: "bg-red-500/10 text-red-700 ring-1 ring-red-500/30 dark:text-red-300",
+    missing: "bg-muted text-muted-foreground ring-1 ring-border",
+    loggedOut: "bg-slate-500/10 text-slate-700 ring-1 ring-slate-500/30 dark:text-slate-300",
+  };
+  return classes[freshness];
+}
+
+function pointStatusTextClass(freshness: UserPoint["freshness"]) {
+  const classes = {
+    online: "font-semibold text-emerald-600",
+    recent: "font-semibold text-amber-600",
+    stale: "font-semibold text-red-600",
+    missing: "font-semibold text-muted-foreground",
+    loggedOut: "font-semibold text-slate-600 dark:text-slate-300",
+  };
+  return classes[freshness];
+}
+
+function pointBorderClass(freshness: UserPoint["freshness"]) {
+  const classes = {
+    online: "border-emerald-500/25",
+    recent: "border-amber-500/25",
+    stale: "border-red-500/25",
+    missing: "",
+    loggedOut: "border-slate-500/25",
+  };
+  return classes[freshness];
+}
+
+function getInitialMapView(users: UserPoint[], orders: OrderPoint[]) {
+  const points = [
+    ...users.flatMap((point) => point.latitude !== null && point.longitude !== null ? [{ latitude: point.latitude, longitude: point.longitude }] : []),
+    ...orders.flatMap((order) => order.latitude !== null && order.longitude !== null ? [{ latitude: order.latitude, longitude: order.longitude }] : []),
+  ];
+
+  if (points.length === 0) return { center: CENTER, zoom: 8 };
+  if (points.length === 1) return { center: points[0], zoom: 14 };
+
+  const minLat = Math.min(...points.map((point) => point.latitude));
+  const maxLat = Math.max(...points.map((point) => point.latitude));
+  const minLng = Math.min(...points.map((point) => point.longitude));
+  const maxLng = Math.max(...points.map((point) => point.longitude));
+  const spread = Math.max(maxLat - minLat, maxLng - minLng);
+
+  return {
+    center: { latitude: (minLat + maxLat) / 2, longitude: (minLng + maxLng) / 2 },
+    zoom: spread < 0.02 ? 14 : spread < 0.12 ? 12 : spread < 0.5 ? 10 : 8,
+  };
 }
 
 function buildTiles(centerTileX: number, centerTileY: number, centerPixel: { x: number; y: number }, zoom: number) {

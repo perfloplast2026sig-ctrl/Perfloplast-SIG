@@ -14,13 +14,14 @@ import { getPreorderModuleData } from "@/services/preorders";
 import { CheckCircle2, FileText, MessageCircle, ReceiptText, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; quote?: string; sent?: string }> }) {
+export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; quote?: string; sent?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador", "Vendedor"].includes(user.role.name)) redirect("/");
   const { products, warehouses, preorders, nextCode, currentDateTime } = await getPreorderModuleData(user);
   const quoteRows = preorders.filter((preorder) => preorder.status.label === "Cotizacion");
   const salesRows = preorders.filter((preorder) => preorder.status.label !== "Cotizacion");
+  const filteredPreorders = filterRows(preorders, params.search, (preorder) => [preorder.code, preorder.client, preorder.taxId, preorder.phone, preorder.products, preorder.warehouse, preorder.status.label]);
   const totalSales = salesRows.reduce((sum, preorder) => sum + preorder.totalNumber, 0);
   const confirmed = salesRows.filter((preorder) => preorder.status.label === "Confirmada").length;
   const printedQuote = params.quote ? preorders.find((preorder) => preorder.id === params.quote && preorder.status.label === "Cotizacion") : undefined;
@@ -37,6 +38,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
       {params.created === "quote" ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Cotizacion creada. Usa el boton PDF para revisar/imprimir o el boton WhatsApp para enviarla con PDF adjunto desde el numero oficial de la empresa.</div> : null}
       {params.created && params.created !== "quote" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Preventa creada y stock reservado.</div> : null}
       {params.sent === "whatsapp" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Cotizacion enviada por WhatsApp Business con PDF adjunto.</div> : null}
+      {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredPreorders.length} resultado(s).</div> : null}
 
       <QuotePrintLauncher quote={printedQuote} />
 
@@ -53,7 +55,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
 
       <SectionCard title="Preventas recientes" eyebrow="Registros reales" className="mt-6">
         <DataTable
-          data={preorders}
+          data={filteredPreorders}
           columns={[
             { header: "Codigo", cell: (item) => <span className="font-mono text-xs font-semibold">{item.code}</span> },
             { header: "Cliente", cell: (item) => <span className="font-medium">{item.client}</span> },
@@ -99,6 +101,16 @@ function MiniKpi({ label, value, detail, icon: Icon, tone }: { label: string; va
 
 function formatGTQ(value: number) {
   return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
+  const term = normalizeSearch(query || "");
+  if (!term) return rows;
+  return rows.filter((row) => normalizeSearch(fields(row).join(" ")).includes(term));
+}
+
+function normalizeSearch(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]) {

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Boxes, ChevronRight, PackageOpen, Warehouse, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 
 type WarehouseStockCard = {
   id: string;
@@ -142,15 +143,7 @@ function WarehouseDetail({ page, setPage, warehouse }: { page: number; setPage: 
                 <p className="text-sm font-medium text-muted">
                   Mostrando {(safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, warehouse.products.length)} de {warehouse.products.length}
                 </p>
-                <div className="flex items-center gap-2">
-                  <button className="h-9 rounded-full border bg-card px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50" disabled={safePage === 1} onClick={() => setPage(safePage - 1)} type="button">
-                    Anterior
-                  </button>
-                  <span className="rounded-full bg-card px-3 py-2 text-sm font-bold">{safePage} / {totalPages}</span>
-                  <button className="h-9 rounded-full border bg-card px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50" disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} type="button">
-                    Siguiente
-                  </button>
-                </div>
+                <PaginationControls currentPage={safePage} onPageChange={setPage} totalPages={totalPages} />
               </div>
             ) : null}
           </div>

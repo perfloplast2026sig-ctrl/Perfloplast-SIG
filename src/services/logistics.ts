@@ -82,7 +82,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
     })),
     latestLocations,
     latestSellerLocations,
-    deliveryMapOrders: dispatches.map((dispatch) => ({
+    deliveryMapOrders: dispatches.filter((dispatch) => !["DELIVERED", "CANCELLED"].includes(dispatch.status)).map((dispatch) => ({
       code: dispatch.code,
       driverId: dispatch.responsibleId,
       client: dispatch.preorder?.client.name || "Sin cliente",
@@ -163,6 +163,35 @@ const getLogisticsModuleDataCached = unstable_cache(
 
 export function getLogisticsModuleData(viewer?: Viewer) {
   return getLogisticsModuleDataCached(viewer?.id, viewer?.role.name);
+}
+
+export async function getLogisticsMapsData(viewer?: Viewer) {
+  const isDriver = viewer?.role.name === "Piloto";
+  const dispatchWhere: Prisma.DispatchWhereInput = isDriver ? { responsibleId: viewer.id } : {};
+  const [dispatches, latestLocations, latestSellerLocations] = await Promise.all([
+    prisma.dispatch.findMany({
+      where: dispatchWhere,
+      include: { preorder: { include: { client: true } }, responsible: true },
+      orderBy: { createdAt: "desc" },
+      take: 40,
+    }),
+    getLatestUserLocations("Piloto", isDriver ? viewer.id : undefined),
+    isDriver ? Promise.resolve([]) : getLatestUserLocations("Vendedor"),
+  ]);
+
+  return {
+    latestLocations,
+    latestSellerLocations,
+    deliveryMapOrders: dispatches.filter((dispatch) => !["DELIVERED", "CANCELLED"].includes(dispatch.status)).map((dispatch) => ({
+      code: dispatch.code,
+      driverId: dispatch.responsibleId,
+      client: dispatch.preorder?.client.name || "Sin cliente",
+      destination: dispatch.destination,
+      status: statusLabel(dispatch.status),
+      latitude: dispatch.destinationLatitude ? Number(dispatch.destinationLatitude) : null,
+      longitude: dispatch.destinationLongitude ? Number(dispatch.destinationLongitude) : null,
+    })),
+  };
 }
 
 async function getInvoiceNumbers(preorderIds: string[]) {
@@ -386,10 +415,21 @@ export async function resolveDispatchReturn(input: { dispatchId: string; resolut
 }
 
 async function getLatestUserLocations(roleName: "Piloto" | "Vendedor", userId?: string) {
-  const users = await prisma.user.findMany({ where: { ...(userId ? { id: userId } : {}), isActive: true, role: { name: roleName } }, include: { driverLocations: { orderBy: { recordedAt: "desc" }, take: 1 } }, orderBy: { name: "asc" } });
+  const users = await prisma.user.findMany({
+    where: { ...(userId ? { id: userId } : {}), isActive: true, role: { name: roleName } },
+    include: {
+      driverLocations: { orderBy: { recordedAt: "desc" }, take: 1 },
+      auditLogs: { where: { action: { in: ["AUTH_LOGIN", "AUTH_LOGOUT"] } }, orderBy: { createdAt: "desc" }, take: 1 },
+    },
+    orderBy: { name: "asc" },
+  });
   return users.map((user) => {
     const point = user.driverLocations[0];
-    const isOnline = point ? Date.now() - point.recordedAt.getTime() <= 5 * 60 * 1000 : false;
+    const latestAuth = user.auditLogs[0];
+    const loggedOut = latestAuth?.action === "AUTH_LOGOUT";
+    const ageMs = point ? Date.now() - point.recordedAt.getTime() : null;
+    const isOnline = !loggedOut && ageMs !== null && ageMs <= 5 * 60 * 1000;
+    const freshness = loggedOut ? { key: "loggedOut" as const, label: "Sesion cerrada" } : gpsFreshness(ageMs);
     return {
       driver: user.name,
       email: user.email,
@@ -397,9 +437,29 @@ async function getLatestUserLocations(roleName: "Piloto" | "Vendedor", userId?: 
       longitude: point ? Number(point.longitude) : null,
       accuracy: point?.accuracy ? Number(point.accuracy) : null,
       isOnline,
+      freshness: freshness.key,
+      freshnessLabel: freshness.label,
+      ageLabel: ageMs === null ? "Sin punto" : formatRelativeAge(ageMs),
       recordedAt: point ? new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(point.recordedAt) : "Sin punto",
     };
   });
+}
+
+function gpsFreshness(ageMs: number | null) {
+  if (ageMs === null) return { key: "missing" as const, label: "Sin GPS" };
+  if (ageMs <= 5 * 60 * 1000) return { key: "online" as const, label: "En linea" };
+  if (ageMs <= 30 * 60 * 1000) return { key: "recent" as const, label: "Reciente" };
+  return { key: "stale" as const, label: "GPS viejo" };
+}
+
+function formatRelativeAge(ageMs: number) {
+  const minutes = Math.max(0, Math.floor(ageMs / 60000));
+  if (minutes < 1) return "GPS ahora";
+  if (minutes < 60) return `GPS hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `GPS hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `GPS hace ${days} d`;
 }
 
 async function buildDispatchCode(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) {

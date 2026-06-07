@@ -48,6 +48,7 @@ export async function updateDispatchStatusAction(formData: FormData) {
       roleName: user.role.name,
     });
     revalidatePath("/logistica");
+    revalidatePath("/logistica/devoluciones");
     revalidatePath("/");
     revalidatePath("/dashboard");
     revalidatePath("/preventas");
@@ -79,6 +80,7 @@ export async function requestDispatchReturnAction(formData: FormData) {
       })),
     });
     revalidatePath("/logistica");
+    revalidatePath("/logistica/devoluciones");
     revalidatePath("/");
     revalidatePath("/dashboard");
     revalidateTag("logistics", "default");
@@ -101,6 +103,7 @@ export async function resolveDispatchReturnAction(formData: FormData) {
       resolution: String(formData.get("resolution") || ""),
     });
     revalidatePath("/logistica");
+    revalidatePath("/logistica/devoluciones");
     revalidatePath("/");
     revalidatePath("/dashboard");
     revalidateTag("logistics", "default");

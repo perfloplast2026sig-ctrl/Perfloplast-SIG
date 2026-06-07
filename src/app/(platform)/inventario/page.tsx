@@ -13,7 +13,7 @@ import { getCatalogProductCards } from "@/services/catalog";
 import { getInventoryModuleData } from "@/services/inventory";
 import { getPreorderModuleData } from "@/services/preorders";
 
-export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; synced?: string }> }) {
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; synced?: string; search?: string }> }) {
   const params = await searchParams;
   await requireInventoryManager();
   const [{ warehouses, warehouseStockCards, adjustmentOptions, movements, stats }, catalogProducts, preorderData] = await Promise.all([
@@ -74,7 +74,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <WarehouseStockCards warehouses={warehouseStockCards} />
       </SectionCard>
 
-      <FinishedProductsBrowser products={catalogProducts} />
+      <FinishedProductsBrowser initialSearch={params.search || ""} products={catalogProducts} />
 
       <SectionCard title="Movimientos recientes" className="mt-6">
         <div className="max-h-[560px] space-y-3 overflow-y-auto overscroll-contain pr-1">

@@ -11,10 +11,11 @@ import { CORPORATE_EMAIL_DOMAIN } from "@/lib/constants";
 import { requireUserManager } from "@/services/auth";
 import { getUserModuleData } from "@/services/users";
 
-export default async function UsersPage({ searchParams }: { searchParams: Promise<{ created?: string; updated?: string; error?: string }> }) {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ created?: string; updated?: string; error?: string; search?: string }> }) {
   const params = await searchParams;
   await requireUserManager();
   const { users, roles, resetRequests, stats } = await getUserModuleData();
+  const filteredUsers = filterRows(users, params.search, (user) => [user.name, user.email, user.role, user.area, user.status.label]);
 
   return (
     <>
@@ -27,6 +28,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Usuario creado correctamente.</div> : null}
       {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Estado del usuario actualizado.</div> : null}
+      {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredUsers.length} resultado(s).</div> : null}
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <UserKpi label="Usuarios activos" value={String(stats.activeUsers)} detail="Con acceso vigente" icon={UsersRound} tone="emerald" />
@@ -75,7 +77,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
         <SectionCard title="Usuarios registrados" eyebrow="Directorio interno" action={<Badge label="@perfloplast.com" tone="info" />}>
           <DataTable
-            data={users}
+            data={filteredUsers}
             columns={[
               { header: "Usuario", cell: (item) => <div><p className="font-semibold">{item.name}</p><p className="text-xs text-muted">{item.email}</p></div> },
               { header: "Rol", cell: (item) => <span className="font-medium">{item.role}</span> },
@@ -109,6 +111,16 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </div>
     </>
   );
+}
+
+function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
+  const term = normalizeSearch(query || "");
+  if (!term) return rows;
+  return rows.filter((row) => normalizeSearch(fields(row).join(" ")).includes(term));
+}
+
+function normalizeSearch(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function UserKpi({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof UsersRound; tone: "emerald" | "sky" | "violet" | "rose" }) {

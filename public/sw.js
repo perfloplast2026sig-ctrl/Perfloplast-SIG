@@ -1,4 +1,4 @@
-const CACHE_NAME = "nexo-inventario-v1";
+const CACHE_NAME = "nexo-inventario-v2";
 const APP_SHELL = ["/", "/inventario", "/preventas", "/produccion", "/logistica"];
 
 self.addEventListener("install", (event) => {
@@ -19,6 +19,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/_next/") || url.pathname === "/sw.js") return;
 
   event.respondWith(
     fetch(request)

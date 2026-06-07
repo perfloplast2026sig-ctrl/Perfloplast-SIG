@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DispatchReturnsRegistry } from "@/components/logistics/dispatch-returns-registry";
 import { PageHeading } from "@/components/layout/page-heading";
-import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/ui/section-card";
 import { requireCurrentUser } from "@/services/auth";
 import { getDispatchReturnRegistryData } from "@/services/logistics";
@@ -15,6 +15,7 @@ export default async function DispatchReturnsPage() {
   const grouped = groupByPreorder(returns);
   const pending = returns.filter((item) => item.status.label === "Pendiente").length;
   const partial = returns.filter((item) => item.scope === "Devolucion parcial").length;
+  const resolved = returns.length - pending;
 
   return (
     <>
@@ -25,10 +26,10 @@ export default async function DispatchReturnsPage() {
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <ReturnMetric label="Pedidos con devolucion" value={String(grouped.length)} />
-        <ReturnMetric label="Registros" value={String(returns.length)} />
-        <ReturnMetric label="Parciales" value={String(partial)} />
-        <ReturnMetric label="Pendientes" value={String(pending)} />
+        <ReturnMetric detail="Pedidos agrupados" label="Pedidos con devolucion" tone="emerald" value={String(grouped.length)} />
+        <ReturnMetric detail="Historial reciente" label="Registros" tone="sky" value={String(returns.length)} />
+        <ReturnMetric detail="No fue retorno total" label="Parciales" tone="amber" value={String(partial)} />
+        <ReturnMetric detail={`${resolved} resuelta(s)`} label="Pendientes" tone={pending > 0 ? "rose" : "emerald"} value={String(pending)} />
       </div>
 
       {grouped.length === 0 ? (
@@ -37,42 +38,7 @@ export default async function DispatchReturnsPage() {
         </SectionCard>
       ) : null}
 
-      <div className="space-y-5">
-        {grouped.map((group) => (
-          <SectionCard key={group.preorder} title={`${group.preorder} - ${group.client}`} eyebrow={`${group.returns.length} devolucion(es)`}>
-            <div className="space-y-4">
-              {group.returns.map((item) => (
-                <article key={item.id} className="rounded-2xl border bg-card-muted/30 p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-bold">{item.dispatch}</span>
-                        <Badge label={item.scope} tone={item.scope === "Devolucion total" ? "warning" : "info"} />
-                        <Badge label={item.status.label} tone={item.status.tone} />
-                      </div>
-                      <p className="mt-2 text-sm text-muted">{item.reason}</p>
-                      <p className="mt-2 text-xs text-muted">Piloto: {item.driver} - Registrada: {item.requestedAt} - Resolucion: {item.resolvedAt}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                    {item.products.map((product) => (
-                      <div key={product.id} className="rounded-xl border bg-card p-3">
-                        <p className="font-semibold">{product.product}</p>
-                        <p className="mt-1 text-xs text-muted">{product.color}</p>
-                        <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                          <span className="text-muted">Devuelto</span>
-                          <span className="font-black">{product.quantity}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </SectionCard>
-        ))}
-      </div>
+      <DispatchReturnsRegistry groups={grouped} />
     </>
   );
 }
@@ -89,11 +55,24 @@ function groupByPreorder(rows: ReturnRow[]) {
   return Array.from(map.values());
 }
 
-function ReturnMetric({ label, value }: { label: string; value: string }) {
+type MetricTone = "emerald" | "sky" | "amber" | "rose";
+
+const metricToneClass: Record<MetricTone, string> = {
+  emerald: "from-emerald-500/18 via-card to-card text-emerald-700 ring-emerald-500/20 shadow-emerald-900/10 dark:text-emerald-300",
+  sky: "from-sky-500/18 via-card to-card text-sky-700 ring-sky-500/20 shadow-sky-900/10 dark:text-sky-300",
+  amber: "from-amber-500/20 via-card to-card text-amber-700 ring-amber-500/20 shadow-amber-900/10 dark:text-amber-300",
+  rose: "from-rose-500/18 via-card to-card text-rose-700 ring-rose-500/20 shadow-rose-900/10 dark:text-rose-300",
+};
+
+function ReturnMetric({ detail, label, tone, value }: { detail: string; label: string; tone: MetricTone; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</p>
-      <p className="mt-3 text-2xl font-black">{value}</p>
+    <div className={`relative overflow-hidden rounded-3xl border bg-gradient-to-br p-4 shadow-xl ring-1 transition duration-300 hover:-translate-y-1 hover:shadow-2xl animate-[dashboard-progress_0.55s_ease-out_both] ${metricToneClass[tone]}`}>
+      <div className="absolute -right-8 -top-8 size-24 rounded-full bg-current opacity-10 blur-2xl" />
+      <div className="relative">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</p>
+        <p className="mt-3 text-3xl font-black text-foreground">{value}</p>
+        <p className="mt-1 text-xs font-semibold">{detail}</p>
+      </div>
     </div>
   );
 }
