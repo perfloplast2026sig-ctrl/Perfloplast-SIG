@@ -14,7 +14,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     role: user.role.name as Role,
     email: user.email,
   };
-  const requiresGps = ["Piloto", "Vendedor"].includes(currentUser.role) && (process.env.NODE_ENV === "production" || process.env.REQUIRE_GPS_IN_LOCAL === "true");
+  const requiresGps = ["Piloto", "Vendedor"].includes(currentUser.role);
 
   return (
     <div className="app-shell flex min-h-screen bg-background">

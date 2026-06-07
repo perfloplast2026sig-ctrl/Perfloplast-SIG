@@ -5,6 +5,7 @@ import { LocateFixed, RefreshCw, ShieldCheck, WifiOff } from "lucide-react";
 import { saveDriverLocationAction } from "@/actions/logistics";
 
 type GpsState = "checking" | "needs-action" | "active" | "blocked" | "stale";
+type LocalGpsMode = "bypass" | "required";
 
 const STALE_AFTER_MS = 2 * 60 * 1000;
 const PING_INTERVAL_MS = 45 * 1000;
@@ -14,8 +15,19 @@ const GEO_OPTIONS: PositionOptions = {
   timeout: 20000,
 };
 
+function getInitialLocalGpsMode(): LocalGpsMode {
+  if (typeof window === "undefined") return process.env.NODE_ENV === "production" ? "required" : "bypass";
+
+  const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (!isLocal) return "required";
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("gps") === "1" || params.get("gps") === "true" ? "required" : "bypass";
+}
+
 export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; roleName: string }) {
   const [state, setState] = useState<GpsState>(enabled ? "checking" : "active");
+  const [localGpsMode] = useState<LocalGpsMode>(getInitialLocalGpsMode);
   const [message, setMessage] = useState("Verificando permiso de ubicacion...");
   const [lastPointAt, setLastPointAt] = useState<number | null>(null);
   const lastPointAtRef = useRef<number | null>(null);
@@ -24,6 +36,7 @@ export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; ro
   const pendingTimeoutRef = useRef<number | null>(null);
 
   const isLocalhost = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const effectiveEnabled = enabled && localGpsMode === "required";
 
   const clearPendingTimeout = useCallback(() => {
     if (pendingTimeoutRef.current !== null) {
@@ -131,7 +144,7 @@ export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; ro
   }, [startTracking]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!effectiveEnabled) {
       stopTracking();
       return;
     }
@@ -190,10 +203,10 @@ export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; ro
       if (permissionStatus) permissionStatus.onchange = null;
       stopTracking();
     };
-  }, [enabled, startTracking, stopTracking]);
+  }, [effectiveEnabled, startTracking, stopTracking]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!effectiveEnabled) return;
 
     const timer = window.setInterval(() => {
       if (!lastPointAt) return;
@@ -204,10 +217,10 @@ export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; ro
     }, 15000);
 
     return () => window.clearInterval(timer);
-  }, [enabled, lastPointAt]);
+  }, [effectiveEnabled, lastPointAt]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!effectiveEnabled) return;
 
     const onVisibilityChange = () => {
     if (document.visibilityState === "visible" && state !== "active") {
@@ -217,9 +230,9 @@ export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; ro
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [enabled, requestSinglePosition, state]);
+  }, [effectiveEnabled, requestSinglePosition, state]);
 
-  if (!enabled || state === "active") return null;
+  if (!effectiveEnabled || state === "active") return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/96 p-4 backdrop-blur-xl">
