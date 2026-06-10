@@ -67,7 +67,7 @@ export function Sidebar({ role }: { role: Role }) {
         </nav>
       </aside>
 
-      <nav id="mobile-navigation" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:hidden">
+      <nav id="mobile-navigation" className="fixed inset-x-0 bottom-0 z-40 w-screen overflow-hidden border-t bg-card/95 px-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:hidden">
         <div className="mobile-nav-scroll flex gap-1 overflow-x-auto overscroll-x-contain pb-1">
         {visibleNavigation.map((item) => {
           const Icon = item.icon;

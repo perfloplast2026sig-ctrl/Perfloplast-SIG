@@ -15,19 +15,20 @@ export function WarehouseCreateModal({ warehouses = [] }: { warehouses?: Array<{
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl border bg-card shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b p-6 bg-card-muted/10">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+          <div className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden border bg-card shadow-2xl sm:h-auto sm:max-h-[92vh] sm:w-full sm:max-w-3xl sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-3 border-b bg-card-muted/10 p-4 sm:gap-4 sm:p-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Ubicaciones internas</p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight">Gestionar bodegas</h2>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">Gestionar bodegas</h2>
               </div>
               <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>
 
-            <form action={createWarehouseAction} className="grid gap-5 border-b p-6">
+            <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
+            <form action={createWarehouseAction} className="grid gap-5 border-b p-4 sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-muted-foreground">Crear nueva bodega</p>
                 <span className="rounded-full border bg-card-muted/60 px-3 py-1 text-xs font-semibold text-muted">{warehouses.length} registradas</span>
@@ -41,11 +42,11 @@ export function WarehouseCreateModal({ warehouses = [] }: { warehouses?: Array<{
                 Usar como bodega de fabrica para ventas rapidas
               </label>
               <div className="flex justify-end gap-3">
-                <button className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground transition hover:opacity-90" type="submit">Guardar nueva bodega</button>
+                <button className="inline-flex h-11 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground transition hover:opacity-90 sm:h-10 sm:w-auto" type="submit">Guardar nueva bodega</button>
               </div>
             </form>
 
-            <div className="bg-card-muted/20 p-6">
+            <div className="bg-card-muted/20 p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Bodegas existentes</p>
@@ -53,7 +54,7 @@ export function WarehouseCreateModal({ warehouses = [] }: { warehouses?: Array<{
                 </div>
                 <Building2 className="text-accent" size={20} />
               </div>
-              <div className="grid max-h-[34vh] gap-3 overflow-y-auto pr-2 sm:grid-cols-2">
+              <div className="grid gap-3 sm:max-h-[34vh] sm:overflow-y-auto sm:pr-2 sm:grid-cols-2">
                 {warehouses.length === 0 ? <p className="rounded-2xl border bg-card p-4 text-sm text-muted text-center">Aun no hay bodegas creadas.</p> : null}
                 {warehouses.map((warehouse) => (
                   <div key={warehouse.id} className="group relative overflow-hidden rounded-2xl border bg-card p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-xl">
@@ -77,6 +78,7 @@ export function WarehouseCreateModal({ warehouses = [] }: { warehouses?: Array<{
                   </div>
                 ))}
               </div>
+            </div>
             </div>
           </div>
         </div>

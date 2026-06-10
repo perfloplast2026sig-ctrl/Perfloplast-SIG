@@ -48,7 +48,7 @@ export function OperationalReportExport({
 
   return (
     <>
-      <button className="operational-report-control inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={print} type="button">
+      <button className="operational-report-control inline-flex h-11 items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted sm:h-10" onClick={print} type="button">
         <Download size={16} /> PDF
       </button>
 

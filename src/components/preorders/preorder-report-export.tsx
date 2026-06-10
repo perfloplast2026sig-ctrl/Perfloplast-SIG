@@ -53,14 +53,14 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
             <SlidersHorizontal size={15} />
             Exportacion PDF
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:items-center">
-            <select className="h-9 rounded-full border bg-card px-3 text-sm outline-none focus:border-accent" onChange={(event) => setSeller(event.target.value)} value={seller}>
+          <div className="grid grid-cols-2 gap-2 lg:flex lg:items-center">
+            <select className="col-span-2 h-10 rounded-full border bg-card px-3 text-sm outline-none focus:border-accent lg:col-span-1 lg:h-9" onChange={(event) => setSeller(event.target.value)} value={seller}>
               <option>Todos</option>
               {sellers.map((name) => <option key={name}>{name}</option>)}
             </select>
-            <input className="h-9 rounded-full border bg-card px-3 text-sm outline-none focus:border-accent" onChange={(event) => setFrom(event.target.value)} type="date" value={from} />
-            <input className="h-9 rounded-full border bg-card px-3 text-sm outline-none focus:border-accent" onChange={(event) => setTo(event.target.value)} type="date" value={to} />
-            <button className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" onClick={print} type="button">
+            <input className="h-10 min-w-0 rounded-full border bg-card px-3 text-sm outline-none focus:border-accent lg:h-9" onChange={(event) => setFrom(event.target.value)} type="date" value={from} />
+            <input className="h-10 min-w-0 rounded-full border bg-card px-3 text-sm outline-none focus:border-accent lg:h-9" onChange={(event) => setTo(event.target.value)} type="date" value={to} />
+            <button className="col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90 lg:col-span-1 lg:h-9" onClick={print} type="button">
               <Download size={15} /> PDF
             </button>
           </div>

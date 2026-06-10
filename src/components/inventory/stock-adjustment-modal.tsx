@@ -50,20 +50,20 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-2 sm:items-center sm:p-4">
-          <div className="max-h-[96dvh] w-full max-w-2xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-h-[92vh] sm:rounded-3xl">
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b bg-card p-4 sm:p-5">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+          <div className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden border bg-card shadow-2xl sm:h-auto sm:max-h-[92vh] sm:w-full sm:max-w-2xl sm:rounded-3xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card p-4 sm:gap-4 sm:p-5">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Conteo fisico</p>
                 <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">Ajustar stock</h3>
-                <p className="mt-1 text-sm text-muted">Corrige diferencias por error de produccion, conteo o merma. El sistema crea un movimiento Kardex auditado.</p>
+                <p className="mt-1 max-w-prose text-sm leading-5 text-muted">Corrige diferencias por error de produccion, conteo o merma. El sistema crea un movimiento Kardex auditado.</p>
               </div>
               <button aria-label="Cerrar" className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>
 
-            <form action={adjustFinishedStockAction} className="grid max-h-[calc(96dvh-108px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-126px)] sm:p-5">
+            <form action={adjustFinishedStockAction} className="grid flex-1 content-start gap-4 overflow-y-auto overscroll-contain p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[calc(92vh-126px)] sm:p-5">
               {selected ? (
                 <>
                   <input name="productId" type="hidden" value={selected.productId} />
@@ -104,7 +104,7 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
                 Mostrar productos sin existencia en esta bodega
               </label>
 
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <InfoBox label="Codigo" value={selected?.code || "-"} />
                 <InfoBox label="Color" value={selected?.color || "-"} />
                 <InfoBox label="Existencia sistema" value={selected?.currentQuantityLabel || "0"} />
@@ -142,7 +142,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border bg-card-muted/45 p-3">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-      <p className="mt-1 truncate text-lg font-black">{value}</p>
+      <p className="mt-1 break-words text-lg font-black">{value}</p>
     </div>
   );
 }
