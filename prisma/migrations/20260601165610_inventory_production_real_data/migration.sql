@@ -1,11 +1,11 @@
 -- AlterTable
-ALTER TABLE `location` ADD COLUMN `isFactoryWarehouse` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `Location` ADD COLUMN `isFactoryWarehouse` BOOLEAN NOT NULL DEFAULT false;
 
 -- AlterTable
-ALTER TABLE `product` ADD COLUMN `color` VARCHAR(80) NULL;
+ALTER TABLE `Product` ADD COLUMN `color` VARCHAR(80) NULL;
 
 -- AlterTable
-ALTER TABLE `productionorder` ADD COLUMN `destinationLocationId` VARCHAR(191) NULL,
+ALTER TABLE `ProductionOrder` ADD COLUMN `destinationLocationId` VARCHAR(191) NULL,
     ADD COLUMN `plannedQuantity` DECIMAL(14, 3) NOT NULL DEFAULT 0,
     ADD COLUMN `producedQuantity` DECIMAL(14, 3) NOT NULL DEFAULT 0,
     ADD COLUMN `shiftEnd` VARCHAR(20) NULL,

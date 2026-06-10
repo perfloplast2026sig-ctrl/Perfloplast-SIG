@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `product` ADD COLUMN `catalogExternalId` VARCHAR(180) NULL,
+ALTER TABLE `Product` ADD COLUMN `catalogExternalId` VARCHAR(180) NULL,
     ADD COLUMN `catalogImageUrl` VARCHAR(500) NULL,
     ADD COLUMN `catalogProductId` VARCHAR(120) NULL,
     ADD COLUMN `description` TEXT NULL,
