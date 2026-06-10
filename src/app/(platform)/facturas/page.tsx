@@ -13,7 +13,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeading title="Facturas" description="Registro de documentos generados desde preventas y entregas." />
+      <PageHeading title="Facturas" />
       <InvoicesRegister initialSearch={params.search || ""} invoices={invoices} />
     </>
   );

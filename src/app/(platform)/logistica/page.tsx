@@ -31,7 +31,6 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeading
         title="Logistica y despachos"
-        description="Crea despachos desde preventas, asigna piloto, controla valor de carga, entrega y rastreo GPS administrativo."
         actions={<><Link className="inline-flex h-11 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/logistica/devoluciones">Ver devoluciones</Link><OperationalReportExport title="Logistica" subtitle="Despachos y rutas registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Despachos", value: String(visibleDispatches.length), detail: "Registros incluidos" },
           { label: "Activos", value: String(active), detail: "Pendientes o en ruta" },

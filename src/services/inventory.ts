@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
 async function getInventoryModuleDataRaw() {
-  const [warehouses, balances, movements, activeFinishedProducts] = await Promise.all([
+  const [warehouses, balances, movements, producedProductRows] = await Promise.all([
     prisma.location.findMany({
       where: { type: "WAREHOUSE" },
       orderBy: [{ isFactoryWarehouse: "desc" }, { name: "asc" }],
@@ -17,9 +17,14 @@ async function getInventoryModuleDataRaw() {
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
-    prisma.product.findMany({
-      where: { type: "FINISHED_GOOD", isActive: true },
-      orderBy: [{ name: "asc" }, { modelName: "asc" }, { color: "asc" }],
+    prisma.productionOutput.findMany({
+      where: {
+        producedQuantity: { gt: 0 },
+        productionOrder: { status: "CLOSED" },
+        product: { type: "FINISHED_GOOD", isActive: true },
+      },
+      select: { productId: true },
+      distinct: ["productId"],
     }),
   ]);
 
@@ -40,31 +45,30 @@ async function getInventoryModuleDataRaw() {
   const finishedBalances = balances.filter((balance) => balance.product.type === "FINISHED_GOOD");
   const totalFinishedUnits = finishedBalances.reduce((sum, balance) => sum + Number(balance.quantity), 0);
   const totalInventoryValue = finishedBalances.reduce((sum, balance) => sum + Number(balance.quantity) * Number(balance.product.priceGTQ || 0), 0);
-  const operationalCodes = buildOperationalProductCodeMap(activeFinishedProducts.map((product) => product.id));
+  const producedProductIds = new Set(producedProductRows.map((row) => row.productId));
+  const adjustableBalances = balances.filter((balance) => balance.product.type === "FINISHED_GOOD" && balance.product.isActive && producedProductIds.has(balance.productId));
+  const operationalCodes = buildOperationalProductCodeMap(adjustableBalances.map((balance) => balance.productId));
   return {
     warehouses,
     warehouseStockCards,
-    adjustmentOptions: activeFinishedProducts.flatMap((product) =>
-      warehouses.map((warehouse) => {
-        const balance = balances.find((item) => item.productId === product.id && item.locationId === warehouse.id);
-        const model = product.modelName && product.modelName.toLowerCase() !== "general" ? product.modelName : product.name;
-        const color = product.color || "Sin color";
+    adjustmentOptions: adjustableBalances.map((balance) => {
+      const model = balance.product.modelName && balance.product.modelName.toLowerCase() !== "general" ? balance.product.modelName : balance.product.name;
+      const color = balance.product.color || "Sin color";
 
-        return {
-          key: `${product.id}:${warehouse.id}`,
-          productId: product.id,
-          warehouseId: warehouse.id,
-          productName: model,
-          color,
-          label: `${model} - ${color}`,
-          sku: product.sku,
-          code: operationalCodes.get(product.id) || product.sku,
-          warehouse: warehouse.name,
-          currentQuantity: Number(balance?.quantity || 0),
-          currentQuantityLabel: formatQuantity(Number(balance?.quantity || 0)),
-        };
-      }),
-    ),
+      return {
+        key: `${balance.productId}:${balance.locationId}`,
+        productId: balance.productId,
+        warehouseId: balance.locationId,
+        productName: model,
+        color,
+        label: `${model} - ${color}`,
+        sku: balance.product.sku,
+        code: operationalCodes.get(balance.productId) || balance.product.sku,
+        warehouse: balance.location.name,
+        currentQuantity: Number(balance.quantity || 0),
+        currentQuantityLabel: formatQuantity(Number(balance.quantity || 0)),
+      };
+    }),
     stockRows: balances.map((balance) => ({
       id: balance.id,
       sku: balance.product.sku,

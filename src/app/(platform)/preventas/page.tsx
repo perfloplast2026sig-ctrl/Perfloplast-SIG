@@ -30,7 +30,6 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeading
         title="Preventas con disponibilidad"
-        description="Crea preventas reales con cliente, NIT, entrega, bodega de origen, productos disponibles, pago, descuento y cambio."
         actions={<PreorderCreateModal products={products} warehouses={warehouses} nextCode={nextCode} currentDateTime={currentDateTime} />}
       />
 
@@ -47,13 +46,13 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <MiniKpi label="Preventas" value={String(salesRows.length)} detail="Ventas/preventas reales" icon={ReceiptText} tone="emerald" />
+        <MiniKpi label="Preventas" value={String(salesRows.length)} detail="Ventas/preventas" icon={ReceiptText} tone="emerald" />
         <MiniKpi label="Total vendido" value={formatGTQ(totalSales)} detail="Monto acumulado" icon={TrendingUp} tone="sky" />
         <MiniKpi label="Confirmadas" value={String(confirmed)} detail="Listas para despacho" icon={CheckCircle2} tone="violet" />
         <MiniKpi label="Cotizaciones" value={String(quoteRows.length)} detail="No descuentan stock" icon={FileText} tone="amber" />
       </div>
 
-      <SectionCard title="Preventas recientes" eyebrow="Registros reales" className="mt-6">
+      <SectionCard title="Preventas recientes" eyebrow="Registros" className="mt-6">
         <DataTable
           data={filteredPreorders}
           columns={[

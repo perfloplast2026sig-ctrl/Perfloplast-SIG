@@ -113,7 +113,7 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
 
               <div className="grid gap-4 sm:grid-cols-[0.65fr_1fr]">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium">Existencia fisica real</span>
+                  <span className="mb-2 block text-sm font-medium">Existencia fisica</span>
                   <input className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" min={0} name="physicalQuantity" onChange={(event) => setPhysicalQuantity(event.target.value)} placeholder="Ej. 548" required step="0.001" type="number" value={physicalQuantity} />
                 </label>
                 <label className="block">

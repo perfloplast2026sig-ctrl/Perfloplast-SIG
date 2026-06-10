@@ -21,7 +21,6 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     <>
       <PageHeading
         title="Usuarios corporativos"
-        description="Alta de usuarios con correo @perfloplast.com, rol operativo, area asignada y permisos reales. Los roles y permisos viven aqui para evitar duplicidad de modulos."
         actions={<UserCreateCard roles={roles} />}
       />
 

@@ -16,7 +16,6 @@ export default async function DashboardPage() {
     <>
       <PageHeading
         title="Centro de control operativo"
-        description="Inventario, ventas, produccion y rutas en tiempo real."
       />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-5">

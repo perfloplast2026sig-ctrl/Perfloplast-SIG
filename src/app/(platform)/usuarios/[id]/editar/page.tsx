@@ -27,7 +27,6 @@ export default async function EditUserPage({
     <>
       <PageHeading
         title="Editar usuario"
-        description="Actualiza datos del usuario, rol asignado y clave temporal sin romper las reglas de Super admin unico ni Administrador minimo."
         actions={<Badge label={user.isActive ? "Activo" : "Inactivo"} tone={user.isActive ? "success" : "neutral"} />}
       />
 

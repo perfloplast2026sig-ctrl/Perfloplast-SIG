@@ -246,7 +246,7 @@ export function GpsRequirementGate({ enabled, roleName }: { enabled: boolean; ro
             <div className="min-w-0">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-muted">GPS obligatorio</p>
               <h2 className="mt-2 text-2xl font-black tracking-tight">Activa tu ubicacion</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">Para usar el sistema como {roleName}, Perfloplast SIG necesita ubicacion en tiempo real mientras la app esta abierta.</p>
+              <p className="mt-2 text-sm leading-6 text-muted">Para usar el sistema como {roleName}, Perfloplast SIG necesita ubicacion mientras la app esta abierta.</p>
             </div>
           </div>
         </div>

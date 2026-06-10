@@ -26,8 +26,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeading
-        title="Inventario real por bodega"
-        description="Bodegas, existencias, productos terminados y movimientos."
+        title="Inventario por bodega"
         actions={
           <>
             <WarehouseCreateModal warehouses={warehouses} />

@@ -21,7 +21,6 @@ export default async function DispatchReturnsPage() {
     <>
       <PageHeading
         title="Devoluciones de despacho"
-        description="Registro separado y agrupado por pedido para revisar devoluciones totales o parciales sin saturar la vista de logistica."
         actions={<Link className="inline-flex h-11 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/logistica">Volver a despachos</Link>}
       />
 

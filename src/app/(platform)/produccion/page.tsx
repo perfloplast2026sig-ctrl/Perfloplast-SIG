@@ -22,8 +22,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
   return (
     <>
       <PageHeading
-        title="Produccion real"
-        description="Produccion usa productos terminados registrados en inventario. El sistema genera numero, fecha, hora y turno automaticamente."
+        title="Produccion"
         actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Produccion total", value: `${totalProduced.toLocaleString("es-GT")} un`, detail: "Unidades registradas" },
           { label: "Ordenes", value: String(orders.length), detail: `${registered} registradas` },

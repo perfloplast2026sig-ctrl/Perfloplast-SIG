@@ -64,7 +64,7 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
           <div className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden border bg-card shadow-2xl sm:h-auto sm:max-h-[92vh] sm:w-full sm:max-w-6xl sm:rounded-3xl">
             <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b bg-card px-4 py-3 pr-16 sm:px-5 sm:py-4 sm:pr-5">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Registro real</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Registro</p>
                 <h3 className="mt-1 text-lg font-semibold sm:text-xl">Nueva preventa</h3>
               </div>
               <button aria-label="Cerrar" className="modal-close-button absolute right-4 top-3 inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card sm:static" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
