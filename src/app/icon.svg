@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo de la empresa">
-  <rect width="512" height="512" rx="112" fill="#f5f8f6"/>
-  <rect x="44" y="64" width="424" height="384" rx="82" fill="#ffffff"/>
-  <path d="M122 284 202 152h136L258 284H122Z" fill="#0f63b6"/>
-  <path d="M282 284 362 152h104L386 284H282Z" fill="#1d8bd1"/>
-  <text x="256" y="374" text-anchor="middle" font-family="Arial, sans-serif" font-size="45" font-weight="800" fill="#0f63b6">PERFLOPLAST</text>
-</svg>
