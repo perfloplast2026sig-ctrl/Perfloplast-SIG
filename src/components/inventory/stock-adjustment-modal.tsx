@@ -52,13 +52,13 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
       {isOpen ? (
         <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 p-0 sm:items-center sm:p-4">
           <div className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden border bg-card shadow-2xl sm:h-auto sm:max-h-[92vh] sm:w-full sm:max-w-2xl sm:rounded-3xl">
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card p-4 sm:gap-4 sm:p-5">
-              <div className="min-w-0">
+            <div className="sticky top-0 z-10 border-b bg-card p-4 pr-16 sm:flex sm:items-start sm:justify-between sm:gap-4 sm:p-5">
+              <div className="min-w-0 max-w-full">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Conteo fisico</p>
                 <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">Ajustar stock</h3>
-                <p className="mt-1 max-w-prose text-sm leading-5 text-muted">Corrige diferencias por error de produccion, conteo o merma. El sistema crea un movimiento Kardex auditado.</p>
+                <p className="mt-1 max-w-[28rem] text-sm leading-5 text-muted">Corrige diferencias por conteo, produccion o merma. Crea un movimiento Kardex auditado.</p>
               </div>
-              <button aria-label="Cerrar" className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
+              <button aria-label="Cerrar" className="absolute right-4 top-4 grid h-10 w-10 min-w-10 max-w-10 shrink-0 place-items-center rounded-full border bg-card-muted transition hover:bg-card sm:static" onClick={() => setIsOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>
