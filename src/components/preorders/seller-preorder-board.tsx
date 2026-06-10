@@ -85,7 +85,7 @@ export function SellerPreorderBoard({ preorders }: { preorders: PreorderRow[] })
                   <p className="text-xs uppercase tracking-[0.14em] text-muted">Acumulado</p>
                   <p className="text-2xl font-black">{formatGTQ(selected.total)}</p>
                 </div>
-                <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setSelectedEmail("")} type="button">
+                <button className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setSelectedEmail("")} type="button">
                   <X size={18} />
                 </button>
               </div>

@@ -60,17 +60,17 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-2 sm:items-center sm:p-4">
-          <div className="max-h-[96dvh] w-full max-w-6xl overflow-hidden rounded-2xl border bg-card shadow-2xl sm:max-h-[92vh] sm:rounded-3xl">
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card px-4 py-3 sm:px-5 sm:py-4">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/35 p-0 sm:items-center sm:p-4">
+          <div className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden border bg-card shadow-2xl sm:h-auto sm:max-h-[92vh] sm:w-full sm:max-w-6xl sm:rounded-3xl">
+            <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b bg-card px-4 py-3 pr-16 sm:px-5 sm:py-4 sm:pr-5">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Registro real</p>
                 <h3 className="mt-1 text-lg font-semibold sm:text-xl">Nueva preventa</h3>
               </div>
-              <button aria-label="Cerrar" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button aria-label="Cerrar" className="modal-close-button absolute right-4 top-3 inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card sm:static" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
 
-            <form action={createPreorderAction} className="grid max-h-[calc(96dvh-67px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-73px)] sm:p-5">
+            <form action={createPreorderAction} className="grid flex-1 content-start gap-4 overflow-y-auto overscroll-contain p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:max-h-[calc(92vh-73px)] sm:p-5">
               <input name="saleLatitude" type="hidden" value={gps.latitude} />
               <input name="saleLongitude" type="hidden" value={gps.longitude} />
               <input name="saleAccuracy" type="hidden" value={gps.accuracy} />
@@ -129,7 +129,7 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
 
               <button className="inline-flex h-10 w-fit items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted" onClick={() => setRows((current) => [...current, newRow()])} type="button"><Plus size={16} /> Agregar producto</button>
 
-              <div className="grid gap-4 md:grid-cols-5">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium">Metodo de pago</span>
                   <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" name="paymentMethod">
@@ -145,7 +145,7 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
                 <ReadOnly label="Cambio" value={formatGTQ(change)} />
               </div>
 
-              <div className="flex justify-end">
+              <div className="sticky bottom-0 z-20 -mx-4 -mb-[calc(6.5rem+env(safe-area-inset-bottom))] border-t bg-card/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur sm:static sm:m-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none flex justify-end">
                 <Button className="w-full sm:w-auto" type="submit"><Receipt size={16} /> {mode === "quote" ? "Generar cotizacion PDF" : "Crear preventa"}</Button>
               </div>
             </form>

@@ -58,7 +58,7 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
                 <h3 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">Ajustar stock</h3>
                 <p className="mt-1 max-w-[28rem] text-sm leading-5 text-muted">Corrige diferencias por conteo, produccion o merma. Crea un movimiento Kardex auditado.</p>
               </div>
-              <button aria-label="Cerrar" className="absolute right-4 top-4 grid h-10 w-10 min-w-10 max-w-10 shrink-0 place-items-center rounded-full border bg-card-muted transition hover:bg-card sm:static" onClick={() => setIsOpen(false)} type="button">
+              <button aria-label="Cerrar" className="modal-close-button absolute right-4 top-4 grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card sm:static" onClick={() => setIsOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>

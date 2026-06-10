@@ -44,7 +44,7 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Efecto devolutivo</p>
                 <h3 className="mt-1 text-xl font-semibold">Registrar devolucion</h3>
               </div>
-              <button className="grid size-9 place-items-center rounded-full border bg-card-muted" onClick={() => setReturnOpen(false)} type="button"><X size={16} /></button>
+              <button className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setReturnOpen(false)} type="button"><X size={18} /></button>
             </div>
             <form action={requestDispatchReturnAction} className="grid gap-4 p-5">
               <input name="dispatchId" type="hidden" value={dispatch.id} />

@@ -57,7 +57,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Numero, fecha y turno automaticos</p>
                 <h3 className="mt-1 text-xl font-semibold">Registrar produccion</h3>
               </div>
-              <button className="inline-flex size-9 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
 
             <form action={createProductionEntryAction} className="max-h-[calc(92vh-74px)] overflow-y-auto p-5">
@@ -128,7 +128,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Rangos de turno</p>
                     <h3 className="mt-1 text-xl font-semibold">Configurar turnos</h3>
                   </div>
-                  <button className="inline-flex size-9 items-center justify-center rounded-full border bg-card-muted" onClick={() => setScheduleOpen(false)} type="button"><X size={16} /></button>
+                  <button className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setScheduleOpen(false)} type="button"><X size={18} /></button>
                 </div>
                 <form action={updateShiftSchedulesAction} className="mt-5 space-y-4">
                   {["Manana", "Tarde", "Noche"].map((name) => {

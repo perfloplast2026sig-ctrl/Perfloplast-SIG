@@ -48,7 +48,7 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {detail.badge ? <span className="hidden rounded-full bg-card-muted px-3 py-1 text-xs font-bold text-muted min-[420px]:inline-flex">{detail.badge}</span> : null}
-                <button aria-label="Cerrar" className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setOpen(false)} type="button">
+                <button aria-label="Cerrar" className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setOpen(false)} type="button">
                   <X size={18} />
                 </button>
               </div>

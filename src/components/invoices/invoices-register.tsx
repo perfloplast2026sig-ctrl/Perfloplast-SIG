@@ -166,7 +166,7 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Vista de factura</p>
                   <p className="font-semibold">{selectedInvoice.number} - {selectedInvoice.client}</p>
                 </div>
-                <button aria-label="Cerrar vista de factura" className="grid size-9 place-items-center rounded-full border bg-card transition hover:bg-card-muted" onClick={() => setSelectedId("")} type="button">
+                <button aria-label="Cerrar vista de factura" className="modal-close-button grid place-items-center rounded-full border bg-card text-foreground shadow-sm transition hover:bg-card-muted" onClick={() => setSelectedId("")} type="button">
                   <X size={16} />
                 </button>
               </div>

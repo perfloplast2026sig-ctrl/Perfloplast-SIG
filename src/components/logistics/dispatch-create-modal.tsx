@@ -37,7 +37,7 @@ export function DispatchCreateModal({ preorders, drivers }: { preorders: Preorde
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Asignacion a piloto</p>
                 <h3 className="mt-1 break-words text-lg font-semibold leading-tight sm:text-xl">Crear despacho desde preventa</h3>
               </div>
-              <button aria-label="Cerrar" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button aria-label="Cerrar" className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
             <form action={createDispatchAction} className="grid max-h-[calc(96dvh-67px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-73px)] sm:p-5">
               <div className="grid gap-4 md:grid-cols-2">

@@ -63,7 +63,7 @@ export function ActivityReportCreateModal() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Reporte de actividad</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight">Crear reporte semanal</h2>
               </div>
-              <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
+              <button className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
 
             <form className="max-h-[calc(92vh-88px)] overflow-y-auto p-5" onSubmit={submit}>

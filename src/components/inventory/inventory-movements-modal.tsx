@@ -45,7 +45,7 @@ export function InventoryMovementsModal({ movements }: { movements: Movement[] }
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Kardex operativo</p>
                 <h2 className="mt-1 text-2xl font-semibold">Movimientos del sistema</h2>
               </div>
-              <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setOpen(false)} type="button">
+              <button className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>

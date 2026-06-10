@@ -22,7 +22,7 @@ export function WarehouseCreateModal({ warehouses = [] }: { warehouses?: Array<{
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Ubicaciones internas</p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">Gestionar bodegas</h2>
               </div>
-              <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
+              <button className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button">
                 <X size={18} />
               </button>
             </div>

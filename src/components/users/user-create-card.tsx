@@ -30,7 +30,7 @@ export function UserCreateCard({ roles }: { roles: Array<{ role: string }> }) {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Alta controlada</p>
                 <h3 className="mt-1 text-xl font-semibold">Crear usuario</h3>
               </div>
-              <button className="inline-flex size-9 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
 
             <form key={formKey} action={createUserAction} autoComplete="off" className="grid max-h-[calc(92vh-73px)] gap-4 overflow-y-auto p-5">

@@ -28,7 +28,7 @@ export function FinishedProductCreateModal({ warehouses }: { warehouses: Warehou
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Producto, modelo, color y existencia</p>
                 <h3 className="mt-1 text-xl font-semibold">Crear producto terminado</h3>
               </div>
-              <button className="inline-flex size-9 items-center justify-center rounded-full border bg-card-muted" onClick={() => setIsOpen(false)} type="button"><X size={16} /></button>
+              <button className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
 
             <form action={createFinishedProductAction} className="grid max-h-[calc(92vh-73px)] gap-4 overflow-y-auto p-5">

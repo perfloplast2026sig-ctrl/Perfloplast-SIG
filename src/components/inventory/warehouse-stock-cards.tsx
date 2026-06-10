@@ -85,7 +85,7 @@ export function WarehouseStockCards({ warehouses }: { warehouses: WarehouseStock
                 <h3 className="mt-1 text-2xl font-semibold tracking-tight">{selectedWarehouse.name}</h3>
                 <p className="mt-1 text-sm text-muted">{selectedWarehouse.code} · {selectedWarehouse.products.length} productos agrupados por modelo y color</p>
               </div>
-              <button className="grid size-10 place-items-center rounded-full border bg-card-muted transition hover:bg-card" onClick={() => setSelectedId(null)} type="button">
+              <button className="modal-close-button grid place-items-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setSelectedId(null)} type="button">
                 <X size={18} />
               </button>
             </div>
