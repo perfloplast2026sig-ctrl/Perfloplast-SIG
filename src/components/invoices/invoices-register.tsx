@@ -5,6 +5,7 @@ import { Eye, FileSpreadsheet, Printer, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import type { InvoiceRecord } from "@/services/invoices";
+import { printWithBodyClass } from "@/lib/print";
 
 export function InvoicesRegister({ initialSearch = "", invoices }: { initialSearch?: string; invoices: InvoiceRecord[] }) {
   const [selectedId, setSelectedId] = useState("");
@@ -20,9 +21,7 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
   const printInvoice = (invoiceId: string) => {
     setSelectedId(invoiceId);
     window.setTimeout(() => {
-      document.body.classList.add("printing-invoice");
-      window.print();
-      window.setTimeout(() => document.body.classList.remove("printing-invoice"), 250);
+      printWithBodyClass("printing-invoice", { delay: 0 });
     }, 50);
   };
 

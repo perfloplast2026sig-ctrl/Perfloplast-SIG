@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import Image from "next/image";
+import { printWithBodyClass } from "@/lib/print";
 
 type Metric = {
   label: string;
@@ -37,13 +38,7 @@ export function OperationalReportExport({
   title: string;
 }) {
   const print = () => {
-    const cleanup = () => {
-      document.body.classList.remove("printing-operational-report");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    document.body.classList.add("printing-operational-report");
-    window.setTimeout(() => window.print(), 80);
+    printWithBodyClass("printing-operational-report");
   };
 
   return (

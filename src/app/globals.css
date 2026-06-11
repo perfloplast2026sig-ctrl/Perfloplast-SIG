@@ -268,6 +268,7 @@ body {
   body {
     background: #ffffff !important;
   }
+}
 
   body.printing-invoice .app-shell,
   body.printing-invoice .app-content,
@@ -2373,7 +2374,6 @@ body {
     display: none !important;
   }
 
-  .report-no-print {
+  body.printing-report .report-no-print {
     display: none !important;
   }
-}

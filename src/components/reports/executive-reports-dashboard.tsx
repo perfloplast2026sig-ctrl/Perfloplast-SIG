@@ -1,6 +1,7 @@
 "use client";
 
 import { ActivityReportCreateModal } from "@/components/reports/activity-report-create-modal";
+import { printWithBodyClass } from "@/lib/print";
 import type { ReportsData } from "@/services/reports";
 import { Activity, BarChart3, CalendarDays, Check, ChevronDown, Download, Factory, FileSpreadsheet, FileText, FilterX, ReceiptText, SlidersHorizontal, Truck } from "lucide-react";
 import Image from "next/image";
@@ -107,13 +108,7 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
   };
 
   const printReport = () => {
-    const cleanup = () => {
-      document.body.classList.remove("printing-report");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    document.body.classList.add("printing-report");
-    window.setTimeout(() => window.print(), 80);
+    printWithBodyClass("printing-report");
   };
 
   return (

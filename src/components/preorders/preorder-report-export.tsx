@@ -3,6 +3,7 @@
 import { Download, SlidersHorizontal } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { printWithBodyClass } from "@/lib/print";
 
 type PreorderRow = {
   code: string;
@@ -36,13 +37,7 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
   const productRows = useMemo(() => rows.flatMap((row) => row.items.map((item, index) => ({ ...item, code: row.code, key: `${row.code}-${index}` }))), [rows]);
 
   const print = () => {
-    const cleanup = () => {
-      document.body.classList.remove("printing-preorder-report");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    document.body.classList.add("printing-preorder-report");
-    window.setTimeout(() => window.print(), 80);
+    printWithBodyClass("printing-preorder-report");
   };
 
   return (

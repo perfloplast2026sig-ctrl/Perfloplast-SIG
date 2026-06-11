@@ -2,6 +2,7 @@
 
 import { Download, FileSpreadsheet, FilterX } from "lucide-react";
 import { useMemo, useState } from "react";
+import { printWithBodyClass } from "@/lib/print";
 
 type Filters = {
   sellers: string[];
@@ -64,7 +65,7 @@ export function ReportControls({ filters, kpis, sellers }: { filters: Filters; k
           <button className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={exportCsv} type="button">
             <FileSpreadsheet size={15} />Excel
           </button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" onClick={() => window.print()} type="button">
+          <button className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" onClick={() => printWithBodyClass("printing-report")} type="button">
             <Download size={15} />PDF
           </button>
         </div>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { FileText, Plus, X } from "lucide-react";
+import { printWithBodyClass } from "@/lib/print";
 
 type DayActivity = {
   date: string;
@@ -41,13 +42,7 @@ export function ActivityReportCreateModal() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const cleanup = () => {
-      document.body.classList.remove("printing-activity-report");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    document.body.classList.add("printing-activity-report");
-    window.setTimeout(() => window.print(), 120);
+    printWithBodyClass("printing-activity-report", { delay: 120 });
   }
 
   return (

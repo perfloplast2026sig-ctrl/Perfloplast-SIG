@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect } from "react";
+import { printWithBodyClass } from "@/lib/print";
 
 type QuoteRow = {
   id: string;
@@ -23,17 +24,7 @@ type QuoteRow = {
 export function QuotePrintLauncher({ quote }: { quote?: QuoteRow }) {
   useEffect(() => {
     if (!quote) return;
-    const cleanup = () => {
-      document.body.classList.remove("printing-quote");
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    document.body.classList.add("printing-quote");
-    const timer = window.setTimeout(() => window.print(), 120);
-    return () => {
-      window.clearTimeout(timer);
-      cleanup();
-    };
+    return printWithBodyClass("printing-quote", { delay: 120 });
   }, [quote]);
 
   if (!quote) return null;
