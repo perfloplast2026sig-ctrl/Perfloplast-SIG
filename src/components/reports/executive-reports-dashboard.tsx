@@ -1,6 +1,7 @@
 "use client";
 
 import { ActivityReportCreateModal } from "@/components/reports/activity-report-create-modal";
+import { downloadExcelWorkbook, excelCell, type ExcelRow, type ExcelWorksheet } from "@/lib/excel";
 import { printWithBodyClass } from "@/lib/print";
 import type { ReportsData } from "@/services/reports";
 import { Activity, BarChart3, CalendarDays, Check, ChevronDown, Download, Factory, FileSpreadsheet, FileText, FilterX, ReceiptText, SlidersHorizontal, Truck } from "lucide-react";
@@ -88,23 +89,13 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
   const topProducts = useMemo(() => buildTopProducts(filteredRows), [filteredRows]);
   const incomeSplit = useMemo(() => buildIncomeSplit(totalIncome), [totalIncome]);
 
-  const exportCsv = () => {
-    const rows = [
-      ["Reporte", state.mode],
-      ["Generado", new Date().toLocaleString("es-GT")],
-      ["Filtros", filterSummary(state)],
-      [],
-      ["Codigo", "Fecha", "Vendedor", "Cliente", "Bodega", "Estado", "Productos", "Total"],
-      ...filteredRows.map((row) => [row.code, row.dateLabel, row.seller, row.client, row.warehouse, row.status, row.productText, row.totalLabel]),
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `reporte-${state.mode.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const exportExcel = () => {
+    downloadExcelWorkbook(`reporte-${state.mode.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xls`, buildReportExcelWorkbook({
+      filteredRows,
+      reports,
+      state,
+      user,
+    }));
   };
 
   const printReport = () => {
@@ -160,7 +151,7 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
               <ActionButton onClick={() => setState(initialState)} variant="light">
                 <FilterX size={16} /> Limpiar {activeFilters.length ? `(${activeFilters.length})` : ""}
               </ActionButton>
-              <ActionButton onClick={exportCsv} variant="light">
+              <ActionButton onClick={exportExcel} variant="light">
                 <FileSpreadsheet size={16} /> Excel
               </ActionButton>
               <ActionButton onClick={printReport} variant="dark">
@@ -987,6 +978,148 @@ function buildIncomeSplit(totalIncome: number) {
       { label: "Otros", value: formatGTQ(other), color: "bg-amber-500" },
     ],
   };
+}
+
+function buildReportExcelWorkbook({ filteredRows, reports, state, user }: { filteredRows: ReportsData["salesRows"]; reports: ReportsData; state: ReportState; user: { name: string; role: string } }): ExcelWorksheet[] {
+  const generatedAt = new Date().toLocaleString("es-GT");
+  const executive = buildExecutive(filteredRows, reports);
+  const sellerRows = buildSellerPerformance(filteredRows);
+  const topProducts = buildTopProducts(filteredRows);
+  const categoryRows = buildSalesByCategory(filteredRows);
+  const warehouseRows = buildWarehouseSummary(filteredRows, reports);
+  const movementRows = buildMovementSummary(reports.recentMovements);
+  const productionRows = buildProductionDetail(reports.productionByShift, executive.totalIncome);
+  const documents = reports.documents;
+
+  return [
+    {
+      name: "Resumen ejecutivo",
+      columns: [132, 112, 132, 112, 132, 112, 132, 122],
+      rows: [
+        ...excelTitle("REPORTE EJECUTIVO - PERFLOPLAST", `Generado: ${generatedAt} · Usuario: ${user.name}`, 8),
+        row([label("Reporte"), text(state.mode), label("Periodo"), text(periodLabel(state)), label("Rol"), text(user.role), label("Registros"), number(filteredRows.length)]),
+        row([label("Filtros"), text(filterSummary(state), 6)]),
+        blankRow(),
+        section("Indicadores principales", 8),
+        header(["Indicador", "Valor", "Detalle", "", "Indicador", "Valor", "Detalle", ""]),
+        ...chunk(reports.kpis, 2).map((items) => row([
+          label(items[0]?.label || ""), text(items[0]?.value || ""), muted(items[0]?.detail || ""), text(""),
+          label(items[1]?.label || ""), text(items[1]?.value || ""), muted(items[1]?.detail || ""), text(""),
+        ])),
+        blankRow(),
+        section("Resumen financiero", 8),
+        header(["Concepto", "Valor", "Concepto", "Valor", "Concepto", "Valor", "Concepto", "Valor"]),
+        row([label("Ingresos totales"), money(executive.totalIncome), label("Costos / ajustes"), money(executive.totalExpenses), label("Utilidad neta"), money(executive.netProfit), label("Margen"), percent(executive.profitMargin / 100)]),
+        row([label("Ventas registradas"), number(executive.salesCount), label("Produccion total"), number(executive.producedUnits), label("Entregas"), number(executive.delivered), label("Movimientos"), number(executive.movements)]),
+        blankRow(),
+        section("Ventas por categoria", 8),
+        header(["Categoria", "Ingresos", "% Participacion", "", "Resumen por bodega", "Ventas", "Ingresos", ""]),
+        ...parallelRows(categoryRows.slice(0, 8), warehouseRows.slice(0, 8), (category, warehouse) => row([
+          text(category?.category || ""), money(category?.income || 0), percent(executive.totalIncome > 0 && category ? category.income / executive.totalIncome : 0), text(""),
+          text(warehouse?.warehouse || ""), number(warehouse?.sales || 0), money(warehouse?.income || 0), text(""),
+        ])),
+        blankRow(),
+        section("Produccion, documentos y movimientos", 8),
+        header(["Turno", "Unidades", "%", "Valor ref.", "Documento", "Cantidad", "Movimiento", "Valor"]),
+        ...parallelRows(productionRows, documents, (production, document, index) => row([
+          text(production?.shift || ""), number(parseLocaleNumber(production?.units || "0")), text(production?.percent || ""), money(parseCurrency(production?.value || "0")),
+          text(document?.label || ""), number(document?.count || 0), text(movementRows[index]?.type || ""), money(movementRows[index]?.value || 0),
+        ])),
+      ],
+    },
+    {
+      name: "Detalle de ventas",
+      columns: [96, 132, 142, 160, 132, 118, 260, 112],
+      freezeHeader: true,
+      rows: [
+        ...excelTitle("DETALLE DE VENTAS", `Periodo: ${periodLabel(state)} · ${filteredRows.length} registros`, 8),
+        header(["Codigo", "Fecha", "Vendedor", "Cliente", "Bodega", "Estado", "Productos", "Total"]),
+        ...(filteredRows.length ? filteredRows.map((item) => row([
+          text(item.code), text(item.dateLabel), text(item.seller), text(item.client), text(item.warehouse), text(item.status), text(item.productText), money(item.total),
+        ])) : [row([muted("Sin registros para los filtros seleccionados", 7)])]),
+        row([label("Total general", 6), money(executive.totalIncome, "Total")]),
+      ],
+    },
+    {
+      name: "Auditoria",
+      columns: [120, 120, 220, 140, 90, 112, 150, 132],
+      freezeHeader: true,
+      rows: [
+        ...excelTitle("AUDITORIA Y RENDIMIENTO", `Generado: ${generatedAt}`, 8),
+        section("Rendimiento por vendedor", 8),
+        header(["Vendedor", "Ventas", "Ingresos", "", "Producto", "Ventas", "% Top", ""]),
+        ...parallelRows(sellerRows.slice(0, 12), topProducts.slice(0, 12), (seller, product) => row([
+          text(seller?.seller || ""), number(seller?.count || 0), money(seller?.total || 0), text(""),
+          text(product?.name || ""), number(product?.count || 0), percent((product?.percent || 0) / 100), text(""),
+        ])),
+        blankRow(),
+        section("Movimientos recientes", 8),
+        header(["Fecha y hora", "Tipo", "Descripcion", "Bodega", "Cantidad", "Valor", "Usuario", "Direccion"]),
+        ...(reports.recentMovements.length ? reports.recentMovements.map((item) => row([
+          text(item.dateLabel), text(item.type), text(item.product), text(item.location), number(parseLocaleNumber(item.quantity)), money(parseCurrency(item.value)), text(item.user), text(item.direction),
+        ])) : [row([muted("Sin movimientos recientes", 7)])]),
+      ],
+    },
+  ];
+}
+
+function excelTitle(title: string, subtitle: string, columns: number): ExcelRow[] {
+  return [
+    { height: 30, cells: [excelCell(title, "Title", "String", columns - 1)] },
+    { height: 22, cells: [excelCell(subtitle, "Subtitle", "String", columns - 1)] },
+    blankRow(),
+  ];
+}
+
+function row(cells: ReturnType<typeof excelCell>[]): ExcelRow {
+  return { cells };
+}
+
+function blankRow(): ExcelRow {
+  return { height: 8, cells: [text("")] };
+}
+
+function section(title: string, columns: number): ExcelRow {
+  return { height: 22, cells: [excelCell(title, "Section", "String", columns - 1)] };
+}
+
+function header(values: string[]): ExcelRow {
+  return { height: 24, cells: values.map((value) => excelCell(value, "Header")) };
+}
+
+function label(value: string, mergeAcross?: number) {
+  return excelCell(value, "Label", "String", mergeAcross);
+}
+
+function text(value: string, mergeAcross?: number) {
+  return excelCell(value, "Text", "String", mergeAcross);
+}
+
+function muted(value: string, mergeAcross?: number) {
+  return excelCell(value, "Muted", "String", mergeAcross);
+}
+
+function number(value: number) {
+  return excelCell(value, "Number", "Number");
+}
+
+function money(value: number, style = "Money") {
+  return excelCell(value, style, "Number");
+}
+
+function percent(value: number) {
+  return excelCell(value, "Percent", "Number");
+}
+
+function chunk<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) chunks.push(items.slice(index, index + size));
+  return chunks;
+}
+
+function parallelRows<A, B>(left: A[], right: B[], render: (leftItem: A | undefined, rightItem: B | undefined, index: number) => ExcelRow) {
+  const length = Math.max(left.length, right.length, 1);
+  return Array.from({ length }, (_, index) => render(left[index], right[index], index));
 }
 
 function filterSummary(state: ReportState) {

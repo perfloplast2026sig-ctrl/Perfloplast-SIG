@@ -2,6 +2,7 @@
 
 import { Download, FileSpreadsheet, FilterX } from "lucide-react";
 import { useMemo, useState } from "react";
+import { downloadExcelWorkbook, excelCell } from "@/lib/excel";
 import { printWithBodyClass } from "@/lib/print";
 
 type Filters = {
@@ -33,22 +34,25 @@ export function ReportControls({ filters, kpis, sellers }: { filters: Filters; k
   const [state, setState] = useState(initialFilters);
   const activeCount = useMemo(() => Object.entries(state).filter(([, value]) => value && value !== "Todos").length, [state]);
 
-  const exportCsv = () => {
-    const rows = [
-      ["Indicador", "Valor", "Detalle"],
-      ...kpis.map((kpi) => [kpi.label, kpi.value, kpi.detail]),
-      [],
-      ["Vendedor", "Ventas", "Total"],
-      ...sellers.map((seller) => [seller.seller, String(seller.count), seller.totalLabel]),
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `reporte-ejecutivo-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const exportExcel = () => {
+    downloadExcelWorkbook(`reporte-ejecutivo-${new Date().toISOString().slice(0, 10)}.xls`, [
+      {
+        name: "Resumen",
+        columns: [160, 130, 260],
+        rows: [
+          { height: 30, cells: [excelCell("REPORTE EJECUTIVO - PERFLOPLAST", "Title", "String", 2)] },
+          { height: 22, cells: [excelCell(`Generado: ${new Date().toLocaleString("es-GT")}`, "Subtitle", "String", 2)] },
+          { height: 8, cells: [excelCell("", "Text")] },
+          { height: 22, cells: [excelCell("Indicadores", "Section", "String", 2)] },
+          { cells: [excelCell("Indicador", "Header"), excelCell("Valor", "Header"), excelCell("Detalle", "Header")] },
+          ...kpis.map((kpi) => ({ cells: [excelCell(kpi.label, "Label"), excelCell(kpi.value, "Text"), excelCell(kpi.detail, "Muted")] })),
+          { height: 8, cells: [excelCell("", "Text")] },
+          { height: 22, cells: [excelCell("Vendedores", "Section", "String", 2)] },
+          { cells: [excelCell("Vendedor", "Header"), excelCell("Ventas", "Header"), excelCell("Total", "Header")] },
+          ...sellers.map((seller) => ({ cells: [excelCell(seller.seller, "Text"), excelCell(seller.count, "Number", "Number"), excelCell(seller.total, "Money", "Number")] })),
+        ],
+      },
+    ]);
   };
 
   return (
@@ -62,7 +66,7 @@ export function ReportControls({ filters, kpis, sellers }: { filters: Filters; k
           <button className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={() => setState(initialFilters)} type="button">
             <FilterX size={15} />Limpiar {activeCount > 0 ? `(${activeCount})` : ""}
           </button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={exportCsv} type="button">
+          <button className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={exportExcel} type="button">
             <FileSpreadsheet size={15} />Excel
           </button>
           <button className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" onClick={() => printWithBodyClass("printing-report")} type="button">
