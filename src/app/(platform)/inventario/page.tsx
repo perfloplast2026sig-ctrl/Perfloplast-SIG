@@ -9,16 +9,19 @@ import { PageHeading } from "@/components/layout/page-heading";
 import { PreorderCreateModal } from "@/components/preorders/preorder-create-modal";
 import { SectionCard } from "@/components/ui/section-card";
 import { requireInventoryManager } from "@/services/auth";
-import { getCatalogProductCards } from "@/services/catalog";
-import { getInventoryModuleData } from "@/services/inventory";
+import { getCatalogProductCards, getCatalogProductCardsFresh, syncCatalogProductsIfStale } from "@/services/catalog";
+import { getInventoryModuleData, getInventoryModuleDataFresh } from "@/services/inventory";
 import { getPreorderModuleData } from "@/services/preorders";
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; synced?: string; search?: string }> }) {
   const params = await searchParams;
   await requireInventoryManager();
+  const autoSync = await syncCatalogProductsIfStale();
+  const inventoryData = autoSync.synced > 0 ? getInventoryModuleDataFresh() : getInventoryModuleData();
+  const catalogData = autoSync.synced > 0 ? getCatalogProductCardsFresh() : getCatalogProductCards();
   const [{ warehouses, warehouseStockCards, adjustmentOptions, movements, stats }, catalogProducts, preorderData] = await Promise.all([
-    getInventoryModuleData(),
-    getCatalogProductCards(),
+    inventoryData,
+    catalogData,
     getPreorderModuleData(),
   ]);
   const factoryWarehouseId = warehouses.find((warehouse: { isFactoryWarehouse: boolean; id: string }) => warehouse.isFactoryWarehouse)?.id || "";
@@ -42,6 +45,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Registro creado correctamente.</div> : null}
       {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Configuracion actualizada.</div> : null}
       {params.synced ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Catalogo sincronizado: {params.synced} combinaciones de producto/modelo/color.</div> : null}
+      {autoSync.synced > 0 ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Catalogo actualizado automaticamente: {autoSync.synced} combinaciones sincronizadas.</div> : null}
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-6">
         {[
@@ -73,7 +77,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <WarehouseStockCards warehouses={warehouseStockCards} />
       </SectionCard>
 
-      <FinishedProductsBrowser initialSearch={params.search || ""} products={catalogProducts} />
+      <FinishedProductsBrowser initialSearch={params.search || ""} products={catalogProducts} syncStatus={autoSync} />
 
       <SectionCard title="Movimientos recientes" className="mt-6">
         <div className="max-h-[560px] space-y-3 overflow-y-auto overscroll-contain pr-1">

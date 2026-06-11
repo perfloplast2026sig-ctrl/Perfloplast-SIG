@@ -112,6 +112,10 @@ async function getInventoryModuleDataRaw() {
   };
 }
 
+export function getInventoryModuleDataFresh() {
+  return getInventoryModuleDataRaw();
+}
+
 export const getInventoryModuleData = unstable_cache(
   async () => {
     return getInventoryModuleDataRaw();

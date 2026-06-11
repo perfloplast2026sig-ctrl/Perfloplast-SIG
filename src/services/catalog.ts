@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
+const DEFAULT_AUTO_SYNC_INTERVAL_MINUTES = 15;
+let autoSyncPromise: Promise<CatalogSyncResult> | null = null;
+
 type CatalogColor = {
   name?: string;
   hex?: string;
@@ -28,6 +31,12 @@ type CatalogProduct = {
   colors?: CatalogColor[];
   types?: CatalogModel[];
   variants?: CatalogModel[];
+};
+
+type CatalogSyncResult = {
+  synced: number;
+  mode: "manual" | "automatic" | "skipped";
+  reason?: string;
 };
 
 export async function fetchCatalogProducts() {
@@ -86,7 +95,7 @@ export async function syncCatalogProducts() {
       const existing = existingProducts.find((product) => {
         if (matchedIds.has(product.id)) return false;
         if (product.catalogExternalId === row.catalogExternalId) return true;
-        return product.catalogProductId === row.catalogProductId && product.modelName === row.modelName && product.color === row.color;
+        return product.catalogProductId === row.catalogProductId && normalizeKey(product.modelName || "General") === normalizeKey(row.modelName) && normalizeKey(product.color || "Sin color") === normalizeKey(row.color);
       });
 
       if (existing) matchedIds.add(existing.id);
@@ -156,11 +165,50 @@ export async function syncCatalogProducts() {
       synced += 1;
     }
 
-    return { synced };
+    return { synced, mode: "manual" as const };
   });
 }
 
-async function getCatalogProductCardsRaw() {
+export async function syncCatalogProductsIfStale(): Promise<CatalogSyncResult> {
+  if (process.env.CATALOG_AUTO_SYNC_ENABLED === "false") {
+    return { synced: 0, mode: "skipped", reason: "disabled" };
+  }
+
+  if (!process.env.CATALOG_PRODUCTS_API_URL && !process.env.NEXT_PUBLIC_CATALOG_PRODUCTS_API_URL) {
+    return { synced: 0, mode: "skipped", reason: "missing_url" };
+  }
+
+  if (autoSyncPromise) return autoSyncPromise;
+
+  autoSyncPromise = syncCatalogProductsIfStaleUncached().finally(() => {
+    autoSyncPromise = null;
+  });
+
+  return autoSyncPromise;
+}
+
+async function syncCatalogProductsIfStaleUncached(): Promise<CatalogSyncResult> {
+  const intervalMinutes = Number(process.env.CATALOG_AUTO_SYNC_INTERVAL_MINUTES || DEFAULT_AUTO_SYNC_INTERVAL_MINUTES);
+  const minimumAgeMs = Math.max(1, Number.isFinite(intervalMinutes) ? intervalMinutes : DEFAULT_AUTO_SYNC_INTERVAL_MINUTES) * 60 * 1000;
+  const latestCatalogProduct = await prisma.product.findFirst({
+    where: { type: "FINISHED_GOOD", catalogExternalId: { not: null } },
+    orderBy: { updatedAt: "desc" },
+    select: { updatedAt: true },
+  });
+
+  if (latestCatalogProduct && Date.now() - latestCatalogProduct.updatedAt.getTime() < minimumAgeMs) {
+    return { synced: 0, mode: "skipped", reason: "fresh" };
+  }
+
+  try {
+    const result = await syncCatalogProducts();
+    return { ...result, mode: "automatic" };
+  } catch (error) {
+    return { synced: 0, mode: "skipped", reason: error instanceof Error ? error.message : "sync_failed" };
+  }
+}
+
+export async function getCatalogProductCardsFresh() {
   const products = await prisma.product.findMany({
     where: { type: "FINISHED_GOOD", catalogExternalId: { not: null }, isActive: true },
     orderBy: [{ name: "asc" }, { modelName: "asc" }, { color: "asc" }],
@@ -184,7 +232,7 @@ async function getCatalogProductCardsRaw() {
 
 export const getCatalogProductCards = unstable_cache(
   async () => {
-    return getCatalogProductCardsRaw();
+    return getCatalogProductCardsFresh();
   },
   ["catalog-data"],
   {
@@ -222,7 +270,7 @@ function normalizeCatalogProduct(product: CatalogProduct) {
 
     return colors.map((color) => {
       const colorName = canonicalColorName(color.name);
-      const externalKey = `${catalogProductId}::${modelName}::${colorName}`;
+      const externalKey = `${catalogProductId}::${normalizeKey(modelName)}::${normalizeKey(colorName)}`;
       return {
         catalogExternalId: externalKey,
         catalogProductId,
@@ -267,7 +315,33 @@ function normalizeKey(value: string) {
 
 function canonicalColorName(value?: string) {
   const cleaned = cleanText(value) || "Sin color";
-  return cleaned.toLowerCase();
+  const aliases: Record<string, string> = {
+    "sin color": "Sin color",
+    transparente: "Transparente",
+    trans: "Transparente",
+    cristal: "Cristal",
+    blanco: "Blanco",
+    blanca: "Blanco",
+    negro: "Negro",
+    negra: "Negro",
+    rojo: "Rojo",
+    roja: "Rojo",
+    azul: "Azul",
+    celeste: "Celeste",
+    verde: "Verde",
+    amarillo: "Amarillo",
+    amarilla: "Amarillo",
+    naranja: "Naranja",
+    morado: "Morado",
+    morada: "Morado",
+    rosado: "Rosado",
+    rosada: "Rosado",
+    cafe: "Cafe",
+    marron: "Cafe",
+    gris: "Gris",
+  };
+  const key = normalizeKey(cleaned);
+  return aliases[key] || toTitleCase(cleaned);
 }
 
 function uniqueColors(colors: CatalogColor[]) {
@@ -293,6 +367,14 @@ function compareCatalogRows(a: ReturnType<typeof normalizeCatalogProduct>[number
     || a.modelName.localeCompare(b.modelName, "es")
     || a.color.localeCompare(b.color, "es")
     || a.catalogExternalId.localeCompare(b.catalogExternalId, "es");
+}
+
+function toTitleCase(value: string) {
+  return normalizeSpacing(value.toLowerCase()).replace(/\p{L}+/gu, (word) => word.charAt(0).toUpperCase() + word.slice(1));
+}
+
+function normalizeSpacing(value: string) {
+  return value.replace(/[\s_-]+/g, " ").trim();
 }
 
 function catalogDisplayTitle(row: ReturnType<typeof normalizeCatalogProduct>[number]) {

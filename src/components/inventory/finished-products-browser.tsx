@@ -50,6 +50,12 @@ type FilterState = {
   color: string;
 };
 
+type SyncStatus = {
+  synced: number;
+  mode: "manual" | "automatic" | "skipped";
+  reason?: string;
+};
+
 const emptyFilters: FilterState = {
   query: "",
   product: "Todos",
@@ -57,7 +63,7 @@ const emptyFilters: FilterState = {
   color: "Todos",
 };
 
-export function FinishedProductsBrowser({ initialSearch = "", products }: { initialSearch?: string; products: FinishedProduct[] }) {
+export function FinishedProductsBrowser({ initialSearch = "", products, syncStatus }: { initialSearch?: string; products: FinishedProduct[]; syncStatus?: SyncStatus }) {
   const [isOpen, setIsOpen] = useState(Boolean(initialSearch));
   const [filters, setFilters] = useState<FilterState>({ ...emptyFilters, query: initialSearch });
   const [page, setPage] = useState(1);
@@ -97,7 +103,7 @@ export function FinishedProductsBrowser({ initialSearch = "", products }: { init
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium text-muted">{productGroups.length} productos agrupados - {products.length} variantes/color sincronizadas</p>
-          <p className="mt-1 text-xs text-muted">Administra producto, modelo, color, precio e imagen. Para corregir existencias usa Ajustar stock.</p>
+          <p className="mt-1 text-xs text-muted">Catalogo en modo automatico{syncStatus?.reason === "fresh" ? " · actualizado recientemente" : ""}. Usa Sincronizar para forzar la carga manual.</p>
         </div>
         <div className="grid gap-2 sm:flex sm:flex-wrap">
           <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted sm:w-auto" onClick={() => setIsOpen((value) => !value)} type="button">
@@ -105,7 +111,7 @@ export function FinishedProductsBrowser({ initialSearch = "", products }: { init
           </button>
           <form action={syncCatalogProductsAction}>
             <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground transition hover:opacity-90 sm:w-auto" type="submit">
-              <RefreshCw size={16} /> Sincronizar
+              <RefreshCw size={16} /> Sincronizar manual
             </button>
           </form>
         </div>
