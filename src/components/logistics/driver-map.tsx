@@ -109,10 +109,6 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
           <button aria-label="Acercar mapa" className="grid size-10 place-items-center border-l border-border/50 text-foreground transition hover:bg-foreground/10" onClick={() => setZoom((current) => Math.min(16, current + 1))} type="button"><Plus size={16} /></button>
         </div>
         
-        <div className="absolute bottom-4 left-4 z-10 rounded-2xl border border-white/20 bg-background/80 px-3 py-2 text-xs leading-5 text-foreground shadow-lg backdrop-blur-md">
-          {located.length > 0 ? "Vista centrada en puntos activos. Usa el boton de mira para volver al encuadre." : "Arrastra el mapa para revisar las entregas asignadas."}
-        </div>
-
         {tiles.map((tile) => {
           const subdomain = `mt${Math.abs(tile.x + tile.y) % 4}`;
           return (
