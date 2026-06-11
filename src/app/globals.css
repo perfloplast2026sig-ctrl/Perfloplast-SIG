@@ -2440,3 +2440,90 @@ body {
   body.printing-report .report-no-print {
     display: none !important;
   }
+
+@media screen {
+  body.printing-invoice,
+  body.printing-quote,
+  body.printing-operational-report,
+  body.printing-activity-report,
+  body.printing-preorder-report,
+  body.printing-report {
+    background: #272a31 !important;
+  }
+
+  body.printing-invoice .app-shell,
+  body.printing-invoice .app-content,
+  body.printing-invoice .app-main,
+  body.printing-quote .app-shell,
+  body.printing-quote .app-content,
+  body.printing-quote .app-main,
+  body.printing-operational-report .app-shell,
+  body.printing-operational-report .app-content,
+  body.printing-operational-report .app-main,
+  body.printing-activity-report .app-main,
+  body.printing-preorder-report .app-shell,
+  body.printing-preorder-report .app-content,
+  body.printing-preorder-report .app-main,
+  body.printing-report .app-shell,
+  body.printing-report .app-content,
+  body.printing-report .app-main {
+    min-height: 100vh !important;
+    background: #272a31 !important;
+  }
+
+  body.printing-invoice .app-main,
+  body.printing-quote .app-main,
+  body.printing-operational-report .app-main,
+  body.printing-activity-report .app-main,
+  body.printing-preorder-report .app-main,
+  body.printing-report .app-main {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    overflow: auto !important;
+    padding: 24px 16px 116px !important;
+  }
+
+  body.printing-invoice .invoice-print-stage,
+  body.printing-quote .quote-print-stage,
+  body.printing-operational-report .operational-report-print-stage,
+  body.printing-activity-report .activity-report-print-stage,
+  body.printing-preorder-report .preorder-report-print-stage,
+  body.printing-report .report-print-stage {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  body.printing-invoice .invoice-print-target,
+  body.printing-quote .quote-print-target,
+  body.printing-operational-report .operational-report-print-target,
+  body.printing-preorder-report .preorder-report-print-target,
+  body.printing-report .report-print-target {
+    width: 216mm !important;
+    max-width: calc(100vw - 32px) !important;
+    min-height: 279mm !important;
+    margin: 0 auto !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42) !important;
+  }
+
+  body.printing-activity-report .activity-report-print-target {
+    width: 210mm !important;
+    max-width: calc(100vw - 32px) !important;
+    min-height: 297mm !important;
+    margin: 0 auto !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42) !important;
+  }
+
+  body.printing-quote .quote-print-target,
+  body.printing-operational-report .operational-report-print-target,
+  body.printing-activity-report .activity-report-print-target,
+  body.printing-preorder-report .preorder-report-print-target,
+  body.printing-report .report-print-target {
+    padding: 8mm !important;
+  }
+}
