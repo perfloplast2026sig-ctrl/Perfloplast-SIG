@@ -2,7 +2,6 @@ import { PreorderCreateModal } from "@/components/preorders/preorder-create-moda
 import { PreorderReportExport } from "@/components/preorders/preorder-report-export";
 import { QuotePrintLauncher } from "@/components/preorders/quote-print-launcher";
 import { SellerPreorderBoard } from "@/components/preorders/seller-preorder-board";
-import { sendQuoteWhatsappAction } from "@/actions/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
@@ -11,10 +10,10 @@ import { PageHeading } from "@/components/layout/page-heading";
 import { redirect } from "next/navigation";
 import { requireCurrentUser } from "@/services/auth";
 import { getPreorderModuleData } from "@/services/preorders";
-import { CheckCircle2, FileText, MessageCircle, ReceiptText, TrendingUp } from "lucide-react";
+import { CheckCircle2, FileText, ReceiptText, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; quote?: string; sent?: string; search?: string }> }) {
+export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; quote?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador", "Vendedor"].includes(user.role.name)) redirect("/");
@@ -34,9 +33,8 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
       />
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
-      {params.created === "quote" ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Cotizacion creada. Usa el boton PDF para revisar/imprimir o el boton WhatsApp para enviarla con PDF adjunto desde el numero oficial de la empresa.</div> : null}
+      {params.created === "quote" ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Cotizacion creada. Usa el boton PDF para revisar o imprimir.</div> : null}
       {params.created && params.created !== "quote" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Preventa creada y stock reservado.</div> : null}
-      {params.sent === "whatsapp" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Cotizacion enviada por WhatsApp Business con PDF adjunto.</div> : null}
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredPreorders.length} resultado(s).</div> : null}
 
       <QuotePrintLauncher quote={printedQuote} />
@@ -64,7 +62,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
             { header: "Fecha", cell: (item) => <span className="text-muted">{item.date}</span> },
             { header: "Total", align: "right", cell: (item) => <span className="font-semibold">{item.total}</span> },
             { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
-            { header: "Ver", align: "right", cell: (item) => <div className="flex items-center justify-end gap-2">{item.status.label === "Cotizacion" ? <Link className="grid size-10 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}{item.status.label === "Cotizacion" ? <form action={sendQuoteWhatsappAction}><input name="preorderId" type="hidden" value={item.id} /><button className="grid size-10 place-items-center rounded-full border bg-card-muted text-emerald-600 transition hover:border-emerald-400 hover:bg-emerald-500/10" title="Enviar PDF por WhatsApp Business" type="submit"><MessageCircle size={17} /></button></form> : null}<RecordDetailButton detail={buildPreorderDetail(item)} /></div> },
+            { header: "Ver", align: "right", cell: (item) => <div className="flex items-center justify-end gap-2">{item.status.label === "Cotizacion" ? <Link className="grid size-10 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} /></div> },
           ]}
         />
       </SectionCard>

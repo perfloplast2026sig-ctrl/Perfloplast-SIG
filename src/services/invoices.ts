@@ -47,7 +47,6 @@ export async function getInvoicesModuleData(viewer?: Viewer) {
       unitPrice: formatGTQ(item.unitPrice),
       subtotal: formatGTQ(Number(item.quantity) * Number(item.unitPrice)),
     })),
-    whatsappUrl: buildWhatsappUrl(invoice.preorder.client.phone || "", invoice.number, invoice.preorder.client.name, invoice.totalGTQ),
   }));
 }
 
@@ -59,18 +58,4 @@ function productTitle(product: { name: string; modelName: string | null }) {
 
 function formatGTQ(value: unknown) {
   return `Q ${Number(value || 0).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function buildWhatsappUrl(phone: string, invoice: string, client: string, total: unknown) {
-  const guatemalaPhone = normalizeGuatemalaPhone(phone);
-  if (!guatemalaPhone) return "";
-  const message = `Factura ${invoice} para ${client}. Total ${formatGTQ(total)}.`;
-  return `https://wa.me/${guatemalaPhone}?text=${encodeURIComponent(message)}`;
-}
-
-function normalizeGuatemalaPhone(value: string) {
-  const clean = value.replace(/\D/g, "");
-  if (clean.length === 8) return `502${clean}`;
-  if (clean.length === 11 && clean.startsWith("502")) return clean;
-  return "";
 }

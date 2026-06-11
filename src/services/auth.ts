@@ -59,3 +59,14 @@ export async function requireProductionManager() {
 
   return user;
 }
+
+export async function requireShiftScheduleManager() {
+  const user = await requireCurrentUser();
+  const roleName = user.role.name as Role;
+
+  if (!["Super admin", "Administrador"].includes(roleName)) {
+    throw new Error("No tienes permisos para configurar turnos.");
+  }
+
+  return user;
+}

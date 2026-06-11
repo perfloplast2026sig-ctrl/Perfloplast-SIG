@@ -13,6 +13,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
   const params = await searchParams;
   const user = await requireProductionManager();
   const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules } = await getProductionModuleData();
+  const canManageShiftSchedules = ["Super admin", "Administrador"].includes(user.role.name);
   const totalProduced = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
   const registered = orders.filter((order) => order.status.label === "Registrada").length;
   const filteredOrders = filterRows(orders, params.search, (order) => [order.code, order.product, order.warehouse, order.shift, order.schedule, order.responsible, order.status.label]);
@@ -44,7 +45,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
           cantidad: order.quantity,
           responsable: order.responsible,
           estado: order.status.label,
-        }))} /><ProductionEntryForm products={products} warehouses={warehouses} nextCode={nextCode} currentShift={currentShift} currentShiftRange={currentShiftRange} currentDateTime={currentDateTime} shiftSchedules={shiftSchedules} /></div>}
+        }))} /><ProductionEntryForm products={products} warehouses={warehouses} nextCode={nextCode} currentShift={currentShift} currentShiftRange={currentShiftRange} currentDateTime={currentDateTime} shiftSchedules={shiftSchedules} canManageShiftSchedules={canManageShiftSchedules} /></div>}
       />
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}

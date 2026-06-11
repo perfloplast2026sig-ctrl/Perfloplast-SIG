@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Eye, FileSpreadsheet, MessageCircle, Printer, X } from "lucide-react";
+import { Eye, FileSpreadsheet, Printer, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import type { InvoiceRecord } from "@/services/invoices";
@@ -97,11 +97,6 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
                   <button className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold transition hover:bg-card-muted" onClick={() => setSelectedId(invoice.id)} type="button">
                     <Eye size={14} />Ver
                   </button>
-                  {invoice.phone ? (
-                    <a className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700" href={invoice.whatsappUrl} rel="noreferrer" target="_blank">
-                      <MessageCircle size={14} />WhatsApp
-                    </a>
-                  ) : null}
                 </div>
               </article>
             ))}
@@ -144,11 +139,6 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
                         <button className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold transition hover:bg-card-muted" onClick={() => setSelectedId(invoice.id)} type="button">
                           <Eye size={14} />Ver
                         </button>
-                        {invoice.phone ? (
-                          <a className="inline-flex h-9 items-center gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700" href={invoice.whatsappUrl} rel="noreferrer" target="_blank">
-                            <MessageCircle size={14} />WhatsApp
-                          </a>
-                        ) : null}
                       </div>
                     </td>
                   </tr>

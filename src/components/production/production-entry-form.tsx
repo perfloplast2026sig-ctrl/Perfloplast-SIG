@@ -33,7 +33,7 @@ type Row = {
   warehouseId: string;
 };
 
-export function ProductionEntryForm({ products, warehouses, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules }: { products: Product[]; warehouses: Warehouse[]; nextCode: string; currentShift: string; currentShiftRange: string; currentDateTime: string; shiftSchedules: ShiftSchedule[] }) {
+export function ProductionEntryForm({ products, warehouses, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules, canManageShiftSchedules }: { products: Product[]; warehouses: Warehouse[]; nextCode: string; currentShift: string; currentShiftRange: string; currentDateTime: string; shiftSchedules: ShiftSchedule[]; canManageShiftSchedules: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const productGroups = useMemo(() => buildProductGroups(products), [products]);
   const [rows, setRows] = useState<Row[]>([newRow()]);
@@ -105,9 +105,11 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                 <button className="inline-flex h-10 items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted" onClick={() => setRows((current) => [...current, newRow()])} type="button">
                   <Plus size={16} /> Agregar otro producto
                 </button>
-                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted" onClick={() => setScheduleOpen(true)} type="button">
-                  <Clock size={16} /> Configurar turnos
-                </button>
+                {canManageShiftSchedules ? (
+                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted" onClick={() => setScheduleOpen(true)} type="button">
+                    <Clock size={16} /> Configurar turnos
+                  </button>
+                ) : null}
               </div>
 
               <div className="mt-4 rounded-2xl border bg-card-muted/60 p-4 text-sm leading-6 text-muted">
@@ -120,17 +122,17 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
             </form>
           </div>
 
-          {scheduleOpen ? (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 p-4">
-              <div className="w-full max-w-lg rounded-3xl border bg-card p-5 shadow-2xl">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
+          {scheduleOpen && canManageShiftSchedules ? (
+            <div className="fixed inset-0 z-[60] flex items-stretch justify-center bg-black/35 p-0 sm:items-center sm:p-4">
+              <div className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden border bg-card shadow-2xl sm:h-auto sm:max-h-[92vh] sm:w-full sm:max-w-lg sm:rounded-3xl">
+                <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card p-4 pr-16 sm:p-5">
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Rangos de turno</p>
                     <h3 className="mt-1 text-xl font-semibold">Configurar turnos</h3>
                   </div>
-                  <button className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setScheduleOpen(false)} type="button"><X size={18} /></button>
+                  <button aria-label="Cerrar" className="modal-close-button absolute right-4 top-4 inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card sm:static" onClick={() => setScheduleOpen(false)} type="button"><X size={18} /></button>
                 </div>
-                <form action={updateShiftSchedulesAction} className="mt-5 space-y-4">
+                <form action={updateShiftSchedulesAction} className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[calc(92vh-96px)] sm:p-5">
                   {["Manana", "Tarde", "Noche"].map((name) => {
                     const schedule = shiftSchedules.find((item) => item.name === name);
 

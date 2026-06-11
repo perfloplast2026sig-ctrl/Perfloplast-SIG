@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireProductionManager } from "@/services/auth";
+import { requireProductionManager, requireShiftScheduleManager } from "@/services/auth";
 import { createProductionEntry, updateShiftSchedules } from "@/services/production";
 
 export async function createProductionEntryAction(formData: FormData) {
@@ -32,7 +32,7 @@ export async function createProductionEntryAction(formData: FormData) {
 
 export async function updateShiftSchedulesAction(formData: FormData) {
   try {
-    await requireProductionManager();
+    await requireShiftScheduleManager();
     await updateShiftSchedules(["Manana", "Tarde", "Noche"].map((name) => ({
       name,
       startTime: String(formData.get(`${name}.startTime`) || ""),
