@@ -7,6 +7,7 @@ import { UserStatusToggle } from "@/components/users/user-status-toggle";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { SectionCard } from "@/components/ui/section-card";
+import { TableActions } from "@/components/ui/table-actions";
 import { CORPORATE_EMAIL_DOMAIN } from "@/lib/constants";
 import { requireUserManager } from "@/services/auth";
 import { getUserModuleData } from "@/services/users";
@@ -63,7 +64,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   cell: (item) => (
                     <form action={resolvePasswordResetRequestAction} className="flex justify-end">
                       <input name="requestId" type="hidden" value={item.id} />
-                      <button className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-card-muted" type="submit">
+                      <button className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-card-muted" type="submit">
                         Marcar revisada
                       </button>
                     </form>
@@ -84,12 +85,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
               { header: "Ultimo ingreso", cell: (item) => <span className="text-muted">{item.lastLogin}</span> },
               { header: "Accion", align: "right", cell: (item) => (
-                <div className="flex justify-end gap-3">
+                <TableActions>
                   <Link className="rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-card-muted" href={`/usuarios/${item.id}/editar`}>
                     Editar
                   </Link>
                   <UserStatusToggle userId={item.id} isActive={item.isActive} isProtected={item.isProtected} />
-                </div>
+                </TableActions>
               ) },
             ]}
           />

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
 import { SectionCard } from "@/components/ui/section-card";
+import { TableActions } from "@/components/ui/table-actions";
 import { requireProductionManager } from "@/services/auth";
 import { getProductionModuleData } from "@/services/production";
 import { ClipboardList, Clock3, Factory, Warehouse } from "lucide-react";
@@ -74,7 +75,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
               { header: "Cantidad", align: "right", cell: (item) => <span className="font-semibold">{item.quantity}</span> },
               { header: "Responsable", cell: (item) => <span className="text-muted">{item.responsible}</span> },
               { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
-              { header: "Ver", align: "right", cell: (item) => <RecordDetailButton detail={buildProductionDetail(item)} /> },
+              { header: "Ver", align: "right", cell: (item) => <TableActions><RecordDetailButton detail={buildProductionDetail(item)} /></TableActions> },
             ]}
           />
         </SectionCard>

@@ -5,6 +5,7 @@ import { TrendingUp, UserRound, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
+import { TableActions } from "@/components/ui/table-actions";
 
 type PreorderRow = {
   id: string;
@@ -101,7 +102,7 @@ export function SellerPreorderBoard({ preorders }: { preorders: PreorderRow[] })
                   { header: "Fecha", cell: (item) => <span className="text-muted">{item.date}</span> },
                   { header: "Total", align: "right", cell: (item) => <span className="font-semibold">{item.total}</span> },
                   { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
-                  { header: "Ver", align: "right", cell: (item) => <RecordDetailButton detail={buildPreorderDetail(item)} /> },
+                  { header: "Ver", align: "right", cell: (item) => <TableActions><RecordDetailButton detail={buildPreorderDetail(item)} /></TableActions> },
                 ]}
               />
             </div>

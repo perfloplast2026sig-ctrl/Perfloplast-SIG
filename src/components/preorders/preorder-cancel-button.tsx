@@ -10,7 +10,8 @@ export function PreorderCancelButton({ preorderId, code }: { preorderId: string;
   return (
     <>
       <button
-        className="grid size-10 place-items-center rounded-full border border-red-500/25 bg-red-500/10 text-red-700 transition hover:bg-red-500/15 dark:text-red-300"
+        aria-label={`Anular venta ${code}`}
+        className="grid size-10 shrink-0 place-items-center rounded-full border border-red-500/25 bg-red-500/10 text-red-700 transition hover:bg-red-500/15 dark:text-red-300"
         onClick={() => setIsOpen(true)}
         title="Anular venta"
         type="button"

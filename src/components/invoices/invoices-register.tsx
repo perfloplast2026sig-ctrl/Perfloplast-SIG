@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Eye, FileSpreadsheet, Printer, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { TableActions } from "@/components/ui/table-actions";
 import type { InvoiceRecord } from "@/services/invoices";
 import { printWithBodyClass } from "@/lib/print";
 
@@ -130,15 +131,15 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
                     <td className="px-5 py-4">{invoice.issuedAt}</td>
                     <td className="px-5 py-4"><span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Pedido / Despacho</span></td>
                     <td className="px-5 py-4 text-right text-base font-black">{invoice.total}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold transition hover:bg-card-muted" onClick={() => printInvoice(invoice.id)} type="button">
+                    <td className="w-1 whitespace-nowrap px-5 py-4 text-right">
+                      <TableActions>
+                        <button className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold transition hover:bg-card-muted" onClick={() => printInvoice(invoice.id)} type="button">
                           <Printer size={14} />Imprimir
                         </button>
-                        <button className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold transition hover:bg-card-muted" onClick={() => setSelectedId(invoice.id)} type="button">
+                        <button className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold transition hover:bg-card-muted" onClick={() => setSelectedId(invoice.id)} type="button">
                           <Eye size={14} />Ver
                         </button>
-                      </div>
+                      </TableActions>
                     </td>
                   </tr>
                 ))}

@@ -36,7 +36,7 @@ export function PaginatedDataTable({ columns, rows, pageSize }: { columns: Displ
           <thead className="bg-card-muted/80 text-left text-xs font-semibold uppercase tracking-[0.12em] text-muted">
             <tr>
               {columns.map((column) => (
-                <th key={column.header} className={`whitespace-nowrap px-4 py-3 ${column.align === "right" ? "text-right" : "text-left"}`}>
+                <th key={column.header} className={`whitespace-nowrap px-4 py-3 ${isActionColumn(column.header) ? "w-1 min-w-[112px]" : ""} ${column.align === "right" ? "text-right" : "text-left"}`}>
                   {column.header}
                 </th>
               ))}
@@ -46,7 +46,7 @@ export function PaginatedDataTable({ columns, rows, pageSize }: { columns: Displ
             {pagedRows.map((row) => (
               <tr key={row.key} className="transition-colors hover:bg-card-muted/60">
                 {columns.map((column, index) => (
-                  <td key={`${row.key}-${column.header}`} className={`px-4 py-4 align-top ${column.align === "right" ? "text-right" : "text-left"}`}>
+                  <td key={`${row.key}-${column.header}`} className={`px-4 py-4 align-top ${isActionColumn(column.header) ? "w-1 whitespace-nowrap" : ""} ${column.align === "right" ? "text-right" : "text-left"}`}>
                     {row.cells[index]}
                   </td>
                 ))}
@@ -126,4 +126,8 @@ function normalizedHeader(value: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isActionColumn(header: string) {
+  return ["accion", "acciones", "ver"].includes(normalizedHeader(header));
 }

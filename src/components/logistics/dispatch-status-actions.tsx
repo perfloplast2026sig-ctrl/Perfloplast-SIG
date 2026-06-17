@@ -20,13 +20,13 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
   const canLoadTruck = isAdmin || roleName === "Bodeguero";
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="inline-flex min-w-max flex-wrap items-center justify-end gap-2">
       {canLoadTruck && ["SCHEDULED", "RESCHEDULED"].includes(dispatch.statusKey) ? <StatusButton dispatchId={dispatch.id} label="Cargar camion" status="LOADED" /> : null}
       {isDriver && ["SCHEDULED", "RESCHEDULED"].includes(dispatch.statusKey) ? <WaitingBadge label="Esperando carga" /> : null}
       {isDriver && dispatch.statusKey === "LOADED" ? <StatusButton dispatchId={dispatch.id} label="En ruta" status="IN_ROUTE" /> : null}
       {isDriver && dispatch.statusKey === "IN_ROUTE" ? <StatusButton dispatchId={dispatch.id} label="Entregado" status="DELIVERED" /> : null}
       {isDriver && dispatch.statusKey === "IN_ROUTE" ? (
-        <button className="inline-flex h-9 items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium transition hover:bg-card-muted" onClick={() => setReturnOpen(true)} type="button">
+        <button className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium transition hover:bg-card-muted" onClick={() => setReturnOpen(true)} type="button">
           <Undo2 size={14} /> Devolucion
         </button>
       ) : null}
@@ -37,7 +37,7 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
         </>
       ) : null}
       {isSuperAdmin && dispatch.statusKey !== "CANCELLED" ? (
-        <button className="inline-flex h-9 items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-3 text-xs font-medium text-red-700 transition hover:bg-red-500/15 dark:text-red-300" onClick={() => setCancelOpen(true)} type="button">
+        <button className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-3 text-xs font-medium text-red-700 transition hover:bg-red-500/15 dark:text-red-300" onClick={() => setCancelOpen(true)} type="button">
           <Ban size={14} /> Anular
         </button>
       ) : null}
@@ -122,7 +122,7 @@ function parseQuantity(value: string) {
 
 function WaitingBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex h-9 items-center gap-2 rounded-full border bg-card-muted px-3 text-xs font-medium text-muted">
+    <span className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border bg-card-muted px-3 text-xs font-medium text-muted">
       <Clock3 size={14} />{label}
     </span>
   );
@@ -133,7 +133,7 @@ function StatusButton({ dispatchId, label, status }: { dispatchId: string; label
     <form action={updateDispatchStatusAction}>
       <input name="dispatchId" type="hidden" value={dispatchId} />
       <input name="status" type="hidden" value={status} />
-      <button className="inline-flex h-9 items-center gap-2 rounded-full bg-accent px-3 text-xs font-medium text-accent-foreground transition hover:opacity-90" type="submit">
+      <button className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-accent px-3 text-xs font-medium text-accent-foreground transition hover:opacity-90" type="submit">
         <Truck size={14} />{label}
       </button>
     </form>
@@ -145,7 +145,7 @@ function ResolveButton({ dispatchId, label, resolution }: { dispatchId: string; 
     <form action={resolveDispatchReturnAction}>
       <input name="dispatchId" type="hidden" value={dispatchId} />
       <input name="resolution" type="hidden" value={resolution} />
-      <button className="inline-flex h-9 items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium transition hover:bg-card-muted" type="submit">
+      <button className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium transition hover:bg-card-muted" type="submit">
         {label}
       </button>
     </form>

@@ -30,7 +30,7 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
     <>
       <button
         aria-label={`Ver detalle de ${detail.title}`}
-        className="inline-flex size-9 items-center justify-center rounded-full border bg-card transition hover:bg-card-muted"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border bg-card transition hover:bg-card-muted"
         onClick={() => setOpen(true)}
         type="button"
       >

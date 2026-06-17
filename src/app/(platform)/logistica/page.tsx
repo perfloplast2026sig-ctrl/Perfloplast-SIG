@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
 import { SectionCard } from "@/components/ui/section-card";
+import { TableActions } from "@/components/ui/table-actions";
 import { requireCurrentUser } from "@/services/auth";
 import { getLogisticsModuleData } from "@/services/logistics";
 import Link from "next/link";
@@ -74,7 +75,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
             { header: "Carga", align: "right", cell: (item) => <span className="font-semibold">{item.load}</span> },
             { header: "Valor", align: "right", cell: (item) => <span className="font-semibold">{item.value}</span> },
             { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
-            { header: "Accion", cell: (item) => <div className="flex items-center gap-2"><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></div> },
+            { header: "Accion", align: "right", cell: (item) => <TableActions><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
           ]}
         />
       </SectionCard>
