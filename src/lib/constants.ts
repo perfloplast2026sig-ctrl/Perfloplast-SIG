@@ -12,6 +12,7 @@ export const SYSTEM_ROLES: Role[] = [
 ];
 
 export const USER_MANAGER_ROLES: Role[] = ["Super admin", "Administrador"];
+export const INVENTORY_VIEWER_ROLES: Role[] = ["Super admin", "Administrador", "Contaduria", "Bodeguero"];
 export const INVENTORY_MANAGER_ROLES: Role[] = ["Super admin", "Administrador", "Bodeguero"];
 export const PRODUCTION_MANAGER_ROLES: Role[] = ["Super admin", "Administrador", "Bodeguero"];
 

@@ -2,8 +2,8 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireCurrentUser } from "@/services/auth";
-import { createDispatch, resolveDispatchReturn, saveDriverLocation, updateDispatchStatus, requestDispatchReturn } from "@/services/logistics";
+import { requireCurrentUser, requireSuperAdmin } from "@/services/auth";
+import { cancelDispatch, createDispatch, resolveDispatchReturn, saveDriverLocation, updateDispatchStatus, requestDispatchReturn } from "@/services/logistics";
 
 export async function createDispatchAction(formData: FormData) {
   try {
@@ -116,4 +116,31 @@ export async function resolveDispatchReturnAction(formData: FormData) {
   }
 
   return;
+}
+
+export async function cancelDispatchAction(formData: FormData) {
+  try {
+    const user = await requireSuperAdmin();
+    await cancelDispatch({
+      dispatchId: String(formData.get("dispatchId") || ""),
+      reason: String(formData.get("reason") || ""),
+      userId: user.id,
+    });
+    revalidatePath("/logistica");
+    revalidatePath("/logistica/devoluciones");
+    revalidatePath("/preventas");
+    revalidatePath("/inventario");
+    revalidatePath("/facturas");
+    revalidatePath("/reportes");
+    revalidatePath("/dashboard");
+    revalidateTag("logistics", "default");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
+    revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
+  } catch (error) {
+    redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo anular el despacho.")}`);
+  }
+
+  redirect("/logistica?cancelled=1");
 }

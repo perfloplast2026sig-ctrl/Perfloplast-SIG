@@ -357,6 +357,83 @@ export async function updateDispatchStatus(input: { dispatchId: string; status: 
   });
 }
 
+export async function cancelDispatch(input: { dispatchId: string; reason: string; userId: string }) {
+  if (!input.dispatchId) throw new Error("Selecciona el despacho que deseas anular.");
+  if (!input.reason.trim()) throw new Error("El motivo de anulacion es obligatorio.");
+
+  return prisma.$transaction(async (tx) => {
+    const dispatch = await tx.dispatch.findUnique({
+      where: { id: input.dispatchId },
+      include: {
+        preorder: { include: { items: true } },
+        items: true,
+      },
+    });
+
+    if (!dispatch) throw new Error("Despacho no encontrado.");
+    if (dispatch.status === "CANCELLED") throw new Error("Este despacho ya esta anulado.");
+    if (!dispatch.preorder || !dispatch.preorder.originLocationId) throw new Error("El despacho no tiene venta o bodega de origen.");
+
+    if (dispatch.status === "DELIVERED") {
+      for (const item of dispatch.items) {
+        await tx.stockBalance.upsert({
+          where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
+          update: { quantity: { increment: item.quantity } },
+          create: { productId: item.productId, locationId: dispatch.preorder.originLocationId, quantity: item.quantity },
+        });
+        await tx.inventoryMovement.create({
+          data: {
+            code: buildMovementCode("RET"),
+            type: "RETURN_IN",
+            productId: item.productId,
+            toLocationId: dispatch.preorder.originLocationId,
+            quantity: item.quantity,
+            reason: `Anulacion por Super admin: ${input.reason.trim()}`,
+            reference: dispatch.code,
+            preorderItemId: item.preorderItemId,
+            dispatchItemId: item.id,
+            createdById: input.userId,
+          },
+        });
+      }
+    } else {
+      for (const item of dispatch.preorder.items) {
+        if (Number(item.reservedQuantity) <= 0) continue;
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
+          data: { reserved: { decrement: item.reservedQuantity } },
+        });
+      }
+    }
+
+    await tx.preorder.update({
+      where: { id: dispatch.preorder.id },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    });
+    const cancelled = await tx.dispatch.update({
+      where: { id: dispatch.id },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    });
+    await tx.auditLog.create({
+      data: {
+        userId: input.userId,
+        action: "DISPATCH_CANCELLED",
+        entity: "Dispatch",
+        entityId: dispatch.id,
+        metadata: {
+          code: dispatch.code,
+          preorder: dispatch.preorder.code,
+          reason: input.reason.trim(),
+          previousStatus: dispatch.status,
+          inventoryRestored: dispatch.status === "DELIVERED",
+        },
+      },
+    });
+
+    return cancelled;
+  });
+}
+
 export async function requestDispatchReturn(input: { dispatchId: string; reason: string; driverId: string; items: Array<{ dispatchItemId: string; quantity: string }> }) {
   if (!input.dispatchId || !input.reason.trim()) throw new Error("Indica el motivo de la devolucion.");
 

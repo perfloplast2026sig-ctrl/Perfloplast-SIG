@@ -2,8 +2,8 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireCurrentUser } from "@/services/auth";
-import { createPreorder } from "@/services/preorders";
+import { requireCurrentUser, requireSuperAdmin } from "@/services/auth";
+import { cancelPreorder, createPreorder } from "@/services/preorders";
 
 export async function createPreorderAction(formData: FormData) {
   const mode = String(formData.get("mode") || "preorder");
@@ -49,4 +49,30 @@ export async function createPreorderAction(formData: FormData) {
   }
 
   redirect(redirectTo);
+}
+
+export async function cancelPreorderAction(formData: FormData) {
+  try {
+    const user = await requireSuperAdmin();
+    await cancelPreorder({
+      preorderId: String(formData.get("preorderId") || ""),
+      reason: String(formData.get("reason") || ""),
+      userId: user.id,
+    });
+    revalidatePath("/preventas");
+    revalidatePath("/logistica");
+    revalidatePath("/inventario");
+    revalidatePath("/facturas");
+    revalidatePath("/reportes");
+    revalidatePath("/dashboard");
+    revalidateTag("preorders", "default");
+    revalidateTag("logistics", "default");
+    revalidateTag("inventory", "default");
+    revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
+  } catch (error) {
+    redirect(`/preventas?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo anular la venta.")}`);
+  }
+
+  redirect("/preventas?cancelled=1");
 }

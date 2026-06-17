@@ -1,4 +1,5 @@
 import { PreorderCreateModal } from "@/components/preorders/preorder-create-modal";
+import { PreorderCancelButton } from "@/components/preorders/preorder-cancel-button";
 import { PreorderReportExport } from "@/components/preorders/preorder-report-export";
 import { QuotePrintLauncher } from "@/components/preorders/quote-print-launcher";
 import { SellerPreorderBoard } from "@/components/preorders/seller-preorder-board";
@@ -13,10 +14,11 @@ import { getPreorderModuleData } from "@/services/preorders";
 import { CheckCircle2, FileText, ReceiptText, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; quote?: string; search?: string }> }) {
+export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; cancelled?: string; quote?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador", "Vendedor"].includes(user.role.name)) redirect("/");
+  const isSuperAdmin = user.role.name === "Super admin";
   const { products, warehouses, preorders, nextCode, currentDateTime } = await getPreorderModuleData(user);
   const quoteRows = preorders.filter((preorder) => preorder.status.label === "Cotizacion");
   const salesRows = preorders.filter((preorder) => preorder.status.label !== "Cotizacion");
@@ -35,6 +37,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created === "quote" ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Cotizacion creada. Usa el boton PDF para revisar o imprimir.</div> : null}
       {params.created && params.created !== "quote" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Preventa creada y stock reservado.</div> : null}
+      {params.cancelled ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Venta anulada correctamente.</div> : null}
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredPreorders.length} resultado(s).</div> : null}
 
       <QuotePrintLauncher quote={printedQuote} />
@@ -62,7 +65,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
             { header: "Fecha", cell: (item) => <span className="text-muted">{item.date}</span> },
             { header: "Total", align: "right", cell: (item) => <span className="font-semibold">{item.total}</span> },
             { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
-            { header: "Ver", align: "right", cell: (item) => <div className="flex items-center justify-end gap-2">{item.status.label === "Cotizacion" ? <Link className="grid size-10 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} /></div> },
+            { header: "Ver", align: "right", cell: (item) => <div className="flex items-center justify-end gap-2">{item.status.label === "Cotizacion" ? <Link className="grid size-10 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} />{isSuperAdmin && item.status.label !== "Cancelada" ? <PreorderCancelButton code={item.code} preorderId={item.id} /> : null}</div> },
           ]}
         />
       </SectionCard>

@@ -8,15 +8,18 @@ import { WarehouseStockCards } from "@/components/inventory/warehouse-stock-card
 import { PageHeading } from "@/components/layout/page-heading";
 import { PreorderCreateModal } from "@/components/preorders/preorder-create-modal";
 import { SectionCard } from "@/components/ui/section-card";
-import { requireInventoryManager } from "@/services/auth";
+import { INVENTORY_MANAGER_ROLES } from "@/lib/constants";
+import { requireInventoryViewer } from "@/services/auth";
 import { getCatalogProductCards, getCatalogProductCardsFresh, syncCatalogProductsIfStale } from "@/services/catalog";
 import { getInventoryModuleData, getInventoryModuleDataFresh } from "@/services/inventory";
 import { getPreorderModuleData } from "@/services/preorders";
+import type { Role } from "@/types";
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; synced?: string; search?: string }> }) {
   const params = await searchParams;
-  await requireInventoryManager();
-  const autoSync = await syncCatalogProductsIfStale();
+  const user = await requireInventoryViewer();
+  const canManageInventory = INVENTORY_MANAGER_ROLES.includes(user.role.name as Role);
+  const autoSync = canManageInventory ? await syncCatalogProductsIfStale() : { synced: 0, mode: "skipped" as const, reason: "viewer" };
   const inventoryData = autoSync.synced > 0 ? getInventoryModuleDataFresh() : getInventoryModuleData();
   const catalogData = autoSync.synced > 0 ? getCatalogProductCardsFresh() : getCatalogProductCards();
   const [{ warehouses, warehouseStockCards, adjustmentOptions, movements, stats }, catalogProducts, preorderData] = await Promise.all([
@@ -31,13 +34,15 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <PageHeading
         title="Inventario por bodega"
         actions={
-          <>
-            <WarehouseCreateModal warehouses={warehouses} />
-            <InventoryMovementsModal movements={movements} />
-            <StockAdjustmentModal options={adjustmentOptions} />
-            <PreorderCreateModal buttonLabel="Venta rapida" currentDateTime={preorderData.currentDateTime} defaultWarehouseId={factoryWarehouseId} nextCode={preorderData.nextCode} products={preorderData.products} warehouses={preorderData.warehouses} />
-            <FinishedProductCreateModal warehouses={warehouses} />
-          </>
+          canManageInventory ? (
+            <>
+              <WarehouseCreateModal warehouses={warehouses} />
+              <InventoryMovementsModal movements={movements} />
+              <StockAdjustmentModal options={adjustmentOptions} />
+              <PreorderCreateModal buttonLabel="Venta rapida" currentDateTime={preorderData.currentDateTime} defaultWarehouseId={factoryWarehouseId} nextCode={preorderData.nextCode} products={preorderData.products} warehouses={preorderData.warehouses} />
+              <FinishedProductCreateModal warehouses={warehouses} />
+            </>
+          ) : <InventoryMovementsModal movements={movements} />
         }
       />
 
@@ -77,7 +82,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <WarehouseStockCards warehouses={warehouseStockCards} />
       </SectionCard>
 
-      <FinishedProductsBrowser initialSearch={params.search || ""} products={catalogProducts} syncStatus={autoSync} />
+      <FinishedProductsBrowser canManage={canManageInventory} initialSearch={params.search || ""} products={catalogProducts} syncStatus={autoSync} />
 
       <SectionCard title="Movimientos recientes" className="mt-6">
         <div className="max-h-[560px] space-y-3 overflow-y-auto overscroll-contain pr-1">

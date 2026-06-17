@@ -63,7 +63,7 @@ const emptyFilters: FilterState = {
   color: "Todos",
 };
 
-export function FinishedProductsBrowser({ initialSearch = "", products, syncStatus }: { initialSearch?: string; products: FinishedProduct[]; syncStatus?: SyncStatus }) {
+export function FinishedProductsBrowser({ canManage = false, initialSearch = "", products, syncStatus }: { canManage?: boolean; initialSearch?: string; products: FinishedProduct[]; syncStatus?: SyncStatus }) {
   const [isOpen, setIsOpen] = useState(Boolean(initialSearch));
   const [filters, setFilters] = useState<FilterState>({ ...emptyFilters, query: initialSearch });
   const [page, setPage] = useState(1);
@@ -109,11 +109,13 @@ export function FinishedProductsBrowser({ initialSearch = "", products, syncStat
           <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted sm:w-auto" onClick={() => setIsOpen((value) => !value)} type="button">
             <List size={16} /> {isOpen ? "Ocultar productos terminados" : "Ver productos terminados"}
           </button>
-          <form action={syncCatalogProductsAction}>
-            <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground transition hover:opacity-90 sm:w-auto" type="submit">
-              <RefreshCw size={16} /> Sincronizar manual
-            </button>
-          </form>
+          {canManage ? (
+            <form action={syncCatalogProductsAction}>
+              <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground transition hover:opacity-90 sm:w-auto" type="submit">
+                <RefreshCw size={16} /> Sincronizar manual
+              </button>
+            </form>
+          ) : null}
         </div>
       </div>
 
@@ -173,7 +175,7 @@ export function FinishedProductsBrowser({ initialSearch = "", products, syncStat
                             <td className="px-4 py-3">
                               <div className="flex justify-end gap-2">
                                 <IconButton label="Ver detalle" onClick={() => { setSelectedId(product.id); setEditingId(""); }}><Eye size={16} /></IconButton>
-                                <IconButton label="Editar" onClick={() => { setSelectedId(product.id); setEditingId(product.id); }}><Edit3 size={16} /></IconButton>
+                                {canManage ? <IconButton label="Editar" onClick={() => { setSelectedId(product.id); setEditingId(product.id); }}><Edit3 size={16} /></IconButton> : null}
                               </div>
                             </td>
                           </tr>
@@ -187,7 +189,7 @@ export function FinishedProductsBrowser({ initialSearch = "", products, syncStat
                   </div>
                 </div>
 
-                <ProductDetail product={selectedProduct} isEditing={isEditing} onEdit={() => selectedProduct ? setEditingId(selectedProduct.id) : undefined} />
+                <ProductDetail canManage={canManage} product={selectedProduct} isEditing={canManage && isEditing} onEdit={() => selectedProduct ? setEditingId(selectedProduct.id) : undefined} />
               </div>
             </>
           )}
@@ -197,7 +199,7 @@ export function FinishedProductsBrowser({ initialSearch = "", products, syncStat
   );
 }
 
-function ProductDetail({ product, isEditing, onEdit }: { product: ProductGroup | undefined; isEditing: boolean; onEdit: () => void }) {
+function ProductDetail({ canManage, product, isEditing, onEdit }: { canManage: boolean; product: ProductGroup | undefined; isEditing: boolean; onEdit: () => void }) {
   if (!product) {
     return (
       <aside className="rounded-2xl border bg-card p-4 text-sm text-muted">
@@ -243,7 +245,7 @@ function ProductDetail({ product, isEditing, onEdit }: { product: ProductGroup |
         <p className="mt-2 text-sm leading-6 text-muted">{product.description}</p>
       </div>
 
-      {isEditing ? <EditProductGroup group={product} /> : (
+      {canManage && isEditing ? <EditProductGroup group={product} /> : canManage ? (
         <div className="mt-4 grid gap-2 sm:flex">
           <Button className="flex-1" onClick={onEdit} type="button"><Edit3 size={16} /> Editar</Button>
           <form action={deactivateFinishedProductAction}>
@@ -253,7 +255,7 @@ function ProductDetail({ product, isEditing, onEdit }: { product: ProductGroup |
             </button>
           </form>
         </div>
-      )}
+      ) : null}
     </aside>
   );
 }

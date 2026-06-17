@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
-import { INVENTORY_MANAGER_ROLES, PRODUCTION_MANAGER_ROLES, USER_MANAGER_ROLES } from "@/lib/constants";
+import { INVENTORY_MANAGER_ROLES, INVENTORY_VIEWER_ROLES, PRODUCTION_MANAGER_ROLES, USER_MANAGER_ROLES } from "@/lib/constants";
 import type { Role } from "@/types";
 
 export async function getCurrentUser() {
@@ -44,6 +44,27 @@ export async function requireInventoryManager() {
 
   if (!INVENTORY_MANAGER_ROLES.includes(roleName)) {
     throw new Error("No tienes permisos para administrar inventario.");
+  }
+
+  return user;
+}
+
+export async function requireInventoryViewer() {
+  const user = await requireCurrentUser();
+  const roleName = user.role.name as Role;
+
+  if (!INVENTORY_VIEWER_ROLES.includes(roleName)) {
+    throw new Error("No tienes permisos para consultar inventario.");
+  }
+
+  return user;
+}
+
+export async function requireSuperAdmin() {
+  const user = await requireCurrentUser();
+
+  if (user.role.name !== "Super admin") {
+    throw new Error("Solo el Super admin puede realizar esta correccion.");
   }
 
   return user;

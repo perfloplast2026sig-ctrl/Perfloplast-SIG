@@ -187,6 +187,88 @@ export async function createPreorder(input: {
   });
 }
 
+export async function cancelPreorder(input: { preorderId: string; reason: string; userId: string }) {
+  if (!input.preorderId) throw new Error("Selecciona la venta que deseas anular.");
+  if (!input.reason.trim()) throw new Error("El motivo de anulacion es obligatorio.");
+
+  return prisma.$transaction(async (tx) => {
+    const preorder = await tx.preorder.findUnique({
+      where: { id: input.preorderId },
+      include: {
+        items: true,
+        dispatches: { include: { items: true } },
+      },
+    });
+
+    if (!preorder) throw new Error("Venta no encontrada.");
+    if (preorder.status === "CANCELLED") throw new Error("Esta venta ya esta anulada.");
+    if (!preorder.originLocationId) throw new Error("La venta no tiene bodega de origen para reversar inventario.");
+
+    const deliveredDispatches = preorder.dispatches.filter((dispatch) => dispatch.status === "DELIVERED");
+    const hasOpenDispatch = preorder.dispatches.some((dispatch) => !["DELIVERED", "CANCELLED"].includes(dispatch.status));
+
+    if (deliveredDispatches.length > 0) {
+      for (const dispatch of deliveredDispatches) {
+        for (const item of dispatch.items) {
+          await tx.stockBalance.upsert({
+            where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
+            update: { quantity: { increment: item.quantity } },
+            create: { productId: item.productId, locationId: preorder.originLocationId, quantity: item.quantity },
+          });
+          await tx.inventoryMovement.create({
+            data: {
+              code: buildMovementCode("RET"),
+              type: "RETURN_IN",
+              productId: item.productId,
+              toLocationId: preorder.originLocationId,
+              quantity: item.quantity,
+              reason: `Anulacion por Super admin: ${input.reason.trim()}`,
+              reference: dispatch.code,
+              preorderItemId: item.preorderItemId,
+              dispatchItemId: item.id,
+              createdById: input.userId,
+            },
+          });
+        }
+      }
+    } else if (preorder.status !== "QUOTE") {
+      for (const item of preorder.items) {
+        if (Number(item.reservedQuantity) <= 0) continue;
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
+          data: { reserved: { decrement: item.reservedQuantity } },
+        });
+      }
+    }
+
+    await tx.dispatch.updateMany({
+      where: { preorderId: preorder.id, status: { not: "CANCELLED" } },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    });
+    const cancelled = await tx.preorder.update({
+      where: { id: preorder.id },
+      data: { status: "CANCELLED", cancelledAt: new Date() },
+    });
+    await tx.auditLog.create({
+      data: {
+        userId: input.userId,
+        action: "PREORDER_CANCELLED",
+        entity: "Preorder",
+        entityId: preorder.id,
+        metadata: {
+          code: preorder.code,
+          reason: input.reason.trim(),
+          previousStatus: preorder.status,
+          openDispatchCancelled: hasOpenDispatch,
+          deliveredDispatchesRestored: deliveredDispatches.map((dispatch) => dispatch.code),
+        },
+      },
+    });
+
+    return cancelled;
+  });
+}
+
 export async function getNextPreorderCode() {
   const year = new Date().getFullYear();
   const count = await prisma.preorder.count({ where: { code: { startsWith: `PV-${year}-` } } });
@@ -251,6 +333,10 @@ function normalizeGuatemalaPhone(value: string) {
   if (clean.length === 8) return `502${clean}`;
   if (clean.length === 11 && clean.startsWith("502")) return clean;
   return "";
+}
+
+function buildMovementCode(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
 function statusLabel(status: string) {
