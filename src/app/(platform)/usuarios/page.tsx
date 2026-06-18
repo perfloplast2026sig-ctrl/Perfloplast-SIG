@@ -82,6 +82,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               { header: "Usuario", cell: (item) => <div><p className="font-semibold">{item.name}</p><p className="text-xs text-muted">{item.email}</p></div> },
               { header: "Rol", cell: (item) => <span className="font-medium">{item.role}</span> },
               { header: "Area", cell: (item) => <span className="text-muted">{item.area}</span> },
+              { header: "Talonario", cell: (item) => <span className="text-xs text-muted">{item.salesBook}</span> },
               { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
               { header: "Ultimo ingreso", cell: (item) => <span className="text-muted">{item.lastLogin}</span> },
               { header: "Accion", align: "right", cell: (item) => (

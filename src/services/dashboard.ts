@@ -11,8 +11,8 @@ async function getDashboardRawData() {
   const today = startOfDay(new Date());
   const weekStart = addDays(today, -6);
   const openPreorderWhere: Prisma.PreorderWhereInput = {
-    status: { in: ["PENDING", "CONFIRMED"] },
-    dispatches: { none: { status: "DELIVERED" } },
+    status: "PENDING",
+    dispatches: { none: {} },
   };
   const activeProductionWhere: Prisma.ProductionOrderWhereInput = {
     status: { in: ["PLANNED", "IN_PROGRESS", "PAUSED", "QUALITY_REVIEW"] },
@@ -35,6 +35,7 @@ async function getDashboardRawData() {
     productionOutputTotal,
     shiftRows,
     topFinishedStockRows,
+    lowSalesBookRows,
   ] = await Promise.all([
     prisma.product.count({ where: { isActive: true } }),
     prisma.stockBalance.findMany({ include: { product: true, location: true } }),
@@ -82,6 +83,12 @@ async function getDashboardRawData() {
       orderBy: { quantity: "desc" },
       take: 6,
     }),
+    prisma.salesBook.findMany({
+      where: { isActive: true },
+      include: { user: true },
+      orderBy: { updatedAt: "desc" },
+      take: 25,
+    }),
   ]);
 
   const lowStock = balances.filter((balance) => Number(balance.product.minimumStock) > 0 && Number(balance.quantity) <= Number(balance.product.minimumStock));
@@ -111,7 +118,7 @@ async function getDashboardRawData() {
       { label: "Insumos y empaque", value: percentage(otherStock, totalForPercentage), amount: formatUnit(otherStock) },
     ],
     stockTotals: { rawStock, availableFinishedStock, reservedStock, otherStock, totalStock: realTotalStock },
-    alerts: buildAlerts(lowStock, pendingPreorders, activeProductionOrders, scheduledDispatches),
+    alerts: buildAlerts(lowStock, pendingPreorders, activeProductionOrders, scheduledDispatches, lowSalesBookRows.filter((book) => remainingSalesBookNumbers(book) <= book.warningThreshold)),
     dispatchStatus: buildDispatchStatus(dispatchStats),
     inventoryByLocation: buildInventoryByLocation(balances),
     topFinishedStock: topFinishedStockRows.map((balance) => ({
@@ -168,6 +175,7 @@ function buildAlerts(
   pendingPreorders: Array<{ code: string; client: { name: string }; items: unknown[] }>,
   activeProductionOrders: Array<{ code: string; targetProduct: { name: string } | null }>,
   scheduledDispatches: number,
+  lowSalesBooks: Array<{ user: { name: string }; nextNumber: number; endNumber: number }>,
 ) {
   const alerts = [];
   const firstLowStock = lowStock[0];
@@ -186,6 +194,15 @@ function buildAlerts(
     alerts.push({
       title: "Preventa por atender",
       detail: `${firstPreorder.code} - ${firstPreorder.client.name}, ${firstPreorder.items.length} productos sin entrega finalizada.`,
+      tone: "warning" as const,
+    });
+  }
+
+  const firstSalesBook = lowSalesBooks[0];
+  if (firstSalesBook) {
+    alerts.push({
+      title: "Talonario por terminar",
+      detail: `${firstSalesBook.user.name}: quedan ${remainingSalesBookNumbers(firstSalesBook)} correlativos disponibles.`,
       tone: "warning" as const,
     });
   }
@@ -215,6 +232,10 @@ function buildAlerts(
   }
 
   return alerts.slice(0, 4);
+}
+
+function remainingSalesBookNumbers(book: { nextNumber: number; endNumber: number }) {
+  return Math.max(0, book.endNumber - book.nextNumber + 1);
 }
 
 function buildDispatchStatus(rows: Array<{ status: string; _count: number }>) {

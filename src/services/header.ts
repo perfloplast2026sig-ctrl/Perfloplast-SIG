@@ -15,7 +15,7 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
   const canSeeInvoices = roleName ? ["Super admin", "Administrador", "Contaduria", "Vendedor"].includes(roleName) : false;
   const preorderScope: Prisma.PreorderWhereInput = roleName === "Vendedor" ? { createdById: user?.id } : {};
   const dispatchScope: Prisma.DispatchWhereInput = roleName === "Piloto" ? { responsibleId: user?.id } : {};
-  const [lowStock, pendingPreorders, activeProduction, openDispatches, products, preorders, clients, dispatches, invoices, productionOrders, users, resetRequests] = await Promise.all([
+  const [lowStock, pendingPreorders, activeProduction, openDispatches, products, preorders, clients, dispatches, invoices, productionOrders, users, resetRequests, lowSalesBooks] = await Promise.all([
     canSeeInventory ? prisma.stockBalance.findMany({
       include: { product: true, location: true },
       take: 25,
@@ -56,6 +56,12 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
     canSeeProduction ? prisma.productionOrder.findMany({ include: { responsible: true, outputs: { include: { product: true } } }, orderBy: { createdAt: "desc" }, take: 40 }) : Promise.resolve([]),
     canManageUsers ? prisma.user.findMany({ include: { role: true }, orderBy: { createdAt: "desc" }, take: 40 }) : Promise.resolve([]),
     canManageUsers ? findPendingPasswordResetRequests(5) : Promise.resolve([]),
+    canManageUsers ? prisma.salesBook.findMany({
+      where: { isActive: true },
+      include: { user: true },
+      orderBy: { updatedAt: "desc" },
+      take: 25,
+    }) : Promise.resolve([]),
   ]);
 
   const filteredLowStock = lowStock
@@ -80,6 +86,12 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
         title: "Preventa pendiente",
         detail: `${preorder.code} - ${preorder.client.name}`,
         href: "/preventas",
+        tone: "warning" as const,
+      })),
+      ...lowSalesBooks.filter((book) => remainingSalesBookNumbers(book) <= book.warningThreshold).map((book) => ({
+        title: "Talonario por terminar",
+        detail: `${book.user.name}: quedan ${remainingSalesBookNumbers(book)} correlativos`,
+        href: `/usuarios/${book.userId}/editar`,
         tone: "warning" as const,
       })),
       ...activeProduction.map((order) => ({
@@ -140,6 +152,10 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
       })),
     ],
   };
+}
+
+function remainingSalesBookNumbers(book: { nextNumber: number; endNumber: number }) {
+  return Math.max(0, book.endNumber - book.nextNumber + 1);
 }
 
 export const getHeaderData = unstable_cache(

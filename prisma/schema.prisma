@@ -74,6 +74,7 @@ model User {
   role               Role                @relation(fields: [roleId], references: [id])
   inventoryMovements InventoryMovement[] @relation("MovementCreatedBy")
   preorders          Preorder[]          @relation("PreorderCreatedBy")
+  salesBooks         SalesBook[]
   productionOrders   ProductionOrder[]   @relation("ProductionResponsible")
   dispatches         Dispatch[]          @relation("DispatchResponsible")
   driverLocations    DriverLocation[]
@@ -83,6 +84,22 @@ model User {
   updatedAt          DateTime            @updatedAt
 
   @@index([roleId])
+}
+
+model SalesBook {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  startNumber      Int
+  endNumber        Int
+  nextNumber       Int
+  warningThreshold Int      @default(10)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId, isActive])
+  @@index([nextNumber])
 }
 
 model Role {

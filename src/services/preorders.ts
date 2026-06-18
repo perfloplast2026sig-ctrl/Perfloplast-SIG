@@ -161,7 +161,7 @@ export async function createPreorder(input: {
     const client = await findOrCreateClient(tx, input);
     const preorder = await tx.preorder.create({
       data: {
-        code: await buildPreorderCode(tx),
+        code: isQuote ? await buildPreorderCode(tx) : await buildSellerPreorderCode(tx, input.createdById),
         clientId: client.id,
         status: isQuote ? "QUOTE" : "PENDING",
         originLocationId: input.originLocationId,
@@ -195,7 +195,7 @@ export async function createPreorder(input: {
 
       await tx.invoice.create({
         data: {
-          number: await buildInvoiceNumber(tx),
+          number: buildInvoiceNumberFromPreorder(preorder.code) || await buildInvoiceNumber(tx),
           preorderId: preorder.id,
           companyAddress: "Aldea Chijou, Santa Cruz Verapaz",
           companyPhone: "Tel: 44235941 / 53146115",
@@ -327,10 +327,39 @@ async function buildPreorderCode(tx: Prisma.TransactionClient) {
   return `PV-${year}-${String(count + 1).padStart(5, "0")}`;
 }
 
+async function buildSellerPreorderCode(tx: Prisma.TransactionClient, sellerId: string) {
+  const seller = await tx.user.findUnique({ where: { id: sellerId }, include: { role: true } });
+  if (seller?.role.name !== "Vendedor") return buildPreorderCode(tx);
+
+  const salesBook = await tx.salesBook.findFirst({
+    where: { userId: sellerId, isActive: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!salesBook) throw new Error("El vendedor no tiene talonario activo. Asigna un rango en Usuarios antes de crear preventas.");
+  if (salesBook.nextNumber > salesBook.endNumber) throw new Error("El talonario del vendedor ya se termino. Asigna un nuevo rango.");
+
+  const nextNumber = salesBook.nextNumber;
+  await tx.salesBook.update({
+    where: { id: salesBook.id },
+    data: {
+      nextNumber: { increment: 1 },
+      isActive: nextNumber + 1 <= salesBook.endNumber,
+    },
+  });
+
+  return `PV-${String(nextNumber).padStart(7, "0")}`;
+}
+
 async function buildInvoiceNumber(tx: Prisma.TransactionClient) {
   const year = new Date().getFullYear();
   const count = await tx.invoice.count({ where: { number: { startsWith: `FAC-${year}-` } } });
   return `FAC-${year}-${String(count + 1).padStart(6, "0")}`;
+}
+
+function buildInvoiceNumberFromPreorder(code: string) {
+  const match = /^PV-(\d{7})$/.exec(code);
+  return match ? `FAC-${match[1]}` : "";
 }
 
 function buildQuoteWhatsappUrl(phone: string, quote: string, client: string, total: unknown) {

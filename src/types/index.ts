@@ -15,6 +15,7 @@ export type UserRow = {
   isActive: boolean;
   isProtected: boolean;
   lastLogin: string;
+  salesBook: string;
   status: StatusBadge;
 };
 

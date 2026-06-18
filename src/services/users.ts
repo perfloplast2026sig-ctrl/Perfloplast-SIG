@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { hashPassword } from "@/lib/password";
 import { CORPORATE_EMAIL_DOMAIN, isCorporateEmail, SYSTEM_ROLES } from "@/lib/constants";
 import { findPendingPasswordResetRequests, resolvePasswordResetRequest as resolveStoredPasswordResetRequest } from "@/services/password-reset-requests";
@@ -8,7 +9,7 @@ import type { Role, UserRow } from "@/types";
 async function getUserModuleDataRaw() {
   const [dbUsers, dbRoles, resetRequests] = await Promise.all([
     prisma.user.findMany({
-      include: { role: true },
+      include: { role: true, salesBooks: { where: { isActive: true }, orderBy: { createdAt: "desc" }, take: 1 } },
       orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     }),
     prisma.role.findMany({
@@ -31,6 +32,7 @@ async function getUserModuleDataRaw() {
       isProtected,
       lastLogin: formatLastLogin(user.lastLoginAt),
       status: user.isActive ? { label: "Activo", tone: "success" } : { label: "Inactivo", tone: "neutral" },
+      salesBook: user.salesBooks[0] ? formatSalesBook(user.salesBooks[0]) : "Sin talonario",
     };
   });
 
@@ -70,7 +72,7 @@ export const getUserModuleData = unstable_cache(
 
 export async function getUserEditData(userId: string) {
   const [user, roles] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, include: { role: true } }),
+    prisma.user.findUnique({ where: { id: userId }, include: { role: true, salesBooks: { where: { isActive: true }, orderBy: { createdAt: "desc" }, take: 1 } } }),
     prisma.role.findMany({ orderBy: { name: "asc" } }),
   ]);
 
@@ -87,6 +89,13 @@ export async function getUserEditData(userId: string) {
       role: user.role.name as Role,
       isActive: user.isActive,
       isProtected: user.role.name === "Super admin",
+      salesBook: user.salesBooks[0] ? {
+        startNumber: String(user.salesBooks[0].startNumber),
+        endNumber: String(user.salesBooks[0].endNumber),
+        nextNumber: String(user.salesBooks[0].nextNumber),
+        warningThreshold: String(user.salesBooks[0].warningThreshold),
+        remaining: Math.max(0, user.salesBooks[0].endNumber - user.salesBooks[0].nextNumber + 1),
+      } : null,
     },
     roles: roles.map((role) => ({ role: role.name, scope: role.description || "" })),
   };
@@ -199,6 +208,10 @@ export async function updateUser(input: {
   area?: string;
   roleName: Role;
   password?: string;
+  salesBookStart?: string;
+  salesBookEnd?: string;
+  salesBookNext?: string;
+  salesBookWarning?: string;
 }) {
   const email = normalizeEmail(input.email);
 
@@ -265,7 +278,7 @@ export async function updateUser(input: {
       }
     }
 
-    return tx.user.update({
+    const updated = await tx.user.update({
       where: { id: user.id },
       data: {
         name: input.name.trim(),
@@ -275,7 +288,65 @@ export async function updateUser(input: {
         ...(input.password ? { passwordHash: hashPassword(input.password), mustChangePassword: true } : {}),
       },
     });
+
+    await upsertSellerSalesBook(tx, {
+      userId: user.id,
+      roleName: input.roleName,
+      start: input.salesBookStart,
+      end: input.salesBookEnd,
+      next: input.salesBookNext,
+      warning: input.salesBookWarning,
+    });
+
+    return updated;
   });
+}
+
+async function upsertSellerSalesBook(tx: Prisma.TransactionClient, input: { userId: string; roleName: Role; start?: string; end?: string; next?: string; warning?: string }) {
+  const hasRange = Boolean(input.start?.trim() || input.end?.trim() || input.next?.trim());
+  if (input.roleName !== "Vendedor") {
+    if (hasRange) throw new Error("Los talonarios solo se asignan a usuarios con rol Vendedor.");
+    return;
+  }
+
+  if (!hasRange) return;
+
+  const startNumber = parseSalesBookNumber(input.start, "inicio");
+  const endNumber = parseSalesBookNumber(input.end, "fin");
+  const nextNumber = input.next?.trim() ? parseSalesBookNumber(input.next, "siguiente") : startNumber;
+  const warningThreshold = input.warning?.trim() ? parseSalesBookNumber(input.warning, "alerta") : 10;
+
+  if (startNumber > endNumber) throw new Error("El inicio del talonario no puede ser mayor que el fin.");
+  if (nextNumber < startNumber || nextNumber > endNumber) throw new Error("El siguiente correlativo debe estar dentro del rango del talonario.");
+
+  await tx.salesBook.updateMany({ where: { userId: input.userId, isActive: true }, data: { isActive: false } });
+  await tx.salesBook.create({
+    data: {
+      userId: input.userId,
+      startNumber,
+      endNumber,
+      nextNumber,
+      warningThreshold,
+      isActive: true,
+    },
+  });
+}
+
+function parseSalesBookNumber(value: string | undefined, label: string) {
+  const parsed = Number(value || 0);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 9999999) {
+    throw new Error(`El numero de ${label} del talonario debe estar entre 1 y 9999999.`);
+  }
+  return parsed;
+}
+
+function formatSalesBook(book: { startNumber: number; endNumber: number; nextNumber: number; warningThreshold: number }) {
+  const remaining = Math.max(0, book.endNumber - book.nextNumber + 1);
+  return `${padSalesBook(book.startNumber)}-${padSalesBook(book.endNumber)} · siguiente ${padSalesBook(book.nextNumber)} · quedan ${remaining}`;
+}
+
+function padSalesBook(value: number) {
+  return String(value).padStart(7, "0");
 }
 
 function normalizeEmail(email: string) {

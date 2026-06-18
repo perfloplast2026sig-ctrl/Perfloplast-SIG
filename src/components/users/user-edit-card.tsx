@@ -12,6 +12,13 @@ type EditableUser = {
   area: string;
   role: Role;
   isProtected: boolean;
+  salesBook: {
+    startNumber: string;
+    endNumber: string;
+    nextNumber: string;
+    warningThreshold: string;
+    remaining: number;
+  } | null;
 };
 
 export function UserEditCard({ user, roles }: { user: EditableUser; roles: Array<{ role: string }> }) {
@@ -48,11 +55,34 @@ export function UserEditCard({ user, roles }: { user: EditableUser; roles: Array
         Si defines una nueva clave temporal, el usuario debera cambiarla en el siguiente ingreso. La desactivacion se hace desde la tabla de usuarios para respetar reglas de Super admin y Administrador minimo.
       </div>
 
+      <section className="rounded-2xl border bg-card-muted/40 p-4">
+        <div className="mb-4">
+          <p className="text-sm font-semibold">Talonario de preventas</p>
+          <p className="mt-1 text-xs leading-5 text-muted">Solo aplica para usuarios con rol Vendedor. El sistema genera PV-0000000 y la factura queda con el mismo correlativo FAC-0000000.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          <NumberField name="salesBookStart" label="Inicio" defaultValue={user.salesBook?.startNumber || ""} placeholder="0001301" />
+          <NumberField name="salesBookEnd" label="Fin" defaultValue={user.salesBook?.endNumber || ""} placeholder="0001400" />
+          <NumberField name="salesBookNext" label="Siguiente" defaultValue={user.salesBook?.nextNumber || ""} placeholder="0001301" />
+          <NumberField name="salesBookWarning" label="Alerta" defaultValue={user.salesBook?.warningThreshold || "10"} placeholder="10" />
+        </div>
+        <p className="mt-3 text-xs text-muted">{user.salesBook ? `Talonario activo: quedan ${user.salesBook.remaining} correlativos.` : "Sin talonario activo asignado."}</p>
+      </section>
+
       <div className="flex flex-wrap justify-end gap-2">
         <Link className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-medium transition hover:bg-card-muted" href="/usuarios">Cancelar</Link>
         <Button type="submit">Guardar cambios</Button>
       </div>
     </form>
+  );
+}
+
+function NumberField({ name, label, defaultValue, placeholder }: { name: string; label: string; defaultValue: string; placeholder: string }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium">{label}</label>
+      <input className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none placeholder:text-muted focus:border-accent" defaultValue={defaultValue} inputMode="numeric" name={name} placeholder={placeholder} type="text" />
+    </div>
   );
 }
 

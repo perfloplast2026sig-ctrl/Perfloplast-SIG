@@ -270,7 +270,7 @@ export async function createDispatch(input: { preorderId: string; driverId: stri
     if (!existingInvoice) {
       await tx.invoice.create({
         data: {
-          number: await buildInvoiceNumber(tx),
+          number: buildInvoiceNumberFromPreorder(preorder.code) || await buildInvoiceNumber(tx),
           preorderId: preorder.id,
           companyAddress: "Aldea Chijou, Santa Cruz Verapaz",
           companyPhone: "Tel: 44235941 / 53146115",
@@ -573,6 +573,11 @@ async function buildInvoiceNumber(tx: Parameters<Parameters<typeof prisma.$trans
   const year = new Date().getFullYear();
   const count = await tx.invoice.count({ where: { number: { startsWith: `FAC-${year}-` } } });
   return `FAC-${year}-${String(count + 1).padStart(6, "0")}`;
+}
+
+function buildInvoiceNumberFromPreorder(code: string) {
+  const match = /^PV-(\d{7})$/.exec(code);
+  return match ? `FAC-${match[1]}` : "";
 }
 
 function productTitle(product: { name: string; modelName: string | null }) {
