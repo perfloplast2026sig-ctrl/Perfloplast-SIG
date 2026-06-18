@@ -58,13 +58,13 @@ export function UserEditCard({ user, roles }: { user: EditableUser; roles: Array
       <section className="rounded-2xl border bg-card-muted/40 p-4">
         <div className="mb-4">
           <p className="text-sm font-semibold">Talonario de preventas</p>
-          <p className="mt-1 text-xs leading-5 text-muted">Solo aplica para usuarios con rol Vendedor. El sistema genera PV-0000000 y la factura queda con el mismo correlativo FAC-0000000.</p>
+          <p className="mt-1 text-xs leading-5 text-muted">Solo aplica para usuarios con rol Vendedor. Escribe numeros simples, por ejemplo 1301 a 1400; el sistema los genera en registros como PV-0001301 y FAC-0001301.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-4">
-          <NumberField name="salesBookStart" label="Inicio" defaultValue={user.salesBook?.startNumber || ""} placeholder="0001301" />
-          <NumberField name="salesBookEnd" label="Fin" defaultValue={user.salesBook?.endNumber || ""} placeholder="0001400" />
-          <NumberField name="salesBookNext" label="Siguiente" defaultValue={user.salesBook?.nextNumber || ""} placeholder="0001301" />
-          <NumberField name="salesBookWarning" label="Alerta" defaultValue={user.salesBook?.warningThreshold || "10"} placeholder="10" />
+          <NumberField name="salesBookStart" label="Inicio" defaultValue={user.salesBook?.startNumber || ""} placeholder="1301" />
+          <NumberField name="salesBookEnd" label="Fin" defaultValue={user.salesBook?.endNumber || ""} placeholder="1400" />
+          <NumberField help="Proximo numero que usara el sistema." name="salesBookNext" label="Siguiente" defaultValue={user.salesBook?.nextNumber || ""} placeholder="1301" />
+          <NumberField help="Notificar cuando queden esta cantidad." name="salesBookWarning" label="Avisar cuando queden" defaultValue={user.salesBook?.warningThreshold || "10"} placeholder="10" />
         </div>
         <p className="mt-3 text-xs text-muted">{user.salesBook ? `Talonario activo: quedan ${user.salesBook.remaining} correlativos.` : "Sin talonario activo asignado."}</p>
       </section>
@@ -77,11 +77,12 @@ export function UserEditCard({ user, roles }: { user: EditableUser; roles: Array
   );
 }
 
-function NumberField({ name, label, defaultValue, placeholder }: { name: string; label: string; defaultValue: string; placeholder: string }) {
+function NumberField({ name, label, defaultValue, placeholder, help }: { name: string; label: string; defaultValue: string; placeholder: string; help?: string }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium">{label}</label>
-      <input className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none placeholder:text-muted focus:border-accent" defaultValue={defaultValue} inputMode="numeric" name={name} placeholder={placeholder} type="text" />
+      <input className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none placeholder:text-muted focus:border-accent" defaultValue={defaultValue} inputMode="numeric" min="1" name={name} placeholder={placeholder} type="number" />
+      {help ? <p className="mt-1 text-xs leading-5 text-muted">{help}</p> : null}
     </div>
   );
 }

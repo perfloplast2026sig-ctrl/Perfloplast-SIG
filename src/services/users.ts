@@ -342,11 +342,7 @@ function parseSalesBookNumber(value: string | undefined, label: string) {
 
 function formatSalesBook(book: { startNumber: number; endNumber: number; nextNumber: number; warningThreshold: number }) {
   const remaining = Math.max(0, book.endNumber - book.nextNumber + 1);
-  return `${padSalesBook(book.startNumber)}-${padSalesBook(book.endNumber)} · siguiente ${padSalesBook(book.nextNumber)} · quedan ${remaining}`;
-}
-
-function padSalesBook(value: number) {
-  return String(value).padStart(7, "0");
+  return `${book.startNumber}-${book.endNumber} · siguiente ${book.nextNumber} · quedan ${remaining}`;
 }
 
 function normalizeEmail(email: string) {
