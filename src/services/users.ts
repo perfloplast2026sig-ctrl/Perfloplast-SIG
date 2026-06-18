@@ -92,7 +92,6 @@ export async function getUserEditData(userId: string) {
       salesBook: user.salesBooks[0] ? {
         startNumber: String(user.salesBooks[0].startNumber),
         endNumber: String(user.salesBooks[0].endNumber),
-        nextNumber: String(user.salesBooks[0].nextNumber),
         warningThreshold: String(user.salesBooks[0].warningThreshold),
         remaining: Math.max(0, user.salesBooks[0].endNumber - user.salesBooks[0].nextNumber + 1),
       } : null,
@@ -210,7 +209,6 @@ export async function updateUser(input: {
   password?: string;
   salesBookStart?: string;
   salesBookEnd?: string;
-  salesBookNext?: string;
   salesBookWarning?: string;
 }) {
   const email = normalizeEmail(input.email);
@@ -294,7 +292,6 @@ export async function updateUser(input: {
       roleName: input.roleName,
       start: input.salesBookStart,
       end: input.salesBookEnd,
-      next: input.salesBookNext,
       warning: input.salesBookWarning,
     });
 
@@ -302,8 +299,8 @@ export async function updateUser(input: {
   });
 }
 
-async function upsertSellerSalesBook(tx: Prisma.TransactionClient, input: { userId: string; roleName: Role; start?: string; end?: string; next?: string; warning?: string }) {
-  const hasRange = Boolean(input.start?.trim() || input.end?.trim() || input.next?.trim());
+async function upsertSellerSalesBook(tx: Prisma.TransactionClient, input: { userId: string; roleName: Role; start?: string; end?: string; warning?: string }) {
+  const hasRange = Boolean(input.start?.trim() || input.end?.trim());
   if (input.roleName !== "Vendedor") {
     if (hasRange) throw new Error("Los talonarios solo se asignan a usuarios con rol Vendedor.");
     return;
@@ -313,11 +310,17 @@ async function upsertSellerSalesBook(tx: Prisma.TransactionClient, input: { user
 
   const startNumber = parseSalesBookNumber(input.start, "inicio");
   const endNumber = parseSalesBookNumber(input.end, "fin");
-  const nextNumber = input.next?.trim() ? parseSalesBookNumber(input.next, "siguiente") : startNumber;
   const warningThreshold = input.warning?.trim() ? parseSalesBookNumber(input.warning, "alerta") : 10;
 
   if (startNumber > endNumber) throw new Error("El inicio del talonario no puede ser mayor que el fin.");
-  if (nextNumber < startNumber || nextNumber > endNumber) throw new Error("El siguiente correlativo debe estar dentro del rango del talonario.");
+
+  const activeBook = await tx.salesBook.findFirst({ where: { userId: input.userId, isActive: true }, orderBy: { createdAt: "desc" } });
+  if (activeBook && activeBook.startNumber === startNumber && activeBook.endNumber === endNumber) {
+    if (activeBook.warningThreshold !== warningThreshold) {
+      await tx.salesBook.update({ where: { id: activeBook.id }, data: { warningThreshold } });
+    }
+    return;
+  }
 
   await tx.salesBook.updateMany({ where: { userId: input.userId, isActive: true }, data: { isActive: false } });
   await tx.salesBook.create({
@@ -325,7 +328,7 @@ async function upsertSellerSalesBook(tx: Prisma.TransactionClient, input: { user
       userId: input.userId,
       startNumber,
       endNumber,
-      nextNumber,
+      nextNumber: startNumber,
       warningThreshold,
       isActive: true,
     },
@@ -342,7 +345,7 @@ function parseSalesBookNumber(value: string | undefined, label: string) {
 
 function formatSalesBook(book: { startNumber: number; endNumber: number; nextNumber: number; warningThreshold: number }) {
   const remaining = Math.max(0, book.endNumber - book.nextNumber + 1);
-  return `${book.startNumber}-${book.endNumber} · siguiente ${book.nextNumber} · quedan ${remaining}`;
+  return `${book.startNumber}-${book.endNumber} · quedan ${remaining}`;
 }
 
 function normalizeEmail(email: string) {

@@ -15,7 +15,6 @@ type EditableUser = {
   salesBook: {
     startNumber: string;
     endNumber: string;
-    nextNumber: string;
     warningThreshold: string;
     remaining: number;
   } | null;
@@ -60,13 +59,12 @@ export function UserEditCard({ user, roles }: { user: EditableUser; roles: Array
           <p className="text-sm font-semibold">Talonario de preventas</p>
           <p className="mt-1 text-xs leading-5 text-muted">Solo aplica para usuarios con rol Vendedor. Escribe numeros simples, por ejemplo 1301 a 1400; el sistema los genera en registros como PV-0001301 y FAC-0001301.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <NumberField name="salesBookStart" label="Inicio" defaultValue={user.salesBook?.startNumber || ""} placeholder="1301" />
           <NumberField name="salesBookEnd" label="Fin" defaultValue={user.salesBook?.endNumber || ""} placeholder="1400" />
-          <NumberField help="Proximo numero que usara el sistema." name="salesBookNext" label="Siguiente" defaultValue={user.salesBook?.nextNumber || ""} placeholder="1301" />
           <NumberField help="Notificar cuando queden esta cantidad." name="salesBookWarning" label="Avisar cuando queden" defaultValue={user.salesBook?.warningThreshold || "10"} placeholder="10" />
         </div>
-        <p className="mt-3 text-xs text-muted">{user.salesBook ? `Talonario activo: quedan ${user.salesBook.remaining} correlativos.` : "Sin talonario activo asignado."}</p>
+        <p className="mt-3 text-xs text-muted">{user.salesBook ? `Talonario activo: quedan ${user.salesBook.remaining} correlativos. El sistema avanza automaticamente cada vez que el vendedor crea una venta real.` : "Sin talonario activo asignado."}</p>
       </section>
 
       <div className="flex flex-wrap justify-end gap-2">
