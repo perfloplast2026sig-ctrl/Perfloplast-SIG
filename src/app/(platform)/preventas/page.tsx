@@ -115,6 +115,19 @@ function normalizeSearch(value: string) {
 }
 
 function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]) {
+  const auditSections = item.auditTrail.map((log: PreorderAuditTrailEntry, index: number) => ({
+    title: `Auditoria ${index + 1}`,
+    rows: [
+      { label: "Accion", value: log.action },
+      { label: "Motivo", value: log.reason },
+      { label: "Usuario", value: log.user },
+      { label: "Fecha", value: log.date },
+      { label: "Estado previo", value: log.previousStatus },
+      { label: "Inventario", value: log.inventoryEffect },
+      { label: "Venta", value: log.salesEffect },
+    ],
+  }));
+
   return {
     title: item.code,
     subtitle: `${item.client} - ${item.date}`,
@@ -142,8 +155,9 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
           { label: "Total", value: item.total },
         ],
       },
+      ...auditSections,
     ],
-    items: item.items.map((row) => ({
+    items: item.items.map((row: PreorderDetailItem) => ({
       title: row.product,
       subtitle: `${row.color} - ${row.unitPrice}`,
       quantity: row.quantity,
@@ -151,3 +165,6 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
     })),
   };
 }
+
+type PreorderAuditTrailEntry = Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]["auditTrail"][number];
+type PreorderDetailItem = Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]["items"][number];

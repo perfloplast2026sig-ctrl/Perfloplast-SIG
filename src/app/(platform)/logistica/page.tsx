@@ -100,6 +100,19 @@ function normalizeSearch(value: string) {
 }
 
 function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {
+  const auditSections = item.auditTrail.map((log: DispatchAuditTrailEntry, index: number) => ({
+    title: `Auditoria ${index + 1}`,
+    rows: [
+      { label: "Accion", value: log.action },
+      { label: "Motivo", value: log.reason },
+      { label: "Usuario", value: log.user },
+      { label: "Fecha", value: log.date },
+      { label: "Estado previo", value: log.previousStatus },
+      { label: "Inventario", value: log.inventoryEffect },
+      { label: "Preventa", value: log.preorder },
+    ],
+  }));
+
   return {
     title: item.code,
     subtitle: `${item.client} - ${item.destination}`,
@@ -128,8 +141,9 @@ function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleD
           { label: "Estado", value: item.status.label },
         ],
       },
+      ...auditSections,
     ],
-    items: item.items.map((row) => ({
+    items: item.items.map((row: DispatchDetailItem) => ({
       title: row.product,
       subtitle: row.color,
       quantity: row.quantity,
@@ -137,3 +151,6 @@ function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleD
     })),
   };
 }
+
+type DispatchAuditTrailEntry = Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]["auditTrail"][number];
+type DispatchDetailItem = Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]["items"][number];

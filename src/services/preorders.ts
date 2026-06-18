@@ -18,12 +18,24 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
     prisma.location.findMany({ where: { type: "WAREHOUSE", isActive: true }, orderBy: [{ isFactoryWarehouse: "desc" }, { name: "asc" }] }),
     prisma.preorder.findMany({
       where: preorderWhere,
-      include: { client: true, items: { include: { product: true } }, createdBy: true },
+      include: {
+        client: true,
+        items: { include: { product: true } },
+        createdBy: true,
+      },
       orderBy: { createdAt: "desc" },
       take: 25,
     }),
     getNextPreorderCode(),
   ]);
+  const auditLogs = preorders.length
+    ? await prisma.auditLog.findMany({
+        where: { entity: "Preorder", entityId: { in: preorders.map((preorder) => preorder.id) } },
+        include: { user: true },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+  const auditLogsByPreorder = groupAuditLogsByEntity(auditLogs);
 
   return {
     nextCode,
@@ -67,6 +79,15 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
         quantity: item.quantity.toString(),
         unitPrice: formatGTQ(item.unitPrice),
         subtotal: formatGTQ(Number(item.quantity) * Number(item.unitPrice)),
+      })),
+      auditTrail: (auditLogsByPreorder.get(preorder.id) || []).map((log) => ({
+        action: auditActionLabel(log.action),
+        user: log.user?.name || "Sistema",
+        date: formatDateTime(log.createdAt),
+        reason: auditReason(log.metadata),
+        previousStatus: auditMetadataValue(log.metadata, "previousStatus") || "Sin estado anterior",
+        inventoryEffect: auditInventoryEffect(log.metadata),
+        salesEffect: auditSalesEffect(log.metadata),
       })),
     })),
   };
@@ -376,6 +397,54 @@ function statusLabel(status: string) {
   return labels[status as keyof typeof labels] || { label: status, tone: "neutral" as const };
 }
 
+function auditActionLabel(action: string) {
+  const labels: Record<string, string> = {
+    QUOTE_CANCELLED: "Cotizacion cancelada",
+    PREORDER_CANCELLED: "Venta anulada",
+  };
+  return labels[action] || action;
+}
+
+function auditReason(metadata: Prisma.JsonValue | null) {
+  return auditMetadataValue(metadata, "reason") || "Sin motivo registrado";
+}
+
+function auditInventoryEffect(metadata: Prisma.JsonValue | null) {
+  const restored = auditMetadataValue(metadata, "deliveredDispatchesRestored");
+  if (auditMetadataValue(metadata, "affectsInventory") === "false") return "No afecto inventario";
+  if (restored && restored !== "[]") return `Inventario devuelto: ${restored}`;
+  return "Reserva liberada o sin movimiento fisico";
+}
+
+function auditSalesEffect(metadata: Prisma.JsonValue | null) {
+  if (auditMetadataValue(metadata, "affectsSales") === "false") return "No se registro como venta";
+  return "Registro comercial cancelado";
+}
+
+function auditMetadataValue(metadata: Prisma.JsonValue | null, key: string) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return "";
+  const value = (metadata as Record<string, Prisma.JsonValue>)[key];
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) return value.length ? value.map(String).join(", ") : "[]";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function groupAuditLogsByEntity(logs: Array<{ entityId: string | null; action: string; metadata: Prisma.JsonValue | null; createdAt: Date; user: { name: string } | null }>) {
+  const grouped = new Map<string, typeof logs>();
+  for (const log of logs) {
+    if (!log.entityId) continue;
+    const rows = grouped.get(log.entityId) || [];
+    if (rows.length < 5) rows.push(log);
+    grouped.set(log.entityId, rows);
+  }
+  return grouped;
+}
+
 function formatGTQ(value: Prisma.Decimal | number) {
   return `Q ${Number(value).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }

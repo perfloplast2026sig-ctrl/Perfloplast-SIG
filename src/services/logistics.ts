@@ -17,7 +17,12 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
     prisma.user.findMany({ where: isDriver ? { id: viewer.id, isActive: true, role: { name: "Piloto" } } : { isActive: true, role: { name: "Piloto" } }, orderBy: { name: "asc" } }),
     prisma.dispatch.findMany({
       where: dispatchWhere,
-      include: { preorder: { include: { client: true, items: { include: { product: true } } } }, responsible: true, items: { include: { product: true } }, returns: { where: { resolvedAt: null }, orderBy: { createdAt: "desc" }, take: 1 } },
+      include: {
+        preorder: { include: { client: true, items: { include: { product: true } } } },
+        responsible: true,
+        items: { include: { product: true } },
+        returns: { where: { resolvedAt: null }, orderBy: { createdAt: "desc" }, take: 1 },
+      },
       orderBy: { createdAt: "desc" },
       take: 30,
     }),
@@ -29,6 +34,14 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
     ...dispatches.map((dispatch) => dispatch.preorderId).filter((id): id is string => Boolean(id)),
   ];
   const invoices = await getInvoiceNumbers(preorderIds);
+  const auditLogs = dispatches.length
+    ? await prisma.auditLog.findMany({
+        where: { entity: "Dispatch", entityId: { in: dispatches.map((dispatch) => dispatch.id) } },
+        include: { user: true },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+  const auditLogsByDispatch = groupAuditLogsByEntity(auditLogs);
 
   return {
     preorders: preorders.map((preorder) => ({
@@ -79,6 +92,15 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       statusKey: dispatch.status,
       latestReturnReason: dispatch.returns[0]?.reason || null,
       latestReturnResolution: dispatch.returns[0]?.resolution || null,
+      auditTrail: (auditLogsByDispatch.get(dispatch.id) || []).map((log) => ({
+        action: auditActionLabel(log.action),
+        user: log.user?.name || "Sistema",
+        date: formatDateTime(log.createdAt),
+        reason: auditReason(log.metadata),
+        previousStatus: auditMetadataValue(log.metadata, "previousStatus") || "Sin estado anterior",
+        inventoryEffect: auditMetadataValue(log.metadata, "inventoryRestored") === "true" ? "Inventario devuelto a bodega" : "Reserva liberada o sin movimiento fisico",
+        preorder: auditMetadataValue(log.metadata, "preorder") || dispatch.preorder?.code || "Sin preventa",
+      })),
     })),
     latestLocations,
     latestSellerLocations,
@@ -573,6 +595,37 @@ function statusLabel(status: string) {
     CANCELLED: { label: "Cancelado", tone: "danger" as const },
   };
   return labels[status as keyof typeof labels] || { label: status, tone: "neutral" as const };
+}
+
+function auditActionLabel(action: string) {
+  const labels: Record<string, string> = {
+    DISPATCH_CANCELLED: "Despacho anulado",
+  };
+  return labels[action] || action;
+}
+
+function auditReason(metadata: Prisma.JsonValue | null) {
+  return auditMetadataValue(metadata, "reason") || "Sin motivo registrado";
+}
+
+function auditMetadataValue(metadata: Prisma.JsonValue | null, key: string) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return "";
+  const value = (metadata as Record<string, Prisma.JsonValue>)[key];
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) return value.length ? value.map(String).join(", ") : "[]";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function groupAuditLogsByEntity(logs: Array<{ entityId: string | null; action: string; metadata: Prisma.JsonValue | null; createdAt: Date; user: { name: string } | null }>) {
+  const grouped = new Map<string, typeof logs>();
+  for (const log of logs) {
+    if (!log.entityId) continue;
+    const rows = grouped.get(log.entityId) || [];
+    if (rows.length < 5) rows.push(log);
+    grouped.set(log.entityId, rows);
+  }
+  return grouped;
 }
 
 function returnStatusLabel(resolution: string | null, resolvedAt: Date | null) {
