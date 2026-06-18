@@ -26,7 +26,7 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
       orderBy: { createdAt: "desc" },
       take: 25,
     }),
-    getNextPreorderCode(),
+    getPreviewPreorderCode(viewer),
   ]);
   const auditLogs = preorders.length
     ? await prisma.auditLog.findMany({
@@ -319,6 +319,22 @@ export async function getNextPreorderCode() {
   const year = new Date().getFullYear();
   const count = await prisma.preorder.count({ where: { code: { startsWith: `PV-${year}-` } } });
   return `PV-${year}-${String(count + 1).padStart(5, "0")}`;
+}
+
+async function getPreviewPreorderCode(viewer?: Viewer) {
+  if (viewer?.role.name === "Vendedor") {
+    const salesBook = await prisma.salesBook.findFirst({
+      where: { userId: viewer.id, isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!salesBook) return "Sin talonario activo";
+    if (salesBook.nextNumber > salesBook.endNumber) return "Talonario terminado";
+
+    return `PV-${String(salesBook.nextNumber).padStart(7, "0")}`;
+  }
+
+  return getNextPreorderCode();
 }
 
 async function buildPreorderCode(tx: Prisma.TransactionClient) {
