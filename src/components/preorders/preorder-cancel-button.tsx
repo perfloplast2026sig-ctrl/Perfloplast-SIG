@@ -20,7 +20,7 @@ export function PreorderCancelButton({ preorderId, code }: { preorderId: string;
       </button>
       {isOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-3xl border bg-card shadow-2xl">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border bg-card shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b p-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Solo Super admin</p>
@@ -30,9 +30,9 @@ export function PreorderCancelButton({ preorderId, code }: { preorderId: string;
                 <X size={18} />
               </button>
             </div>
-            <form action={cancelPreorderAction} className="grid gap-4 p-5">
+            <form action={cancelPreorderAction} className="grid min-w-0 gap-4 p-5">
               <input name="preorderId" type="hidden" value={preorderId} />
-              <label>
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-medium">Motivo obligatorio</span>
                 <textarea className="min-h-28 w-full rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent" name="reason" placeholder="Error en cliente, venta duplicada, producto incorrecto..." required />
               </label>

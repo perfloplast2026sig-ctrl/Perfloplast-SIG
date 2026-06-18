@@ -9,6 +9,7 @@ const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 await app.prepare();
+const handleUpgrade = app.getUpgradeHandler();
 
 const server = createServer((req, res) => {
   handle(req, res);
@@ -21,7 +22,7 @@ server.on("upgrade", (request, socket, head) => {
   const url = new URL(request.url || "/", `http://${request.headers.host || `${hostname}:${port}`}`);
 
   if (url.pathname !== "/ws/logistics/maps") {
-    socket.destroy();
+    handleUpgrade(request, socket, head);
     return;
   }
 

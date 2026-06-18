@@ -41,6 +41,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const enablePwa = process.env.NODE_ENV === "production";
+
   return (
     <html
       lang="es"
@@ -48,9 +50,41 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-foreground">
-        <ServiceWorkerRegister />
+        {!enablePwa ? <LocalDevServiceWorkerReset /> : <ServiceWorkerRegister />}
         {children}
       </body>
     </html>
+  );
+}
+
+function LocalDevServiceWorkerReset() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          (function () {
+            var isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "::1";
+            if (!isLocal) return;
+            var hadController = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+            var unregister = navigator.serviceWorker
+              ? navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                  return Promise.all(registrations.map(function (registration) { return registration.unregister(); }));
+                }).catch(function () {})
+              : Promise.resolve();
+            var clearCaches = window.caches
+              ? caches.keys().then(function (keys) {
+                  return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+                }).catch(function () {})
+              : Promise.resolve();
+            Promise.all([unregister, clearCaches]).then(function () {
+              if (!hadController) return;
+              if (sessionStorage.getItem("local-sw-reset") === "1") return;
+              sessionStorage.setItem("local-sw-reset", "1");
+              location.reload();
+            });
+          })();
+        `,
+      }}
+    />
   );
 }
