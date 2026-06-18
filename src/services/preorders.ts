@@ -188,7 +188,7 @@ export async function createPreorder(input: {
 }
 
 export async function cancelPreorder(input: { preorderId: string; reason: string; userId: string }) {
-  if (!input.preorderId) throw new Error("Selecciona la venta que deseas anular.");
+  if (!input.preorderId) throw new Error("Selecciona la venta o cotizacion que deseas cancelar.");
   if (!input.reason.trim()) throw new Error("El motivo de anulacion es obligatorio.");
 
   return prisma.$transaction(async (tx) => {
@@ -200,8 +200,33 @@ export async function cancelPreorder(input: { preorderId: string; reason: string
       },
     });
 
-    if (!preorder) throw new Error("Venta no encontrada.");
-    if (preorder.status === "CANCELLED") throw new Error("Esta venta ya esta anulada.");
+    if (!preorder) throw new Error("Preventa no encontrada.");
+    if (preorder.status === "CANCELLED") throw new Error("Este registro ya esta cancelado.");
+
+    if (preorder.status === "QUOTE") {
+      const cancelled = await tx.preorder.update({
+        where: { id: preorder.id },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: input.userId,
+          action: "QUOTE_CANCELLED",
+          entity: "Preorder",
+          entityId: preorder.id,
+          metadata: {
+            code: preorder.code,
+            reason: input.reason.trim(),
+            previousStatus: preorder.status,
+            affectsInventory: false,
+            affectsSales: false,
+          },
+        },
+      });
+
+      return cancelled;
+    }
+
     if (!preorder.originLocationId) throw new Error("La venta no tiene bodega de origen para reversar inventario.");
 
     const deliveredDispatches = preorder.dispatches.filter((dispatch) => dispatch.status === "DELIVERED");
@@ -231,7 +256,7 @@ export async function cancelPreorder(input: { preorderId: string; reason: string
           });
         }
       }
-    } else if (preorder.status !== "QUOTE") {
+    } else {
       for (const item of preorder.items) {
         if (Number(item.reservedQuantity) <= 0) continue;
         await tx.stockBalance.update({

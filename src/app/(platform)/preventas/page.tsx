@@ -66,7 +66,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
             { header: "Fecha", cell: (item) => <span className="text-muted">{item.date}</span> },
             { header: "Total", align: "right", cell: (item) => <span className="font-semibold">{item.total}</span> },
             { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
-            { header: "Ver", align: "right", cell: (item) => <TableActions>{item.status.label === "Cotizacion" ? <Link aria-label={`Generar PDF de ${item.code}`} className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} />{isSuperAdmin && item.status.label !== "Cancelada" ? <PreorderCancelButton code={item.code} preorderId={item.id} /> : null}</TableActions> },
+            { header: "Ver", align: "right", cell: (item) => <TableActions>{item.status.label === "Cotizacion" ? <Link aria-label={`Generar PDF de ${item.code}`} className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} />{isSuperAdmin && item.status.label !== "Cancelada" ? <PreorderCancelButton code={item.code} kind={item.status.label === "Cotizacion" ? "quote" : "sale"} preorderId={item.id} /> : null}</TableActions> },
           ]}
         />
       </SectionCard>

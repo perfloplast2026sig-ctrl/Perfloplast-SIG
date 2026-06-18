@@ -216,6 +216,8 @@ export async function createDispatch(input: { preorderId: string; driverId: stri
     ]);
 
     if (!preorder) throw new Error("Preventa no encontrada.");
+    if (preorder.status === "QUOTE") throw new Error("Una cotizacion no puede enviarse a despacho. Primero conviertela en venta/preventa.");
+    if (!["PENDING", "CONFIRMED"].includes(preorder.status)) throw new Error("Solo ventas/preventas pendientes o confirmadas pueden enviarse a despacho.");
     if (preorder.dispatches.length > 0) throw new Error("Esta preventa ya tiene despacho asignado.");
     if (!driver) throw new Error("Piloto no encontrado o inactivo.");
 
