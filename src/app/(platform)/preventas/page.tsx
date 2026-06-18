@@ -115,10 +115,10 @@ function normalizeSearch(value: string) {
 }
 
 function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]) {
-  const auditSections = item.auditTrail.map((log: PreorderAuditTrailEntry, index: number) => ({
-    title: `Auditoria ${index + 1}`,
+  const audits = item.auditTrail.map((log: PreorderAuditTrailEntry) => ({
+    title: log.action,
+    subtitle: `${log.user} - ${log.date}`,
     rows: [
-      { label: "Accion", value: log.action },
       { label: "Motivo", value: log.reason },
       { label: "Usuario", value: log.user },
       { label: "Fecha", value: log.date },
@@ -155,8 +155,8 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
           { label: "Total", value: item.total },
         ],
       },
-      ...auditSections,
     ],
+    audits,
     items: item.items.map((row: PreorderDetailItem) => ({
       title: row.product,
       subtitle: `${row.color} - ${row.unitPrice}`,
