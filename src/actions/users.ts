@@ -64,6 +64,9 @@ export async function updateUserAction(formData: FormData) {
       email: String(formData.get("email") || ""),
       roleName: String(formData.get("roleName") || "") as Role,
       password: String(formData.get("password") || ""),
+      salesBookStart: String(formData.get("salesBookStart") || ""),
+      salesBookEnd: String(formData.get("salesBookEnd") || ""),
+      salesBookWarning: String(formData.get("salesBookWarning") || ""),
     });
 
     revalidatePath("/usuarios");
