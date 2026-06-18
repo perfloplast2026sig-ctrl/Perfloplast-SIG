@@ -44,7 +44,7 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
       {!isDriver && !isAdmin && !canLoadTruck ? <span className="text-xs text-muted">Sin accion</span> : null}
 
       {returnOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-left whitespace-normal">
           <div className="w-full max-w-xl overflow-hidden rounded-3xl border bg-card shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b p-5">
               <div>
@@ -57,7 +57,7 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
               <input name="dispatchId" type="hidden" value={dispatch.id} />
               <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-medium">Motivo</span>
-                <textarea className="min-h-28 w-full rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent" name="reason" placeholder="Cliente ausente, producto rechazado, direccion incorrecta..." required />
+                <textarea className="block min-h-28 w-full max-w-full resize-y rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent" name="reason" placeholder="Cliente ausente, producto rechazado, direccion incorrecta..." required />
               </label>
               <div>
                 <p className="mb-2 text-sm font-medium">Productos devueltos</p>
@@ -78,9 +78,9 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
                 </div>
                 <p className="mt-2 text-xs leading-5 text-muted">Deja la cantidad completa para devolucion total. Escribe 0 en productos que no fueron devueltos.</p>
               </div>
-              <div className="flex justify-end gap-3">
-                <button className="inline-flex h-10 items-center rounded-full border bg-card px-4 text-sm font-medium" onClick={() => setReturnOpen(false)} type="button">Cancelar</button>
-                <button className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground" type="submit"><RotateCcw size={16} />Registrar</button>
+              <div className="grid grid-cols-2 gap-3">
+                <button className="inline-flex h-11 w-full items-center justify-center rounded-full border bg-card px-4 text-sm font-medium" onClick={() => setReturnOpen(false)} type="button">Cancelar</button>
+                <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-accent-foreground" type="submit"><RotateCcw size={16} />Registrar</button>
               </div>
             </form>
           </div>
@@ -88,7 +88,7 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
       ) : null}
 
       {cancelOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 text-left whitespace-normal">
           <div className="w-full max-w-lg overflow-hidden rounded-3xl border bg-card shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b p-5">
               <div>
@@ -101,12 +101,12 @@ export function DispatchStatusActions({ dispatch, roleName }: { dispatch: Dispat
               <input name="dispatchId" type="hidden" value={dispatch.id} />
               <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-medium">Motivo obligatorio</span>
-                <textarea className="min-h-28 w-full rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent" name="reason" placeholder="Despacho duplicado, direccion incorrecta, venta equivocada..." required />
+                <textarea className="block min-h-28 w-full max-w-full resize-y rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent" name="reason" placeholder="Despacho duplicado, direccion incorrecta, venta equivocada..." required />
               </label>
-              <p className="text-xs leading-5 text-muted">Si ya fue entregado, el sistema devuelve el inventario con movimiento de retorno. La accion queda en auditoria.</p>
-              <div className="flex justify-end gap-3">
-                <button className="inline-flex h-10 items-center rounded-full border bg-card px-4 text-sm font-medium" onClick={() => setCancelOpen(false)} type="button">Cancelar</button>
-                <button className="inline-flex h-10 items-center gap-2 rounded-full bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-700" type="submit"><Ban size={16} />Anular</button>
+              <p className="break-words text-xs leading-5 text-muted">Si ya fue entregado, el sistema devuelve el inventario con movimiento de retorno. La accion queda en auditoria.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button className="inline-flex h-11 w-full items-center justify-center rounded-full border bg-card px-4 text-sm font-medium" onClick={() => setCancelOpen(false)} type="button">Cancelar</button>
+                <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-700" type="submit"><Ban size={16} />Anular</button>
               </div>
             </form>
           </div>
