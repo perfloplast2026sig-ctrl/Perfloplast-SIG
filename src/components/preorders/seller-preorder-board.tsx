@@ -142,7 +142,7 @@ function buildPreorderDetail(item: PreorderRow) {
         ],
       },
     ],
-    items: item.items.map((row) => ({
+    items: (item.items || []).map((row) => ({
       title: row.product,
       subtitle: `${row.color} - ${row.unitPrice}`,
       quantity: row.quantity,

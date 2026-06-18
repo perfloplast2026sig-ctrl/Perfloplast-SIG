@@ -115,7 +115,7 @@ function normalizeSearch(value: string) {
 }
 
 function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]) {
-  const audits = item.auditTrail.map((log: PreorderAuditTrailEntry) => ({
+  const audits = (item.auditTrail || []).map((log: PreorderAuditTrailEntry) => ({
     title: log.action,
     subtitle: `${log.user} - ${log.date}`,
     rows: [
@@ -157,7 +157,7 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
       },
     ],
     audits,
-    items: item.items.map((row: PreorderDetailItem) => ({
+    items: (item.items || []).map((row: PreorderDetailItem) => ({
       title: row.product,
       subtitle: `${row.color} - ${row.unitPrice}`,
       quantity: row.quantity,

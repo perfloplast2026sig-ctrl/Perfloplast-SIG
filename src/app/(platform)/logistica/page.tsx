@@ -100,7 +100,7 @@ function normalizeSearch(value: string) {
 }
 
 function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {
-  const audits = item.auditTrail.map((log: DispatchAuditTrailEntry) => ({
+  const audits = (item.auditTrail || []).map((log: DispatchAuditTrailEntry) => ({
     title: log.action,
     subtitle: `${log.user} - ${log.date}`,
     rows: [
@@ -143,7 +143,7 @@ function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleD
       },
     ],
     audits,
-    items: item.items.map((row: DispatchDetailItem) => ({
+    items: (item.items || []).map((row: DispatchDetailItem) => ({
       title: row.product,
       subtitle: row.color,
       quantity: row.quantity,
