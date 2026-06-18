@@ -21,7 +21,7 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
       take: 25,
     }) : Promise.resolve([]),
     canSeePreorders ? prisma.preorder.findMany({
-      where: { ...preorderScope, status: { in: ["PENDING", "CONFIRMED"] }, dispatches: { none: { status: "DELIVERED" } } },
+      where: { ...preorderScope, status: "PENDING", dispatches: { none: {} } },
       include: { client: true },
       orderBy: { createdAt: "desc" },
       take: 4,
