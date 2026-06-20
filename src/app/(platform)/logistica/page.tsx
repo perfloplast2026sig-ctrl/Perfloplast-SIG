@@ -18,8 +18,9 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const user = await requireCurrentUser();
   if (user.role.name === "Vendedor") redirect("/preventas");
   if (!["Super admin", "Administrador", "Piloto", "Bodeguero"].includes(user.role.name)) redirect("/");
-  const { preorders, drivers, dispatches, latestLocations, latestSellerLocations, deliveryMapOrders } = await getLogisticsModuleData(user);
+  const { preorders, drivers, dispatches, latestLocations, latestSellerLocations, deliveryMapOrders, warehouses } = await getLogisticsModuleData(user);
   const canSeeMap = ["Super admin", "Administrador"].includes(user.role.name);
+  const canCreateDispatch = ["Super admin", "Administrador", "Bodeguero"].includes(user.role.name);
   const isDriver = user.role.name === "Piloto";
   const visibleDispatches = filterRows(dispatches, params.search, (dispatch) => [dispatch.code, dispatch.preorder, dispatch.invoice, dispatch.client, dispatch.driver, dispatch.destination, dispatch.status.label]);
   const driverOrders = deliveryMapOrders;
@@ -55,7 +56,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
           carga: dispatch.load,
           valor: dispatch.value,
           estado: dispatch.status.label,
-        }))} />{canSeeMap ? <DispatchCreateModal preorders={preorders} drivers={drivers} /> : null}</>}
+        }))} />{canCreateDispatch ? <DispatchCreateModal preorders={preorders} drivers={drivers} warehouses={warehouses} /> : null}</>}
       />
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}

@@ -8,7 +8,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
   const isDriver = viewer?.role.name === "Piloto";
   const dispatchWhere: Prisma.DispatchWhereInput = isDriver ? { responsibleId: viewer.id } : {};
 
-  const [preorders, drivers, dispatches, latestLocations, latestSellerLocations] = await Promise.all([
+  const [preorders, drivers, dispatches, latestLocations, latestSellerLocations, warehouses] = await Promise.all([
     prisma.preorder.findMany({
       where: isDriver ? { id: "__none__" } : { status: { in: ["PENDING", "CONFIRMED"] }, dispatches: { none: {} } },
       include: { client: true, items: { include: { product: true } } },
@@ -28,12 +28,22 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
     }),
     getLatestUserLocations("Piloto", isDriver ? viewer.id : undefined),
     isDriver ? Promise.resolve([]) : getLatestUserLocations("Vendedor"),
+    isDriver ? Promise.resolve([]) : prisma.location.findMany({ where: { type: "WAREHOUSE", isActive: true }, orderBy: { name: "asc" } }),
   ]);
   const preorderIds = [
     ...preorders.map((preorder) => preorder.id),
     ...dispatches.map((dispatch) => dispatch.preorderId).filter((id): id is string => Boolean(id)),
   ];
   const invoices = await getInvoiceNumbers(preorderIds);
+  const productIds = [...new Set(preorders.flatMap((preorder) => preorder.items.map((item) => item.productId)))];
+  const stockBalances = productIds.length
+    ? await prisma.stockBalance.findMany({
+        where: { productId: { in: productIds }, location: { type: "WAREHOUSE", isActive: true } },
+        include: { location: true },
+      })
+    : [];
+  const balancesByProduct = groupStockBalancesByProduct(stockBalances);
+  const warehouseById = new Map(warehouses.map((warehouse) => [warehouse.id, warehouse.name]));
   const auditLogs = dispatches.length
     ? await prisma.auditLog.findMany({
         where: { entity: "Dispatch", entityId: { in: dispatches.map((dispatch) => dispatch.id) } },
@@ -51,18 +61,31 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
       taxId: preorder.client.taxId || "CF",
       phone: preorder.client.phone || "Sin telefono",
       deliveryAddress: preorder.deliveryAddress || preorder.client.address || "Sin direccion",
+      originWarehouse: preorder.originLocationId ? warehouseById.get(preorder.originLocationId) || "Sin bodega" : "Sin bodega",
+      originWarehouseId: preorder.originLocationId || "",
       latitude: preorder.saleLatitude ? Number(preorder.saleLatitude) : null,
       longitude: preorder.saleLongitude ? Number(preorder.saleLongitude) : null,
       accuracy: preorder.saleAccuracy ? Number(preorder.saleAccuracy) : null,
       total: formatGTQ(preorder.totalGTQ),
       invoice: invoices.get(preorder.id) || "Sin factura",
       items: preorder.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
         product: productTitle(item.product),
         color: item.product.color || "Sin color",
         quantity: item.quantity.toString(),
+        reservedQuantity: item.reservedQuantity.toString(),
         unitPrice: formatGTQ(item.unitPrice),
+        stockSources: (balancesByProduct.get(item.productId) || [])
+          .filter((balance) => balance.locationId !== preorder.originLocationId && Number(balance.quantity) - Number(balance.reserved) > 0)
+          .map((balance) => ({
+            warehouseId: balance.locationId,
+            warehouse: balance.location.name,
+            available: formatQuantity(Number(balance.quantity) - Number(balance.reserved)),
+          })),
       })),
     })),
+    warehouses: warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
     drivers: drivers.map((driver) => ({ id: driver.id, name: driver.name, email: driver.email })),
     dispatches: dispatches.map((dispatch) => ({
       id: dispatch.id,
@@ -231,11 +254,36 @@ export async function createDispatch(input: { preorderId: string; driverId: stri
   return dispatch;
 }
 
-export async function createDispatches(input: { preorderIds: string[]; driverId: string; routeName: string; destination: string }) {
+export async function createDispatches(input: {
+  preorderIds: string[];
+  driverId: string;
+  routeName: string;
+  destination: string;
+  approvedById?: string;
+  approvedByRole?: string;
+  rejectedItems?: Array<{ preorderItemId: string; reason: string }>;
+  loadedItems?: Array<{ preorderItemId: string; quantity: string }>;
+  transferItems?: Array<{ preorderItemId: string; sourceLocationId: string }>;
+}) {
   const preorderIds = [...new Set(input.preorderIds.filter(Boolean))];
   if (preorderIds.length === 0 || !input.driverId || !input.destination.trim()) {
     throw new Error("Selecciona preventa, piloto y destino.");
   }
+  const approveLoad = Boolean(input.approvedById);
+  if (approveLoad && !["Administrador", "Super admin", "Bodeguero"].includes(input.approvedByRole || "")) {
+    throw new Error("Solo bodega o administracion puede aprobar la carga.");
+  }
+  const rejectedByItemId = new Map<string, string>(
+    (input.rejectedItems || [])
+      .map((item): [string, string] => [item.preorderItemId, item.reason.trim()])
+      .filter(([, reason]) => Boolean(reason))
+  );
+  const loadedByItemId = new Map<string, number>((input.loadedItems || []).map((item): [string, number] => [item.preorderItemId, parseQuantity(item.quantity)]));
+  const transferByItemId = new Map<string, string>(
+    (input.transferItems || [])
+      .filter((item) => Boolean(item.sourceLocationId))
+      .map((item): [string, string] => [item.preorderItemId, item.sourceLocationId])
+  );
 
   return prisma.$transaction(async (tx) => {
     const driver = await tx.user.findFirst({ where: { id: input.driverId, isActive: true, role: { name: "Piloto" } } });
@@ -249,6 +297,52 @@ export async function createDispatches(input: { preorderIds: string[]; driverId:
       if (preorder.status === "QUOTE") throw new Error("Una cotizacion no puede enviarse a despacho. Primero conviertela en venta/preventa.");
       if (!["PENDING", "CONFIRMED"].includes(preorder.status)) throw new Error("Solo ventas/preventas pendientes o confirmadas pueden enviarse a despacho.");
       if (preorder.dispatches.length > 0) throw new Error(`La preventa ${preorder.code} ya tiene despacho asignado.`);
+      if (!preorder.originLocationId) throw new Error(`La preventa ${preorder.code} no tiene bodega de origen.`);
+
+      const approvedItems = preorder.items.filter((item) => !rejectedByItemId.has(item.id));
+      if (approvedItems.length === 0) throw new Error(`Debe quedar al menos un producto aprobado en ${preorder.code}.`);
+      if (approveLoad) {
+        for (const item of approvedItems) {
+          const loadedQuantity = loadedByItemId.get(item.id);
+          if (loadedQuantity === undefined || loadedQuantity <= 0) throw new Error(`Verifica la cantidad cargada de ${preorder.code}.`);
+          if (loadedQuantity !== Number(item.quantity)) throw new Error(`La cantidad cargada no coincide en ${preorder.code}. Rechaza el producto si no corresponde.`);
+        }
+      }
+
+      for (const item of approvedItems) {
+        const sourceLocationId = transferByItemId.get(item.id);
+        if (!sourceLocationId || sourceLocationId === preorder.originLocationId) continue;
+        const sourceBalance = await tx.stockBalance.findUnique({
+          where: { productId_locationId: { productId: item.productId, locationId: sourceLocationId } },
+          include: { location: true },
+        });
+        if (!sourceBalance || Number(sourceBalance.quantity) - Number(sourceBalance.reserved) < Number(item.quantity)) {
+          throw new Error(`No hay existencia libre suficiente en la bodega alterna para ${preorder.code}.`);
+        }
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: sourceLocationId } },
+          data: { quantity: { decrement: item.quantity } },
+        });
+        await tx.stockBalance.upsert({
+          where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
+          update: { quantity: { increment: item.quantity } },
+          create: { productId: item.productId, locationId: preorder.originLocationId, quantity: item.quantity },
+        });
+        await tx.inventoryMovement.create({
+          data: {
+            code: buildMovementCode("TRS"),
+            type: "TRANSFER_OUT",
+            productId: item.productId,
+            fromLocationId: sourceLocationId,
+            toLocationId: preorder.originLocationId,
+            quantity: item.quantity,
+            reason: "Traslado para carga verificada",
+            reference: preorder.code,
+            preorderItemId: item.id,
+            createdById: input.approvedById || preorder.createdById,
+          },
+        });
+      }
 
       const dispatch = await tx.dispatch.create({
         data: {
@@ -261,9 +355,10 @@ export async function createDispatches(input: { preorderIds: string[]; driverId:
           destinationLongitude: preorder.saleLongitude,
           destinationAccuracy: preorder.saleAccuracy,
           scheduledAt: new Date(),
-          status: "SCHEDULED",
+          status: approveLoad ? "LOADED" : "SCHEDULED",
+          loadedAt: approveLoad ? new Date() : null,
           items: {
-            create: preorder.items.map((item) => ({
+            create: approvedItems.map((item) => ({
               productId: item.productId,
               preorderItemId: item.id,
               quantity: item.quantity,
@@ -282,6 +377,45 @@ export async function createDispatches(input: { preorderIds: string[]; driverId:
             companyAddress: "Aldea Chijou, Santa Cruz Verapaz",
             companyPhone: "Tel: 44235941 / 53146115",
             totalGTQ: preorder.totalGTQ,
+          },
+        });
+      }
+      for (const item of preorder.items.filter((row) => rejectedByItemId.has(row.id))) {
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
+          data: { reserved: { decrement: item.reservedQuantity } },
+        });
+        await tx.preorderItem.update({ where: { id: item.id }, data: { reservedQuantity: 0 } });
+        await tx.auditLog.create({
+          data: {
+            userId: input.approvedById || preorder.createdById,
+            action: "DISPATCH_ITEM_REJECTED",
+            entity: "Dispatch",
+            entityId: dispatch.id,
+            metadata: {
+              code: dispatch.code,
+              preorder: preorder.code,
+              reason: rejectedByItemId.get(item.id),
+              previousStatus: "PRE_DISPATCH_REVIEW",
+              inventoryRestored: false,
+            },
+          },
+        });
+      }
+      if (approveLoad) {
+        await tx.auditLog.create({
+          data: {
+            userId: input.approvedById || preorder.createdById,
+            action: "DISPATCH_LOAD_APPROVED",
+            entity: "Dispatch",
+            entityId: dispatch.id,
+            metadata: {
+              code: dispatch.code,
+              preorder: preorder.code,
+              rejectedItems: preorder.items.filter((row) => rejectedByItemId.has(row.id)).length,
+              previousStatus: "PRE_DISPATCH_REVIEW",
+              inventoryRestored: false,
+            },
           },
         });
       }
@@ -681,6 +815,25 @@ function productTitle(product: { name: string; modelName: string | null }) {
 
 function formatGTQ(value: unknown) {
   return `Q ${Number(value || 0).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatQuantity(value: number) {
+  return value.toLocaleString("es-GT", { maximumFractionDigits: 3 });
+}
+
+function parseQuantity(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function groupStockBalancesByProduct(rows: Array<{ productId: string; locationId: string; quantity: Prisma.Decimal; reserved: Prisma.Decimal; location: { name: string } }>) {
+  const grouped = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const current = grouped.get(row.productId) || [];
+    current.push(row);
+    grouped.set(row.productId, current);
+  }
+  return grouped;
 }
 
 function statusLabel(status: string) {

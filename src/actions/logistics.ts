@@ -7,12 +7,29 @@ import { cancelDispatch, createDispatches, resolveDispatchReturn, saveDriverLoca
 
 export async function createDispatchAction(formData: FormData) {
   try {
-    await requireCurrentUser();
+    const user = await requireCurrentUser();
+    const rejectedIds = formData.getAll("rejectedPreorderItemId").map(String);
+    const loadedItemIds = formData.getAll("loadedPreorderItemId").map(String);
+    const transferItemIds = formData.getAll("transferPreorderItemId").map(String);
     await createDispatches({
       preorderIds: formData.getAll("preorderId").map(String),
       driverId: String(formData.get("driverId") || ""),
       routeName: String(formData.get("routeName") || ""),
       destination: String(formData.get("destination") || ""),
+      approvedById: user.id,
+      approvedByRole: user.role.name,
+      rejectedItems: rejectedIds.map((preorderItemId) => ({
+        preorderItemId,
+        reason: String(formData.get(`rejectionReason-${preorderItemId}`) || ""),
+      })),
+      loadedItems: loadedItemIds.map((preorderItemId) => ({
+        preorderItemId,
+        quantity: String(formData.get(`loadedQuantity-${preorderItemId}`) || ""),
+      })),
+      transferItems: transferItemIds.map((preorderItemId) => ({
+        preorderItemId,
+        sourceLocationId: String(formData.get(`sourceLocationId-${preorderItemId}`) || ""),
+      })),
     });
     revalidatePath("/logistica");
     revalidatePath("/preventas");
