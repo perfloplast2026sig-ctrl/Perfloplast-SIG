@@ -12,11 +12,17 @@ import { CORPORATE_EMAIL_DOMAIN } from "@/lib/constants";
 import { requireUserManager } from "@/services/auth";
 import { getUserModuleData } from "@/services/users";
 
-export default async function UsersPage({ searchParams }: { searchParams: Promise<{ created?: string; updated?: string; error?: string; search?: string }> }) {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ created?: string; updated?: string; error?: string; search?: string; role?: string }> }) {
   const params = await searchParams;
   await requireUserManager();
   const { users, roles, resetRequests, stats } = await getUserModuleData();
-  const filteredUsers = filterRows(users, params.search, (user) => [user.name, user.email, user.role, user.area, user.status.label]);
+  const selectedRole = roles.some((role) => role.role === params.role) ? params.role : "";
+  const roleFilteredUsers = selectedRole ? users.filter((user) => user.role === selectedRole) : users;
+  const filteredUsers = filterRows(roleFilteredUsers, params.search, (user) => [user.name, user.email, user.role, user.area, user.status.label, user.salesBook]);
+  const roleGroups = roles.map((role) => ({
+    role: role.role,
+    count: users.filter((user) => user.role === role.role).length,
+  }));
 
   return (
     <>
@@ -28,7 +34,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Usuario creado correctamente.</div> : null}
       {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Estado del usuario actualizado.</div> : null}
-      {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredUsers.length} resultado(s).</div> : null}
+      {params.search || selectedRole ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Filtro aplicado. Mostrando {filteredUsers.length} resultado(s).</div> : null}
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <UserKpi label="Usuarios activos" value={String(stats.activeUsers)} detail="Con acceso vigente" icon={UsersRound} tone="emerald" />
@@ -76,6 +82,29 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         ) : null}
 
         <SectionCard title="Usuarios registrados" eyebrow="Directorio interno" action={<Badge label="@perfloplast.com" tone="info" />}>
+          <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto]">
+            <form action="/usuarios" className="grid gap-3 sm:grid-cols-[1fr_220px_auto]">
+              <input className="h-11 rounded-full border bg-card px-4 text-sm outline-none placeholder:text-muted focus:border-accent" defaultValue={params.search || ""} name="search" placeholder="Buscar usuario, correo, area o talonario..." type="search" />
+              <select className="h-11 rounded-full border bg-card px-4 text-sm outline-none focus:border-accent" defaultValue={selectedRole} name="role">
+                <option value="">Todos los roles</option>
+                {roles.map((role) => <option key={role.role} value={role.role}>{role.role}</option>)}
+              </select>
+              <button className="inline-flex h-11 items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-accent-foreground transition hover:opacity-90" type="submit">Filtrar</button>
+            </form>
+            {(params.search || selectedRole) ? <Link className="inline-flex h-11 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/usuarios">Limpiar</Link> : null}
+          </div>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <RoleFilterChip active={!selectedRole} count={users.length} href={params.search ? `/usuarios?search=${encodeURIComponent(params.search)}` : "/usuarios"} label="Todos" />
+            {roleGroups.map((role) => (
+              <RoleFilterChip
+                active={selectedRole === role.role}
+                count={role.count}
+                href={`/usuarios?${new URLSearchParams({ ...(params.search ? { search: params.search } : {}), role: role.role }).toString()}`}
+                key={role.role}
+                label={role.role}
+              />
+            ))}
+          </div>
           <DataTable
             data={filteredUsers}
             columns={[
@@ -122,6 +151,15 @@ function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) =>
 
 function normalizeSearch(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function RoleFilterChip({ active, count, href, label }: { active: boolean; count: number; href: string; label: string }) {
+  return (
+    <Link className={`inline-flex h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition ${active ? "border-accent bg-accent text-accent-foreground" : "bg-card text-muted hover:bg-card-muted hover:text-foreground"}`} href={href}>
+      <span>{label}</span>
+      <span className="rounded-full bg-background/60 px-2 py-0.5 text-[11px] text-foreground">{count}</span>
+    </Link>
+  );
 }
 
 function UserKpi({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof UsersRound; tone: "emerald" | "sky" | "violet" | "rose" }) {
