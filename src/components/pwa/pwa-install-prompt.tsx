@@ -12,6 +12,12 @@ type NavigatorWithStandalone = Navigator & {
   standalone?: boolean;
 };
 
+function isStandaloneMode() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    (navigator as NavigatorWithStandalone).standalone === true;
+}
+
 function isIOSDevice() {
   return /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
 }
@@ -22,12 +28,19 @@ export function PwaInstallPrompt() {
   const [showIOSInstruction, setShowIOSInstruction] = useState(false);
 
   useEffect(() => {
-    // Check if already running in standalone mode (PWA)
-    const isStandalone = 
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as NavigatorWithStandalone).standalone === true;
+    const syncInstallVisibility = () => {
+      if (isStandaloneMode()) {
+        setShowPrompt(false);
+        setShowIOSInstruction(false);
+        return;
+      }
 
-    if (isStandalone) return;
+      if (deferredPrompt || isIOSDevice()) {
+        setShowPrompt(true);
+      }
+    };
+
+    syncInstallVisibility();
 
     // Listen for beforeinstallprompt event (Android / Chrome / Edge / Brave / Samsung)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -37,6 +50,9 @@ export function PwaInstallPrompt() {
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", syncInstallVisibility);
+    window.addEventListener("focus", syncInstallVisibility);
+    document.addEventListener("visibilitychange", syncInstallVisibility);
 
     // If iOS and not standalone, show the install option
     let animationFrame = 0;
@@ -47,8 +63,11 @@ export function PwaInstallPrompt() {
     return () => {
       if (animationFrame) window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", syncInstallVisibility);
+      window.removeEventListener("focus", syncInstallVisibility);
+      document.removeEventListener("visibilitychange", syncInstallVisibility);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (isIOSDevice()) {
