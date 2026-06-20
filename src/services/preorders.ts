@@ -8,8 +8,16 @@ type Viewer = { id: string; role: { name: string } };
 async function getPreorderModuleDataRaw(viewer?: Viewer) {
   const roleName = viewer?.role.name as Role | undefined;
   const preorderWhere: Prisma.PreorderWhereInput = roleName === "Vendedor" ? { createdById: viewer?.id } : {};
+  const now = new Date();
+  const todayStart = startOfDayInTimeZone(now);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+  const monthStart = startOfMonthInTimeZone(now);
+  const nextMonthStart = new Date(monthStart);
+  nextMonthStart.setUTCMonth(nextMonthStart.getUTCMonth() + 1);
+  const salesStatusWhere: Prisma.PreorderWhereInput = { status: { in: ["PENDING", "CONFIRMED", "DISPATCHED"] } };
 
-  const [balances, warehouses, preorders, nextCode] = await Promise.all([
+  const [balances, warehouses, preorders, nextCode, todaySales, monthSales] = await Promise.all([
     prisma.stockBalance.findMany({
       where: { quantity: { gt: 0 }, product: { type: "FINISHED_GOOD", isActive: true }, location: { type: "WAREHOUSE", isActive: true } },
       include: { product: true, location: true },
@@ -27,6 +35,16 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
       take: 25,
     }),
     getPreviewPreorderCode(viewer),
+    prisma.preorder.aggregate({
+      where: { ...preorderWhere, ...salesStatusWhere, createdAt: { gte: todayStart, lt: tomorrowStart } },
+      _count: true,
+      _sum: { totalGTQ: true },
+    }),
+    prisma.preorder.aggregate({
+      where: { ...preorderWhere, ...salesStatusWhere, createdAt: { gte: monthStart, lt: nextMonthStart } },
+      _count: true,
+      _sum: { totalGTQ: true },
+    }),
   ]);
   const auditLogs = preorders.length
     ? await prisma.auditLog.findMany({
@@ -40,6 +58,14 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
   return {
     nextCode,
     currentDateTime: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(new Date()),
+    salesSummary: {
+      todayCount: todaySales._count,
+      todayTotal: Number(todaySales._sum.totalGTQ || 0),
+      todayTotalLabel: formatGTQ(todaySales._sum.totalGTQ || 0),
+      monthCount: monthSales._count,
+      monthTotal: Number(monthSales._sum.totalGTQ || 0),
+      monthTotalLabel: formatGTQ(monthSales._sum.totalGTQ || 0),
+    },
     warehouses: warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
     products: balances.map((balance) => ({
       productId: balance.productId,
@@ -492,4 +518,28 @@ function formatGTQ(value: Prisma.Decimal | number) {
 
 function formatDateTime(date: Date) {
   return new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
+}
+
+function startOfDayInTimeZone(date: Date) {
+  const parts = datePartsInGuatemala(date);
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 6, 0, 0, 0));
+}
+
+function startOfMonthInTimeZone(date: Date) {
+  const parts = datePartsInGuatemala(date);
+  return new Date(Date.UTC(parts.year, parts.month - 1, 1, 6, 0, 0, 0));
+}
+
+function datePartsInGuatemala(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Guatemala",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value || date.getUTCFullYear()),
+    month: Number(parts.find((part) => part.type === "month")?.value || date.getUTCMonth() + 1),
+    day: Number(parts.find((part) => part.type === "day")?.value || date.getUTCDate()),
+  };
 }

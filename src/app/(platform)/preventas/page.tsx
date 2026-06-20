@@ -20,11 +20,10 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador", "Vendedor"].includes(user.role.name)) redirect("/");
   const isSuperAdmin = user.role.name === "Super admin";
-  const { products, warehouses, preorders, nextCode, currentDateTime } = await getPreorderModuleData(user);
+  const { products, warehouses, preorders, nextCode, currentDateTime, salesSummary } = await getPreorderModuleData(user);
   const quoteRows = preorders.filter((preorder) => preorder.status.label === "Cotizacion");
   const salesRows = preorders.filter((preorder) => preorder.status.label !== "Cotizacion");
   const filteredPreorders = filterRows(preorders, params.search, (preorder) => [preorder.code, preorder.client, preorder.taxId, preorder.phone, preorder.products, preorder.warehouse, preorder.status.label]);
-  const totalSales = salesRows.reduce((sum, preorder) => sum + preorder.totalNumber, 0);
   const confirmed = salesRows.filter((preorder) => preorder.status.label === "Confirmada").length;
   const printedQuote = params.quote ? preorders.find((preorder) => preorder.id === params.quote && preorder.status.label === "Cotizacion") : undefined;
 
@@ -48,8 +47,8 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <MiniKpi label="Preventas" value={String(salesRows.length)} detail="Ventas/preventas" icon={ReceiptText} tone="emerald" />
-        <MiniKpi label="Total vendido" value={formatGTQ(totalSales)} detail="Monto acumulado" icon={TrendingUp} tone="sky" />
+        <MiniKpi label="Ventas hoy" value={salesSummary.todayTotalLabel} detail={`${salesSummary.todayCount} ventas del dia`} icon={ReceiptText} tone="emerald" />
+        <MiniKpi label="Ventas del mes" value={salesSummary.monthTotalLabel} detail={`${salesSummary.monthCount} ventas del mes`} icon={TrendingUp} tone="sky" />
         <MiniKpi label="Confirmadas" value={String(confirmed)} detail="Listas para despacho" icon={CheckCircle2} tone="violet" />
         <MiniKpi label="Cotizaciones" value={String(quoteRows.length)} detail="No descuentan stock" icon={FileText} tone="amber" />
       </div>
@@ -98,10 +97,6 @@ function MiniKpi({ label, value, detail, icon: Icon, tone }: { label: string; va
       </div>
     </div>
   );
-}
-
-function formatGTQ(value: number) {
-  return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
