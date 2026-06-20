@@ -21,8 +21,14 @@ type Driver = { id: string; name: string; email: string };
 
 export function DispatchCreateModal({ preorders, drivers }: { preorders: Preorder[]; drivers: Driver[] }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [preorderId, setPreorderId] = useState("");
-  const selected = useMemo(() => preorders.find((preorder) => preorder.id === preorderId), [preorderId, preorders]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selected = useMemo(() => preorders.filter((preorder) => selectedIds.includes(preorder.id)), [selectedIds, preorders]);
+  const selectedItemCount = selected.reduce((sum, preorder) => sum + preorder.items.length, 0);
+  const suggestedDestination = selected.length === 1 ? selected[0].deliveryAddress : selected.length > 1 ? "Ruta multiple" : "";
+
+  function togglePreorder(id: string) {
+    setSelectedIds((current) => current.includes(id) ? current.filter((row) => row !== id) : [...current, id]);
+  }
 
   return (
     <>
@@ -35,19 +41,37 @@ export function DispatchCreateModal({ preorders, drivers }: { preorders: Preorde
             <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card px-4 py-3 sm:px-5 sm:py-4">
               <div className="min-w-0 pr-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Asignacion a piloto</p>
-                <h3 className="mt-1 break-words text-lg font-semibold leading-tight sm:text-xl">Crear despacho desde preventa</h3>
+                <h3 className="mt-1 break-words text-lg font-semibold leading-tight sm:text-xl">Crear carga desde preventas</h3>
               </div>
               <button aria-label="Cerrar" className="modal-close-button inline-flex items-center justify-center rounded-full border bg-card-muted text-foreground shadow-sm transition hover:bg-card" onClick={() => setIsOpen(false)} type="button"><X size={18} /></button>
             </div>
             <form action={createDispatchAction} className="grid max-h-[calc(96dvh-67px)] gap-4 overflow-y-auto p-4 sm:max-h-[calc(92vh-73px)] sm:p-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label>
-                  <span className="mb-2 block text-sm font-medium">Orden de preventa</span>
-                  <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" name="preorderId" onChange={(event) => setPreorderId(event.target.value)} required value={preorderId}>
-                    <option value="">Seleccionar preventa</option>
-                    {preorders.map((preorder) => <option key={preorder.id} value={preorder.id}>{preorder.code} · {preorder.client} · {preorder.total}</option>)}
-                  </select>
-                </label>
+              <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+                <section className="rounded-2xl border bg-card-muted/30 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Pedidos disponibles</p>
+                      <h4 className="mt-1 text-base font-semibold">Selecciona uno o varios pedidos</h4>
+                    </div>
+                    <span className="rounded-full border bg-card px-3 py-1 text-xs font-semibold">{selected.length} seleccionado(s)</span>
+                  </div>
+                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                    {preorders.length ? preorders.map((preorder) => {
+                      const checked = selectedIds.includes(preorder.id);
+                      return (
+                        <label key={preorder.id} className={`grid cursor-pointer gap-3 rounded-2xl border p-3 transition sm:grid-cols-[auto_1fr_auto] sm:items-center ${checked ? "border-accent bg-accent/10" : "bg-card hover:bg-card-muted"}`}>
+                          <input checked={checked} className="mt-1 h-5 w-5 accent-[hsl(var(--accent))]" name="preorderId" onChange={() => togglePreorder(preorder.id)} type="checkbox" value={preorder.id} />
+                          <span className="min-w-0">
+                            <span className="block font-semibold">{preorder.code} - {preorder.client}</span>
+                            <span className="block text-xs text-muted">{preorder.invoice} - {preorder.items.length} producto(s)</span>
+                          </span>
+                          <span className="font-semibold">{preorder.total}</span>
+                        </label>
+                      );
+                    }) : <p className="rounded-2xl border bg-card p-4 text-sm text-muted">No hay preventas pendientes para despacho.</p>}
+                  </div>
+                </section>
+
                 <label>
                   <span className="mb-2 block text-sm font-medium">Piloto</span>
                   <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" name="driverId" required>
@@ -57,35 +81,44 @@ export function DispatchCreateModal({ preorders, drivers }: { preorders: Preorde
                 </label>
               </div>
 
-              {selected ? (
+              {selected.length ? (
                 <div className="rounded-2xl border bg-card-muted/50 p-4">
                   <div className="grid gap-3 md:grid-cols-4">
-                    <Info label="Cliente" value={selected.client} />
-                    <Info label="NIT" value={selected.taxId} />
-                    <Info label="Telefono" value={selected.phone} />
-                    <Info label="Factura" value={selected.invoice} />
+                    <Info label="Pedidos" value={String(selected.length)} />
+                    <Info label="Productos" value={String(selectedItemCount)} />
+                    <Info label="Destino base" value={suggestedDestination} />
+                    <Info label="Revision" value="Bodega verifica antes del piloto" />
                   </div>
                   <p className="mt-4 text-sm font-medium">Carga y valoracion</p>
                   <div className="mt-2 space-y-2">
-                    {selected.items.map((item, index) => (
-                      <div key={`${item.product}-${item.color}-${index}`} className="grid gap-2 rounded-xl border bg-card p-3 text-sm md:grid-cols-[1fr_0.6fr_0.4fr_0.5fr]">
-                        <span>{item.product}</span>
-                        <span className="text-muted">{item.color}</span>
-                        <span>{item.quantity}</span>
-                        <span className="font-semibold">{item.unitPrice}</span>
+                    {selected.map((preorder) => (
+                      <div key={preorder.id} className="rounded-xl border bg-card p-3">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-semibold">{preorder.code} - {preorder.client}</p>
+                          <span className="text-sm font-semibold">{preorder.total}</span>
+                        </div>
+                        <div className="space-y-2">
+                          {preorder.items.map((item, index) => (
+                            <div key={`${preorder.id}-${item.product}-${item.color}-${index}`} className="grid gap-2 rounded-xl border bg-card-muted/40 p-3 text-sm md:grid-cols-[1fr_0.6fr_0.4fr_0.5fr]">
+                              <span>{item.product}</span>
+                              <span className="text-muted">{item.color}</span>
+                              <span>{item.quantity}</span>
+                              <span className="font-semibold">{item.unitPrice}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-3 text-sm font-semibold">Total: {selected.total}</p>
                 </div>
               ) : null}
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Ruta" name="routeName" placeholder="Ruta Coban / Santa Cruz" />
-                <Field label="Lugar de entrega" name="destination" defaultValue={selected?.deliveryAddress || ""} placeholder="Direccion de entrega" required />
+                <Field key={suggestedDestination} label="Lugar de entrega" name="destination" defaultValue={suggestedDestination} placeholder="Direccion de entrega" required />
               </div>
 
-              <div className="flex justify-end"><Button className="w-full sm:w-auto" type="submit">Crear despacho</Button></div>
+              <div className="flex justify-end"><Button className="w-full sm:w-auto" disabled={selected.length === 0} type="submit">Crear carga para verificar</Button></div>
             </form>
           </div>
         </div>

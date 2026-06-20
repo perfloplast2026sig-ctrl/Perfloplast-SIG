@@ -3,13 +3,13 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCurrentUser, requireSuperAdmin } from "@/services/auth";
-import { cancelDispatch, createDispatch, resolveDispatchReturn, saveDriverLocation, updateDispatchStatus, requestDispatchReturn } from "@/services/logistics";
+import { cancelDispatch, createDispatches, resolveDispatchReturn, saveDriverLocation, updateDispatchStatus, requestDispatchReturn, verifyDispatchLoad } from "@/services/logistics";
 
 export async function createDispatchAction(formData: FormData) {
   try {
     await requireCurrentUser();
-    await createDispatch({
-      preorderId: String(formData.get("preorderId") || ""),
+    await createDispatches({
+      preorderIds: formData.getAll("preorderId").map(String),
       driverId: String(formData.get("driverId") || ""),
       routeName: String(formData.get("routeName") || ""),
       destination: String(formData.get("destination") || ""),
@@ -28,6 +28,39 @@ export async function createDispatchAction(formData: FormData) {
   }
 
   redirect("/logistica?created=1");
+}
+
+export async function verifyDispatchLoadAction(formData: FormData) {
+  try {
+    const user = await requireCurrentUser();
+    const rejectedIds = formData.getAll("rejectedItemId").map(String);
+    await verifyDispatchLoad({
+      dispatchId: String(formData.get("dispatchId") || ""),
+      userId: user.id,
+      roleName: user.role.name,
+      rejectedItems: rejectedIds.map((dispatchItemId) => ({
+        dispatchItemId,
+        reason: String(formData.get(`rejectionReason-${dispatchItemId}`) || ""),
+      })),
+    });
+    revalidatePath("/logistica");
+    revalidatePath("/logistica/devoluciones");
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+    revalidatePath("/preventas");
+    revalidatePath("/inventario");
+    revalidatePath("/facturas");
+    revalidatePath("/reportes");
+    revalidateTag("logistics", "default");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
+    revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
+  } catch (error) {
+    redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo verificar la carga.")}`);
+  }
+
+  return;
 }
 
 export async function saveDriverLocationAction(input: { latitude: number; longitude: number; accuracy?: number }) {

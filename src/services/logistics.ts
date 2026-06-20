@@ -227,58 +227,153 @@ async function getInvoiceNumbers(preorderIds: string[]) {
 }
 
 export async function createDispatch(input: { preorderId: string; driverId: string; routeName: string; destination: string }) {
-  if (!input.preorderId || !input.driverId || !input.destination.trim()) {
+  const [dispatch] = await createDispatches({ ...input, preorderIds: [input.preorderId] });
+  return dispatch;
+}
+
+export async function createDispatches(input: { preorderIds: string[]; driverId: string; routeName: string; destination: string }) {
+  const preorderIds = [...new Set(input.preorderIds.filter(Boolean))];
+  if (preorderIds.length === 0 || !input.driverId || !input.destination.trim()) {
     throw new Error("Selecciona preventa, piloto y destino.");
   }
 
   return prisma.$transaction(async (tx) => {
-    const [preorder, driver] = await Promise.all([
-      tx.preorder.findUnique({ where: { id: input.preorderId }, include: { items: true, dispatches: true } }),
-      tx.user.findFirst({ where: { id: input.driverId, isActive: true, role: { name: "Piloto" } } }),
-    ]);
-
-    if (!preorder) throw new Error("Preventa no encontrada.");
-    if (preorder.status === "QUOTE") throw new Error("Una cotizacion no puede enviarse a despacho. Primero conviertela en venta/preventa.");
-    if (!["PENDING", "CONFIRMED"].includes(preorder.status)) throw new Error("Solo ventas/preventas pendientes o confirmadas pueden enviarse a despacho.");
-    if (preorder.dispatches.length > 0) throw new Error("Esta preventa ya tiene despacho asignado.");
+    const driver = await tx.user.findFirst({ where: { id: input.driverId, isActive: true, role: { name: "Piloto" } } });
     if (!driver) throw new Error("Piloto no encontrado o inactivo.");
 
-    const dispatch = await tx.dispatch.create({
+    const dispatches = [];
+    for (const preorderId of preorderIds) {
+      const preorder = await tx.preorder.findUnique({ where: { id: preorderId }, include: { items: true, dispatches: true } });
+
+      if (!preorder) throw new Error("Preventa no encontrada.");
+      if (preorder.status === "QUOTE") throw new Error("Una cotizacion no puede enviarse a despacho. Primero conviertela en venta/preventa.");
+      if (!["PENDING", "CONFIRMED"].includes(preorder.status)) throw new Error("Solo ventas/preventas pendientes o confirmadas pueden enviarse a despacho.");
+      if (preorder.dispatches.length > 0) throw new Error(`La preventa ${preorder.code} ya tiene despacho asignado.`);
+
+      const dispatch = await tx.dispatch.create({
+        data: {
+          code: await buildDispatchCode(tx),
+          preorderId: preorder.id,
+          responsibleId: driver.id,
+          routeName: input.routeName.trim() || "Ruta directa",
+          destination: input.destination.trim(),
+          destinationLatitude: preorder.saleLatitude,
+          destinationLongitude: preorder.saleLongitude,
+          destinationAccuracy: preorder.saleAccuracy,
+          scheduledAt: new Date(),
+          status: "SCHEDULED",
+          items: {
+            create: preorder.items.map((item) => ({
+              productId: item.productId,
+              preorderItemId: item.id,
+              quantity: item.quantity,
+            })),
+          },
+        },
+      });
+
+      await tx.preorder.update({ where: { id: preorder.id }, data: { status: "CONFIRMED", confirmedAt: new Date() } });
+      const existingInvoice = await tx.invoice.findUnique({ where: { preorderId: preorder.id } });
+      if (!existingInvoice) {
+        await tx.invoice.create({
+          data: {
+            number: buildInvoiceNumberFromPreorder(preorder.code) || await buildInvoiceNumber(tx),
+            preorderId: preorder.id,
+            companyAddress: "Aldea Chijou, Santa Cruz Verapaz",
+            companyPhone: "Tel: 44235941 / 53146115",
+            totalGTQ: preorder.totalGTQ,
+          },
+        });
+      }
+      dispatches.push(dispatch);
+    }
+
+    return dispatches;
+  });
+}
+
+export async function verifyDispatchLoad(input: { dispatchId: string; userId: string; roleName: string; rejectedItems: Array<{ dispatchItemId: string; reason: string }> }) {
+  const isAdmin = ["Administrador", "Super admin"].includes(input.roleName);
+  const isWarehouse = input.roleName === "Bodeguero";
+  if (!isAdmin && !isWarehouse) throw new Error("Solo bodega o administracion puede verificar la carga.");
+
+  const rejectedItems = input.rejectedItems
+    .map((item) => ({ dispatchItemId: item.dispatchItemId, reason: item.reason.trim() }))
+    .filter((item) => item.dispatchItemId && item.reason);
+  const rejectedIds = new Set(rejectedItems.map((item) => item.dispatchItemId));
+
+  return prisma.$transaction(async (tx) => {
+    const dispatch = await tx.dispatch.findUnique({
+      where: { id: input.dispatchId },
+      include: {
+        preorder: { include: { items: true } },
+        items: { include: { product: true } },
+      },
+    });
+    if (!dispatch) throw new Error("Despacho no encontrado.");
+    if (!["SCHEDULED", "RESCHEDULED"].includes(dispatch.status)) throw new Error("Este despacho no esta listo para verificar carga.");
+    if (!dispatch.preorder || !dispatch.preorder.originLocationId) throw new Error("El despacho no tiene preventa o bodega de origen.");
+    if (rejectedIds.size >= dispatch.items.length) throw new Error("Debe quedar al menos un producto aprobado para enviar al piloto.");
+
+    for (const rejected of rejectedItems) {
+      const item = dispatch.items.find((row) => row.id === rejected.dispatchItemId);
+      if (!item) throw new Error("Producto rechazado no pertenece al despacho.");
+
+      await tx.stockBalance.update({
+        where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
+        data: { reserved: { decrement: item.quantity } },
+      });
+
+      if (item.preorderItemId) {
+        await tx.preorderItem.update({
+          where: { id: item.preorderItemId },
+          data: { reservedQuantity: { decrement: item.quantity } },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          userId: input.userId,
+          action: "DISPATCH_ITEM_REJECTED",
+          entity: "Dispatch",
+          entityId: dispatch.id,
+          metadata: {
+            code: dispatch.code,
+            preorder: dispatch.preorder.code,
+            product: productTitle(item.product),
+            quantity: item.quantity.toString(),
+            reason: rejected.reason,
+            previousStatus: dispatch.status,
+            inventoryRestored: false,
+          },
+        },
+      });
+
+      await tx.dispatchItem.delete({ where: { id: item.id } });
+    }
+
+    const loaded = await tx.dispatch.update({
+      where: { id: dispatch.id },
+      data: { status: "LOADED", loadedAt: new Date() },
+    });
+
+    await tx.auditLog.create({
       data: {
-        code: await buildDispatchCode(tx),
-        preorderId: preorder.id,
-        responsibleId: driver.id,
-        routeName: input.routeName.trim() || "Ruta directa",
-        destination: input.destination.trim(),
-        destinationLatitude: preorder.saleLatitude,
-        destinationLongitude: preorder.saleLongitude,
-        destinationAccuracy: preorder.saleAccuracy,
-        scheduledAt: new Date(),
-        status: "SCHEDULED",
-        items: {
-          create: preorder.items.map((item) => ({
-            productId: item.productId,
-            preorderItemId: item.id,
-            quantity: item.quantity,
-          })),
+        userId: input.userId,
+        action: "DISPATCH_LOAD_APPROVED",
+        entity: "Dispatch",
+        entityId: dispatch.id,
+        metadata: {
+          code: dispatch.code,
+          preorder: dispatch.preorder.code,
+          rejectedItems: rejectedItems.length,
+          previousStatus: dispatch.status,
+          inventoryRestored: false,
         },
       },
     });
 
-    await tx.preorder.update({ where: { id: preorder.id }, data: { status: "CONFIRMED", confirmedAt: new Date() } });
-    const existingInvoice = await tx.invoice.findUnique({ where: { preorderId: preorder.id } });
-    if (!existingInvoice) {
-      await tx.invoice.create({
-        data: {
-          number: buildInvoiceNumberFromPreorder(preorder.code) || await buildInvoiceNumber(tx),
-          preorderId: preorder.id,
-          companyAddress: "Aldea Chijou, Santa Cruz Verapaz",
-          companyPhone: "Tel: 44235941 / 53146115",
-          totalGTQ: preorder.totalGTQ,
-        },
-      });
-    }
-    return dispatch;
+    return loaded;
   });
 }
 
@@ -605,6 +700,8 @@ function statusLabel(status: string) {
 function auditActionLabel(action: string) {
   const labels: Record<string, string> = {
     DISPATCH_CANCELLED: "Despacho anulado",
+    DISPATCH_ITEM_REJECTED: "Producto rechazado en carga",
+    DISPATCH_LOAD_APPROVED: "Carga aprobada",
   };
   return labels[action] || action;
 }
