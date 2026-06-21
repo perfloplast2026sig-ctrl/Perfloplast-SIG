@@ -9,7 +9,7 @@ async function getHeaderDataRaw(user?: { id: string; role: Role }) {
   const roleName = user?.role;
   const canManageUsers = roleName ? USER_MANAGER_ROLES.includes(roleName) : false;
   const canSeeInventory = roleName ? ["Super admin", "Administrador", "Contaduria", "Bodeguero"].includes(roleName) : false;
-  const canSeeProduction = roleName ? ["Super admin", "Administrador", "Bodeguero"].includes(roleName) : false;
+  const canSeeProduction = roleName ? ["Super admin", "Administrador"].includes(roleName) : false;
   const canSeePreorders = roleName ? ["Super admin", "Administrador", "Vendedor"].includes(roleName) : false;
   const canSeeDispatches = roleName ? ["Super admin", "Administrador", "Piloto", "Bodeguero"].includes(roleName) : false;
   const canSeeInvoices = roleName ? ["Super admin", "Administrador", "Contaduria", "Vendedor"].includes(roleName) : false;

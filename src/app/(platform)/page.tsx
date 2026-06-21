@@ -7,9 +7,14 @@ import { PageHeading } from "@/components/layout/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/ui/section-card";
 import { getDashboardData, type DashboardData } from "@/services/dashboard";
+import { requireCurrentUser } from "@/services/auth";
 import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, PackageCheck } from "lucide-react";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
+  const user = await requireCurrentUser();
+  if (user.role.name === "Bodeguero") redirect("/inventario");
+
   const dashboard = await getDashboardData();
 
   return (

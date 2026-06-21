@@ -6,13 +6,15 @@ import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
 import { SectionCard } from "@/components/ui/section-card";
 import { TableActions } from "@/components/ui/table-actions";
-import { requireProductionManager } from "@/services/auth";
+import { requireCurrentUser } from "@/services/auth";
 import { getProductionModuleData } from "@/services/production";
 import { ClipboardList, Clock3, Factory, Warehouse } from "lucide-react";
+import { redirect } from "next/navigation";
 
 export default async function ProductionPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; search?: string }> }) {
   const params = await searchParams;
-  const user = await requireProductionManager();
+  const user = await requireCurrentUser();
+  if (!["Super admin", "Administrador"].includes(user.role.name)) redirect("/inventario");
   const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules } = await getProductionModuleData();
   const canManageShiftSchedules = ["Super admin", "Administrador"].includes(user.role.name);
   const totalProduced = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);

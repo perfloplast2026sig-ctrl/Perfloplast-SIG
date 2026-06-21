@@ -21,7 +21,7 @@ const navigation: Array<{ name: string; href: string; icon: LucideIcon; roles: R
   { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["Super admin", "Administrador", "Contaduria"] },
   { name: "Inventario", href: "/inventario", icon: Boxes, roles: ["Super admin", "Administrador", "Contaduria", "Bodeguero"] },
   { name: "Preventas", href: "/preventas", icon: ClipboardList, roles: ["Super admin", "Administrador", "Vendedor"] },
-  { name: "Produccion", href: "/produccion", icon: Factory, roles: ["Super admin", "Administrador", "Bodeguero"] },
+  { name: "Produccion", href: "/produccion", icon: Factory, roles: ["Super admin", "Administrador"] },
   { name: "Logistica", href: "/logistica", icon: Truck, roles: ["Super admin", "Administrador", "Piloto", "Bodeguero"] },
   { name: "Facturas", href: "/facturas", icon: ReceiptText, roles: ["Super admin", "Administrador", "Contaduria", "Vendedor"] },
   { name: "Usuarios", href: "/usuarios", icon: ShieldCheck, roles: ["Super admin", "Administrador"] },
