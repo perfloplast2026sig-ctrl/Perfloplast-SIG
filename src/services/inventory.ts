@@ -301,81 +301,93 @@ export async function adjustFinishedStock(input: {
 }
 
 export async function transferFinishedStock(input: {
-  productId: string;
   fromWarehouseId: string;
   toWarehouseId: string;
-  quantity: string;
+  items: Array<{ productId: string; quantity: string }>;
   reason: string;
   createdById: string;
 }) {
-  const quantity = parseQuantity(input.quantity);
-  if (!input.productId || !input.fromWarehouseId || !input.toWarehouseId) {
-    throw new Error("Selecciona producto, bodega origen y bodega destino.");
+  const items = input.items
+    .map((item) => ({ productId: item.productId, quantity: parseQuantity(item.quantity) }))
+    .filter((item) => item.productId && item.quantity > 0);
+  if (!input.fromWarehouseId || !input.toWarehouseId || items.length === 0) {
+    throw new Error("Selecciona bodega origen, bodega destino y al menos un producto.");
   }
   if (input.fromWarehouseId === input.toWarehouseId) {
     throw new Error("La bodega origen y destino deben ser diferentes.");
-  }
-  if (quantity <= 0) {
-    throw new Error("La cantidad a trasladar debe ser mayor a cero.");
   }
   if (!input.reason.trim()) {
     throw new Error("El motivo del traslado es obligatorio.");
   }
 
   return prisma.$transaction(async (tx) => {
-    const [product, fromWarehouse, toWarehouse, currentBalance] = await Promise.all([
-      tx.product.findFirst({ where: { id: input.productId, type: "FINISHED_GOOD", isActive: true } }),
+    const groupedItems = Array.from(items.reduce((map, item) => {
+      map.set(item.productId, (map.get(item.productId) || 0) + item.quantity);
+      return map;
+    }, new Map<string, number>()).entries()).map(([productId, quantity]) => ({ productId, quantity }));
+
+    const [fromWarehouse, toWarehouse] = await Promise.all([
       tx.location.findFirst({ where: { id: input.fromWarehouseId, type: "WAREHOUSE", isActive: true } }),
       tx.location.findFirst({ where: { id: input.toWarehouseId, type: "WAREHOUSE", isActive: true } }),
-      tx.stockBalance.findUnique({ where: { productId_locationId: { productId: input.productId, locationId: input.fromWarehouseId } } }),
     ]);
 
-    if (!product) throw new Error("Producto terminado no encontrado o inactivo.");
     if (!fromWarehouse) throw new Error("Bodega origen no encontrada o inactiva.");
     if (!toWarehouse) throw new Error("Bodega destino no encontrada o inactiva.");
-    const available = Number(currentBalance?.quantity || 0) - Number(currentBalance?.reserved || 0);
-    if (available < quantity) {
-      throw new Error(`Solo hay ${formatQuantity(Math.max(0, available))} unidades disponibles para trasladar.`);
-    }
 
     const reference = `TR-${Date.now()}`;
-    await tx.stockBalance.update({
-      where: { productId_locationId: { productId: product.id, locationId: fromWarehouse.id } },
-      data: { quantity: { decrement: quantity } },
-    });
-    await tx.stockBalance.upsert({
-      where: { productId_locationId: { productId: product.id, locationId: toWarehouse.id } },
-      update: { quantity: { increment: quantity } },
-      create: { productId: product.id, locationId: toWarehouse.id, quantity },
-    });
+    const movements = [];
+    for (const item of groupedItems) {
+      const [product, currentBalance] = await Promise.all([
+        tx.product.findFirst({ where: { id: item.productId, type: "FINISHED_GOOD", isActive: true } }),
+        tx.stockBalance.findUnique({ where: { productId_locationId: { productId: item.productId, locationId: input.fromWarehouseId } } }),
+      ]);
 
-    await tx.inventoryMovement.create({
-      data: {
-        code: buildMovementCode("TRO"),
-        type: "TRANSFER_OUT",
-        productId: product.id,
-        fromLocationId: fromWarehouse.id,
-        toLocationId: toWarehouse.id,
-        quantity,
-        reason: input.reason.trim(),
-        reference,
-        createdById: input.createdById,
-      },
-    });
+      if (!product) throw new Error("Producto terminado no encontrado o inactivo.");
+      const available = Number(currentBalance?.quantity || 0) - Number(currentBalance?.reserved || 0);
+      if (available < item.quantity) {
+        throw new Error(`${productTitle(product)} solo tiene ${formatQuantity(Math.max(0, available))} unidades disponibles para trasladar.`);
+      }
 
-    return tx.inventoryMovement.create({
-      data: {
-        code: buildMovementCode("TRI"),
-        type: "TRANSFER_IN",
-        productId: product.id,
-        fromLocationId: fromWarehouse.id,
-        toLocationId: toWarehouse.id,
-        quantity,
-        reason: input.reason.trim(),
-        reference,
-        createdById: input.createdById,
-      },
-    });
+      await tx.stockBalance.update({
+        where: { productId_locationId: { productId: product.id, locationId: fromWarehouse.id } },
+        data: { quantity: { decrement: item.quantity } },
+      });
+      await tx.stockBalance.upsert({
+        where: { productId_locationId: { productId: product.id, locationId: toWarehouse.id } },
+        update: { quantity: { increment: item.quantity } },
+        create: { productId: product.id, locationId: toWarehouse.id, quantity: item.quantity },
+      });
+
+      await tx.inventoryMovement.create({
+        data: {
+          code: buildMovementCode("TRO"),
+          type: "TRANSFER_OUT",
+          productId: product.id,
+          fromLocationId: fromWarehouse.id,
+          toLocationId: toWarehouse.id,
+          quantity: item.quantity,
+          reason: input.reason.trim(),
+          reference,
+          createdById: input.createdById,
+        },
+      });
+
+      movements.push(await tx.inventoryMovement.create({
+        data: {
+          code: buildMovementCode("TRI"),
+          type: "TRANSFER_IN",
+          productId: product.id,
+          fromLocationId: fromWarehouse.id,
+          toLocationId: toWarehouse.id,
+          quantity: item.quantity,
+          reason: input.reason.trim(),
+          reference,
+          createdById: input.createdById,
+        },
+      }));
+    }
+
+    return movements;
   });
 }
 
@@ -539,6 +551,11 @@ function buildOperationalProductCodeMap(productIds: string[]) {
 
 function formatGTQ(value: number) {
   return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function productTitle(product: { name: string; modelName: string | null; color: string | null }) {
+  const model = product.modelName && product.modelName.toLowerCase() !== "general" ? product.modelName : product.name;
+  return `${model}${product.color ? ` - ${product.color}` : ""}`;
 }
 
 function productTypeLabel(type: string) {

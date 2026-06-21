@@ -65,10 +65,12 @@ export async function transferFinishedStockAction(formData: FormData) {
   try {
     const user = await requireInventoryManager();
     await transferFinishedStock({
-      productId: String(formData.get("productId") || ""),
       fromWarehouseId: String(formData.get("fromWarehouseId") || ""),
       toWarehouseId: String(formData.get("toWarehouseId") || ""),
-      quantity: String(formData.get("quantity") || "0"),
+      items: formData.getAll("productId").map((productId, index) => ({
+        productId: String(productId || ""),
+        quantity: String(formData.getAll("quantity")[index] || "0"),
+      })),
       reason: String(formData.get("reason") || ""),
       createdById: user.id,
     });
