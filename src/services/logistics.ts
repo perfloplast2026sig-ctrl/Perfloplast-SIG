@@ -300,7 +300,32 @@ export async function createDispatches(input: {
       if (!preorder.originLocationId) throw new Error(`La preventa ${preorder.code} no tiene bodega de origen.`);
 
       const approvedItems = preorder.items.filter((item) => !rejectedByItemId.has(item.id));
-      if (approvedItems.length === 0) throw new Error(`Debe quedar al menos un producto aprobado en ${preorder.code}.`);
+      if (approvedItems.length === 0) {
+        for (const item of preorder.items) {
+          if (Number(item.reservedQuantity) <= 0) continue;
+          await tx.stockBalance.update({
+            where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
+            data: { reserved: { decrement: item.reservedQuantity } },
+          });
+          await tx.preorderItem.update({ where: { id: item.id }, data: { reservedQuantity: 0 } });
+        }
+        await tx.preorder.update({ where: { id: preorder.id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
+        await tx.auditLog.create({
+          data: {
+            userId: input.approvedById || preorder.createdById,
+            action: "PREORDER_CANCELLED",
+            entity: "Preorder",
+            entityId: preorder.id,
+            metadata: {
+              code: preorder.code,
+              reason: "Pedido rechazado completo en revision de carga",
+              previousStatus: preorder.status,
+              inventoryRestored: false,
+            },
+          },
+        });
+        continue;
+      }
       if (approveLoad) {
         for (const item of approvedItems) {
           const loadedQuantity = loadedByItemId.get(item.id);
@@ -447,7 +472,35 @@ export async function verifyDispatchLoad(input: { dispatchId: string; userId: st
     if (!dispatch) throw new Error("Despacho no encontrado.");
     if (!["SCHEDULED", "RESCHEDULED"].includes(dispatch.status)) throw new Error("Este despacho no esta listo para verificar carga.");
     if (!dispatch.preorder || !dispatch.preorder.originLocationId) throw new Error("El despacho no tiene preventa o bodega de origen.");
-    if (rejectedIds.size >= dispatch.items.length) throw new Error("Debe quedar al menos un producto aprobado para enviar al piloto.");
+    if (rejectedIds.size >= dispatch.items.length) {
+      for (const item of dispatch.items) {
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
+          data: { reserved: { decrement: item.quantity } },
+        });
+        if (item.preorderItemId) {
+          await tx.preorderItem.update({ where: { id: item.preorderItemId }, data: { reservedQuantity: 0 } });
+        }
+      }
+      await tx.dispatch.update({ where: { id: dispatch.id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
+      await tx.preorder.update({ where: { id: dispatch.preorder.id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
+      await tx.auditLog.create({
+        data: {
+          userId: input.userId,
+          action: "DISPATCH_CANCELLED",
+          entity: "Dispatch",
+          entityId: dispatch.id,
+          metadata: {
+            code: dispatch.code,
+            preorder: dispatch.preorder.code,
+            reason: "Despacho rechazado completo en revision de carga",
+            previousStatus: dispatch.status,
+            inventoryRestored: false,
+          },
+        },
+      });
+      return dispatch;
+    }
 
     for (const rejected of rejectedItems) {
       const item = dispatch.items.find((row) => row.id === rejected.dispatchItemId);

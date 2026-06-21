@@ -6,12 +6,13 @@ import { requireCurrentUser, requireSuperAdmin } from "@/services/auth";
 import { cancelDispatch, createDispatches, resolveDispatchReturn, saveDriverLocation, updateDispatchStatus, requestDispatchReturn, verifyDispatchLoad } from "@/services/logistics";
 
 export async function createDispatchAction(formData: FormData) {
+  let createdDispatches = 0;
   try {
     const user = await requireCurrentUser();
     const rejectedIds = formData.getAll("rejectedPreorderItemId").map(String);
     const loadedItemIds = formData.getAll("loadedPreorderItemId").map(String);
     const transferItemIds = formData.getAll("transferPreorderItemId").map(String);
-    await createDispatches({
+    const dispatches = await createDispatches({
       preorderIds: formData.getAll("preorderId").map(String),
       driverId: String(formData.get("driverId") || ""),
       routeName: String(formData.get("routeName") || ""),
@@ -20,7 +21,7 @@ export async function createDispatchAction(formData: FormData) {
       approvedByRole: user.role.name,
       rejectedItems: rejectedIds.map((preorderItemId) => ({
         preorderItemId,
-        reason: String(formData.get(`rejectionReason-${preorderItemId}`) || ""),
+        reason: "Producto rechazado en revision de carga",
       })),
       loadedItems: loadedItemIds.map((preorderItemId) => ({
         preorderItemId,
@@ -31,6 +32,7 @@ export async function createDispatchAction(formData: FormData) {
         sourceLocationId: String(formData.get(`sourceLocationId-${preorderItemId}`) || ""),
       })),
     });
+    createdDispatches = dispatches.length;
     revalidatePath("/logistica");
     revalidatePath("/preventas");
     revalidatePath("/facturas");
@@ -44,7 +46,7 @@ export async function createDispatchAction(formData: FormData) {
     redirect(`/logistica?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo crear el despacho.")}`);
   }
 
-  redirect("/logistica?created=1");
+  redirect(createdDispatches > 0 ? "/logistica?created=1" : "/logistica?rejected=1");
 }
 
 export async function verifyDispatchLoadAction(formData: FormData) {
@@ -57,7 +59,7 @@ export async function verifyDispatchLoadAction(formData: FormData) {
       roleName: user.role.name,
       rejectedItems: rejectedIds.map((dispatchItemId) => ({
         dispatchItemId,
-        reason: String(formData.get(`rejectionReason-${dispatchItemId}`) || ""),
+        reason: "Producto rechazado en revision de carga",
       })),
     });
     revalidatePath("/logistica");

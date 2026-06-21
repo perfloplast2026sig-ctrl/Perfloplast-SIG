@@ -13,7 +13,7 @@ import { requireCurrentUser } from "@/services/auth";
 import { getLogisticsModuleData } from "@/services/logistics";
 import Link from "next/link";
 
-export default async function LogisticsPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; cancelled?: string; search?: string }> }) {
+export default async function LogisticsPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; rejected?: string; cancelled?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (user.role.name === "Vendedor") redirect("/preventas");
@@ -61,6 +61,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Despacho creado correctamente.</div> : null}
+      {params.rejected ? <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-700 dark:text-amber-300">Pedido rechazado en revision de bodega. No se envio al piloto.</div> : null}
       {params.cancelled ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Despacho anulado correctamente.</div> : null}
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {visibleDispatches.length} resultado(s).</div> : null}
 

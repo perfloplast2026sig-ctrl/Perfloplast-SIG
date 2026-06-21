@@ -162,10 +162,6 @@ function LoadVerificationModal({ dispatch, onClose }: { dispatch: DispatchRow; o
                       Rechazo
                     </label>
                   </div>
-                  <label className="mt-3 block">
-                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-muted">Motivo de rechazo</span>
-                    <textarea className="block min-h-20 w-full resize-y rounded-2xl border bg-card px-4 py-3 text-sm outline-none focus:border-accent disabled:opacity-45" disabled={!rejected} name={`rejectionReason-${item.id}`} placeholder="Producto equivocado, cantidad incorrecta, no corresponde al pedido..." required={rejected} />
-                  </label>
                 </div>
               );
             })}

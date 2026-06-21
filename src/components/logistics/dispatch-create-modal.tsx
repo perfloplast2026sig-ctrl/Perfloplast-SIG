@@ -155,10 +155,6 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
                                     Rechazo
                                   </label>
                                 </div>
-                                <label className="mt-3 block">
-                                  <span className="mb-1 block text-xs font-semibold text-muted">Motivo si se rechaza</span>
-                                  <textarea className="block min-h-16 w-full resize-y rounded-xl border bg-card px-3 py-2 text-sm outline-none focus:border-accent disabled:opacity-45" disabled={!rejected} name={`rejectionReason-${item.id}`} placeholder="Producto equivocado, cantidad incorrecta, no corresponde al pedido..." required={rejected} />
-                                </label>
                               </div>
                             );
                           })}

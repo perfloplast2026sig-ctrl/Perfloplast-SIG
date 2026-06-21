@@ -316,9 +316,7 @@ export async function transferFinishedStock(input: {
   if (input.fromWarehouseId === input.toWarehouseId) {
     throw new Error("La bodega origen y destino deben ser diferentes.");
   }
-  if (!input.reason.trim()) {
-    throw new Error("El motivo del traslado es obligatorio.");
-  }
+  const reason = input.reason.trim() || "Traslado interno entre bodegas";
 
   return prisma.$transaction(async (tx) => {
     const groupedItems = Array.from(items.reduce((map, item) => {
@@ -366,7 +364,7 @@ export async function transferFinishedStock(input: {
           fromLocationId: fromWarehouse.id,
           toLocationId: toWarehouse.id,
           quantity: item.quantity,
-          reason: input.reason.trim(),
+          reason,
           reference,
           createdById: input.createdById,
         },
@@ -380,7 +378,7 @@ export async function transferFinishedStock(input: {
           fromLocationId: fromWarehouse.id,
           toLocationId: toWarehouse.id,
           quantity: item.quantity,
-          reason: input.reason.trim(),
+          reason,
           reference,
           createdById: input.createdById,
         },

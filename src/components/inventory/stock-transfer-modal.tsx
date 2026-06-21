@@ -127,11 +127,6 @@ export function StockTransferModal({ options, warehouses }: { options: TransferO
                 </div>
               </section>
 
-              <label>
-                <span className="mb-2 block text-sm font-medium">Motivo</span>
-                <input className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" name="reason" placeholder="Reabastecer bodega, preparar despacho..." required />
-              </label>
-
               <div className="flex justify-end">
                 <Button className="w-full sm:w-auto" disabled={!canSubmit} type="submit">
                   <ArrowRightLeft size={16} /> Registrar traslado
