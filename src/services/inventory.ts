@@ -51,6 +51,28 @@ async function getInventoryModuleDataRaw() {
   return {
     warehouses,
     warehouseStockCards,
+    transferOptions: finishedBalances
+      .filter((balance) => balance.product.isActive && Number(balance.quantity) > 0)
+      .map((balance) => {
+        const model = balance.product.modelName && balance.product.modelName.toLowerCase() !== "general" ? balance.product.modelName : balance.product.name;
+        const color = balance.product.color || "Sin color";
+        const available = Math.max(0, Number(balance.quantity) - Number(balance.reserved));
+
+        return {
+          key: `${balance.productId}:${balance.locationId}`,
+          productId: balance.productId,
+          warehouseId: balance.locationId,
+          productName: model,
+          color,
+          label: `${model} - ${color}`,
+          sku: balance.product.sku,
+          warehouse: balance.location.name,
+          quantity: Number(balance.quantity || 0),
+          reserved: Number(balance.reserved || 0),
+          available,
+          availableLabel: formatQuantity(available),
+        };
+      }),
     adjustmentOptions: adjustableBalances.map((balance) => {
       const model = balance.product.modelName && balance.product.modelName.toLowerCase() !== "general" ? balance.product.modelName : balance.product.name;
       const color = balance.product.color || "Sin color";
@@ -272,6 +294,85 @@ export async function adjustFinishedStock(input: {
         unitCost: product.priceGTQ,
         reason: input.reason.trim(),
         reference: `Conteo fisico: ${formatQuantity(physicalQuantity)}`,
+        createdById: input.createdById,
+      },
+    });
+  });
+}
+
+export async function transferFinishedStock(input: {
+  productId: string;
+  fromWarehouseId: string;
+  toWarehouseId: string;
+  quantity: string;
+  reason: string;
+  createdById: string;
+}) {
+  const quantity = parseQuantity(input.quantity);
+  if (!input.productId || !input.fromWarehouseId || !input.toWarehouseId) {
+    throw new Error("Selecciona producto, bodega origen y bodega destino.");
+  }
+  if (input.fromWarehouseId === input.toWarehouseId) {
+    throw new Error("La bodega origen y destino deben ser diferentes.");
+  }
+  if (quantity <= 0) {
+    throw new Error("La cantidad a trasladar debe ser mayor a cero.");
+  }
+  if (!input.reason.trim()) {
+    throw new Error("El motivo del traslado es obligatorio.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const [product, fromWarehouse, toWarehouse, currentBalance] = await Promise.all([
+      tx.product.findFirst({ where: { id: input.productId, type: "FINISHED_GOOD", isActive: true } }),
+      tx.location.findFirst({ where: { id: input.fromWarehouseId, type: "WAREHOUSE", isActive: true } }),
+      tx.location.findFirst({ where: { id: input.toWarehouseId, type: "WAREHOUSE", isActive: true } }),
+      tx.stockBalance.findUnique({ where: { productId_locationId: { productId: input.productId, locationId: input.fromWarehouseId } } }),
+    ]);
+
+    if (!product) throw new Error("Producto terminado no encontrado o inactivo.");
+    if (!fromWarehouse) throw new Error("Bodega origen no encontrada o inactiva.");
+    if (!toWarehouse) throw new Error("Bodega destino no encontrada o inactiva.");
+    const available = Number(currentBalance?.quantity || 0) - Number(currentBalance?.reserved || 0);
+    if (available < quantity) {
+      throw new Error(`Solo hay ${formatQuantity(Math.max(0, available))} unidades disponibles para trasladar.`);
+    }
+
+    const reference = `TR-${Date.now()}`;
+    await tx.stockBalance.update({
+      where: { productId_locationId: { productId: product.id, locationId: fromWarehouse.id } },
+      data: { quantity: { decrement: quantity } },
+    });
+    await tx.stockBalance.upsert({
+      where: { productId_locationId: { productId: product.id, locationId: toWarehouse.id } },
+      update: { quantity: { increment: quantity } },
+      create: { productId: product.id, locationId: toWarehouse.id, quantity },
+    });
+
+    await tx.inventoryMovement.create({
+      data: {
+        code: buildMovementCode("TRO"),
+        type: "TRANSFER_OUT",
+        productId: product.id,
+        fromLocationId: fromWarehouse.id,
+        toLocationId: toWarehouse.id,
+        quantity,
+        reason: input.reason.trim(),
+        reference,
+        createdById: input.createdById,
+      },
+    });
+
+    return tx.inventoryMovement.create({
+      data: {
+        code: buildMovementCode("TRI"),
+        type: "TRANSFER_IN",
+        productId: product.id,
+        fromLocationId: fromWarehouse.id,
+        toLocationId: toWarehouse.id,
+        quantity,
+        reason: input.reason.trim(),
+        reference,
         createdById: input.createdById,
       },
     });

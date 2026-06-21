@@ -3,6 +3,7 @@ import { FinishedProductCreateModal } from "@/components/inventory/finished-prod
 import { FinishedProductsBrowser } from "@/components/inventory/finished-products-browser";
 import { InventoryMovementsModal } from "@/components/inventory/inventory-movements-modal";
 import { StockAdjustmentModal } from "@/components/inventory/stock-adjustment-modal";
+import { StockTransferModal } from "@/components/inventory/stock-transfer-modal";
 import { WarehouseCreateModal } from "@/components/inventory/warehouse-create-modal";
 import { WarehouseStockCards } from "@/components/inventory/warehouse-stock-cards";
 import { PageHeading } from "@/components/layout/page-heading";
@@ -22,7 +23,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   const autoSync = canManageInventory ? await syncCatalogProductsIfStale() : { synced: 0, mode: "skipped" as const, reason: "viewer" };
   const inventoryData = autoSync.synced > 0 ? getInventoryModuleDataFresh() : getInventoryModuleData();
   const catalogData = autoSync.synced > 0 ? getCatalogProductCardsFresh() : getCatalogProductCards();
-  const [{ warehouses, warehouseStockCards, adjustmentOptions, movements, stats }, catalogProducts, preorderData] = await Promise.all([
+  const [{ warehouses, warehouseStockCards, adjustmentOptions, transferOptions, movements, stats }, catalogProducts, preorderData] = await Promise.all([
     inventoryData,
     catalogData,
     getPreorderModuleData(),
@@ -38,6 +39,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             <>
               <WarehouseCreateModal warehouses={warehouses} />
               <InventoryMovementsModal movements={movements} />
+              <StockTransferModal options={transferOptions} warehouses={warehouses} />
               <StockAdjustmentModal options={adjustmentOptions} />
               <PreorderCreateModal buttonLabel="Venta rapida" currentDateTime={preorderData.currentDateTime} defaultWarehouseId={factoryWarehouseId} nextCode={preorderData.nextCode} products={preorderData.products} warehouses={preorderData.warehouses} />
               <FinishedProductCreateModal warehouses={warehouses} />
@@ -48,7 +50,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Registro creado correctamente.</div> : null}
-      {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Configuracion actualizada.</div> : null}
+      {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">{params.updated === "transfer" ? "Traslado registrado correctamente." : "Configuracion actualizada."}</div> : null}
       {params.synced ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Catalogo sincronizado: {params.synced} combinaciones de producto/modelo/color.</div> : null}
       {autoSync.synced > 0 ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Catalogo actualizado automaticamente: {autoSync.synced} combinaciones sincronizadas.</div> : null}
 

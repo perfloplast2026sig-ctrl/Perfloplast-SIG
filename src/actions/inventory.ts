@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireInventoryManager } from "@/services/auth";
-import { adjustFinishedStock, createFinishedProduct, createWarehouse, deactivateFinishedProduct, setFactoryWarehouse, updateFinishedProduct } from "@/services/inventory";
+import { adjustFinishedStock, createFinishedProduct, createWarehouse, deactivateFinishedProduct, setFactoryWarehouse, transferFinishedStock, updateFinishedProduct } from "@/services/inventory";
 
 export async function createWarehouseAction(formData: FormData) {
   try {
@@ -59,6 +59,31 @@ export async function adjustFinishedStockAction(formData: FormData) {
   }
 
   redirect("/inventario?updated=stock");
+}
+
+export async function transferFinishedStockAction(formData: FormData) {
+  try {
+    const user = await requireInventoryManager();
+    await transferFinishedStock({
+      productId: String(formData.get("productId") || ""),
+      fromWarehouseId: String(formData.get("fromWarehouseId") || ""),
+      toWarehouseId: String(formData.get("toWarehouseId") || ""),
+      quantity: String(formData.get("quantity") || "0"),
+      reason: String(formData.get("reason") || ""),
+      createdById: user.id,
+    });
+    revalidatePath("/inventario");
+    revalidatePath("/logistica");
+    revalidatePath("/reportes");
+    revalidateTag("inventory", "default");
+    revalidateTag("logistics", "default");
+    revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
+  } catch (error) {
+    redirect(`/inventario?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo registrar el traslado.")}`);
+  }
+
+  redirect("/inventario?updated=transfer");
 }
 
 export async function createFinishedProductAction(formData: FormData) {
