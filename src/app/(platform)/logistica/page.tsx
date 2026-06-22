@@ -22,7 +22,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const canSeeMap = ["Super admin", "Administrador"].includes(user.role.name);
   const canCreateDispatch = ["Super admin", "Administrador", "Bodeguero"].includes(user.role.name);
   const isDriver = user.role.name === "Piloto";
-  const visibleDispatches = filterRows(dispatches, params.search, (dispatch) => [dispatch.code, dispatch.preorder, dispatch.invoice, dispatch.client, dispatch.driver, dispatch.destination, dispatch.status.label]);
+  const visibleDispatches = filterRows(dispatches, params.search, (dispatch) => [dispatch.code, dispatch.preorder, dispatch.invoice, dispatch.client, dispatch.driver, dispatch.destination, dispatch.status.label, dispatch.rejectedLoad]);
   const driverOrders = deliveryMapOrders;
   const totalLoad = visibleDispatches.reduce((sum, dispatch) => sum + Number(dispatch.load.replace(/[^\d.-]/g, "") || 0), 0);
   const delivered = visibleDispatches.filter((dispatch) => dispatch.status.label === "Entregado").length;
@@ -45,6 +45,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
           { key: "piloto", label: "Piloto" },
           { key: "destino", label: "Destino" },
           { key: "carga", label: "Carga", align: "right" },
+          { key: "rechazos", label: "Rechazos" },
           { key: "valor", label: "Valor", align: "right" },
           { key: "estado", label: "Estado" },
         ]} rows={visibleDispatches.map((dispatch) => ({
@@ -54,6 +55,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
           piloto: dispatch.driver,
           destino: dispatch.destination,
           carga: dispatch.load,
+          rechazos: dispatch.rejectedLoad,
           valor: dispatch.value,
           estado: dispatch.status.label,
         }))} />{canCreateDispatch ? <DispatchCreateModal preorders={preorders} drivers={drivers} warehouses={warehouses} /> : null}</>}
@@ -75,6 +77,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
             { header: "Piloto", cell: (item) => <span className="font-medium">{item.driver}</span> },
             { header: "Destino", cell: (item) => <span className="text-muted">{item.destination}</span> },
             { header: "Carga", align: "right", cell: (item) => <span className="font-semibold">{item.load}</span> },
+            { header: "Rechazos", cell: (item) => item.rejectedLoad === "Sin rechazos" ? <span className="text-xs text-muted">Sin rechazos</span> : <span className="block max-w-52 whitespace-normal text-xs font-semibold text-red-600 dark:text-red-300">{item.rejectedLoad}</span> },
             { header: "Valor", align: "right", cell: (item) => <span className="font-semibold">{item.value}</span> },
             { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
             { header: "Accion", align: "right", cell: (item) => <TableActions><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
@@ -139,6 +142,7 @@ function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleD
           { label: "Telefono", value: item.phone },
           { label: "Piloto", value: item.driver },
           { label: "Destino", value: item.destination },
+          { label: "Rechazos", value: item.rejectedLoad },
           { label: "Valor", value: item.value },
           { label: "Estado", value: item.status.label },
         ],

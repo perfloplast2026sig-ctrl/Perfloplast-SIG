@@ -87,44 +87,48 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
     })),
     warehouses: warehouses.map((warehouse) => ({ id: warehouse.id, name: warehouse.name })),
     drivers: drivers.map((driver) => ({ id: driver.id, name: driver.name, email: driver.email })),
-    dispatches: dispatches.map((dispatch) => ({
-      id: dispatch.id,
-      code: dispatch.code,
-      driverId: dispatch.responsibleId,
-      preorder: dispatch.preorder?.code || "Sin preventa",
-      invoice: dispatch.preorderId ? invoices.get(dispatch.preorderId) || "Sin factura" : "Sin factura",
-      client: dispatch.preorder?.client.name || "Sin cliente",
-      taxId: dispatch.preorder?.client.taxId || "C/F",
-      phone: dispatch.preorder?.client.phone || "Sin telefono",
-      driver: dispatch.responsible.name,
-      routeName: dispatch.routeName,
-      destination: dispatch.destination,
-      destinationLatitude: dispatch.destinationLatitude ? Number(dispatch.destinationLatitude) : null,
-      destinationLongitude: dispatch.destinationLongitude ? Number(dispatch.destinationLongitude) : null,
-      scheduledAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(dispatch.scheduledAt),
-      deliveredAt: dispatch.deliveredAt ? new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(dispatch.deliveredAt) : "Sin entrega",
-      load: `${dispatch.items.reduce((sum, item) => sum + Number(item.quantity), 0)} un`,
-      value: formatGTQ(dispatch.preorder?.totalGTQ || 0),
-      items: dispatch.items.map((item) => ({
-        id: item.id,
-        product: productTitle(item.product),
-        color: item.product.color || "Sin color",
-        quantity: item.quantity.toString(),
-      })),
-      status: statusLabel(dispatch.status),
-      statusKey: dispatch.status,
-      latestReturnReason: dispatch.returns[0]?.reason || null,
-      latestReturnResolution: dispatch.returns[0]?.resolution || null,
-      auditTrail: (auditLogsByDispatch.get(dispatch.id) || []).map((log) => ({
-        action: auditActionLabel(log.action),
-        user: log.user?.name || "Sistema",
-        date: formatDateTime(log.createdAt),
-        reason: auditReason(log.metadata),
-        previousStatus: auditMetadataValue(log.metadata, "previousStatus") || "Sin estado anterior",
-        inventoryEffect: auditMetadataValue(log.metadata, "inventoryRestored") === "true" ? "Inventario devuelto a bodega" : "Reserva liberada o sin movimiento fisico",
-        preorder: auditMetadataValue(log.metadata, "preorder") || dispatch.preorder?.code || "Sin preventa",
-      })),
-    })),
+    dispatches: dispatches.map((dispatch) => {
+      const dispatchAuditLogs = auditLogsByDispatch.get(dispatch.id) || [];
+      return {
+        id: dispatch.id,
+        code: dispatch.code,
+        driverId: dispatch.responsibleId,
+        preorder: dispatch.preorder?.code || "Sin preventa",
+        invoice: dispatch.preorderId ? invoices.get(dispatch.preorderId) || "Sin factura" : "Sin factura",
+        client: dispatch.preorder?.client.name || "Sin cliente",
+        taxId: dispatch.preorder?.client.taxId || "C/F",
+        phone: dispatch.preorder?.client.phone || "Sin telefono",
+        driver: dispatch.responsible.name,
+        routeName: dispatch.routeName,
+        destination: dispatch.destination,
+        destinationLatitude: dispatch.destinationLatitude ? Number(dispatch.destinationLatitude) : null,
+        destinationLongitude: dispatch.destinationLongitude ? Number(dispatch.destinationLongitude) : null,
+        scheduledAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(dispatch.scheduledAt),
+        deliveredAt: dispatch.deliveredAt ? new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(dispatch.deliveredAt) : "Sin entrega",
+        load: `${dispatch.items.reduce((sum, item) => sum + Number(item.quantity), 0)} un`,
+        value: formatGTQ(dispatch.preorder?.totalGTQ || 0),
+        rejectedLoad: rejectedDispatchSummary(dispatchAuditLogs),
+        items: dispatch.items.map((item) => ({
+          id: item.id,
+          product: productTitle(item.product),
+          color: item.product.color || "Sin color",
+          quantity: item.quantity.toString(),
+        })),
+        status: statusLabel(dispatch.status),
+        statusKey: dispatch.status,
+        latestReturnReason: dispatch.returns[0]?.reason || null,
+        latestReturnResolution: dispatch.returns[0]?.resolution || null,
+        auditTrail: dispatchAuditLogs.map((log) => ({
+          action: auditActionLabel(log.action),
+          user: log.user?.name || "Sistema",
+          date: formatDateTime(log.createdAt),
+          reason: auditReason(log.metadata),
+          previousStatus: auditMetadataValue(log.metadata, "previousStatus") || "Sin estado anterior",
+          inventoryEffect: auditMetadataValue(log.metadata, "inventoryRestored") === "true" ? "Inventario devuelto a bodega" : "Reserva liberada o sin movimiento fisico",
+          preorder: auditMetadataValue(log.metadata, "preorder") || dispatch.preorder?.code || "Sin preventa",
+        })),
+      };
+    }),
     latestLocations,
     latestSellerLocations,
     deliveryMapOrders: dispatches.filter((dispatch) => !["DELIVERED", "CANCELLED"].includes(dispatch.status)).map((dispatch) => ({
@@ -291,7 +295,7 @@ export async function createDispatches(input: {
 
     const dispatches = [];
     for (const preorderId of preorderIds) {
-      const preorder = await tx.preorder.findUnique({ where: { id: preorderId }, include: { items: true, dispatches: true } });
+      const preorder = await tx.preorder.findUnique({ where: { id: preorderId }, include: { items: { include: { product: true } }, dispatches: true } });
 
       if (!preorder) throw new Error("Preventa no encontrada.");
       if (preorder.status === "QUOTE") throw new Error("Una cotizacion no puede enviarse a despacho. Primero conviertela en venta/preventa.");
@@ -301,6 +305,21 @@ export async function createDispatches(input: {
 
       const approvedItems = preorder.items.filter((item) => !rejectedByItemId.has(item.id));
       if (approvedItems.length === 0) {
+        const dispatch = await tx.dispatch.create({
+          data: {
+            code: await buildDispatchCode(tx),
+            preorderId: preorder.id,
+            responsibleId: driver.id,
+            routeName: input.routeName.trim() || "Ruta directa",
+            destination: input.destination.trim(),
+            destinationLatitude: preorder.saleLatitude,
+            destinationLongitude: preorder.saleLongitude,
+            destinationAccuracy: preorder.saleAccuracy,
+            scheduledAt: new Date(),
+            status: "CANCELLED",
+            cancelledAt: new Date(),
+          },
+        });
         for (const item of preorder.items) {
           if (Number(item.reservedQuantity) <= 0) continue;
           await tx.stockBalance.update({
@@ -310,6 +329,22 @@ export async function createDispatches(input: {
           await tx.preorderItem.update({ where: { id: item.id }, data: { reservedQuantity: 0 } });
         }
         await tx.preorder.update({ where: { id: preorder.id }, data: { status: "CANCELLED", cancelledAt: new Date() } });
+        await tx.auditLog.create({
+          data: {
+            userId: input.approvedById || preorder.createdById,
+            action: "DISPATCH_CANCELLED",
+            entity: "Dispatch",
+            entityId: dispatch.id,
+            metadata: {
+              code: dispatch.code,
+              preorder: preorder.code,
+              rejectedItems: preorder.items.map((item) => `${productTitle(item.product)} ${item.product.color || "Sin color"} (${item.quantity.toString()})`),
+              reason: "Pedido rechazado completo en revision de carga",
+              previousStatus: "PRE_DISPATCH_REVIEW",
+              inventoryRestored: false,
+            },
+          },
+        });
         await tx.auditLog.create({
           data: {
             userId: input.approvedById || preorder.createdById,
@@ -324,6 +359,7 @@ export async function createDispatches(input: {
             },
           },
         });
+        dispatches.push(dispatch);
         continue;
       }
       if (approveLoad) {
@@ -420,6 +456,8 @@ export async function createDispatches(input: {
             metadata: {
               code: dispatch.code,
               preorder: preorder.code,
+              product: productTitle(item.product),
+              quantity: item.quantity.toString(),
               reason: rejectedByItemId.get(item.id),
               previousStatus: "PRE_DISPATCH_REVIEW",
               inventoryRestored: false,
@@ -914,6 +952,22 @@ function auditActionLabel(action: string) {
 
 function auditReason(metadata: Prisma.JsonValue | null) {
   return auditMetadataValue(metadata, "reason") || "Sin motivo registrado";
+}
+
+function rejectedDispatchSummary(logs: Array<{ action: string; metadata: Prisma.JsonValue | null }>) {
+  const rejected: string[] = [];
+  for (const log of logs) {
+    if (log.action === "DISPATCH_ITEM_REJECTED") {
+      const product = auditMetadataValue(log.metadata, "product") || "Producto";
+      const quantity = auditMetadataValue(log.metadata, "quantity");
+      rejected.push(quantity ? `${product} (${quantity})` : product);
+    }
+    if (log.action === "DISPATCH_CANCELLED") {
+      const items = auditMetadataValue(log.metadata, "rejectedItems");
+      if (items && items !== "[]") rejected.push(items);
+    }
+  }
+  return rejected.length ? rejected.join("; ") : "Sin rechazos";
 }
 
 function auditMetadataValue(metadata: Prisma.JsonValue | null, key: string) {

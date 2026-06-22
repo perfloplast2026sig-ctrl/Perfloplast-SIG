@@ -18,9 +18,9 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
   const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules } = await getProductionModuleData();
   const canManageShiftSchedules = ["Super admin", "Administrador"].includes(user.role.name);
   const totalProduced = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
+  const totalRejected = orders.reduce((sum, order) => sum + Number(order.rejectedQuantity || 0), 0);
   const registered = orders.filter((order) => order.status.label === "Registrada").length;
-  const filteredOrders = filterRows(orders, params.search, (order) => [order.code, order.product, order.warehouse, order.shift, order.schedule, order.responsible, order.status.label]);
-  const warehousesUsed = new Set(orders.map((order) => order.warehouse).filter(Boolean)).size;
+  const filteredOrders = filterRows(orders, params.search, (order) => [order.code, order.product, order.warehouse, order.shift, order.schedule, order.quantity, order.rejectedQuantity, order.responsible, order.status.label]);
   const generatedAt = formatOperationalDate(new Date());
 
   return (
@@ -29,15 +29,16 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
         title="Produccion"
         actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Produccion total", value: `${totalProduced.toLocaleString("es-GT")} un`, detail: "Unidades registradas" },
+          { label: "Rechazos", value: `${totalRejected.toLocaleString("es-GT")} un`, detail: "Merma de fabricacion" },
           { label: "Ordenes", value: String(orders.length), detail: `${registered} registradas` },
           { label: "Turno actual", value: currentShift, detail: currentShiftRange },
-          { label: "Bodegas destino", value: String(warehousesUsed), detail: "Con produccion reciente" },
         ]} columns={[
           { key: "codigo", label: "Orden" },
           { key: "productos", label: "Productos" },
           { key: "bodega", label: "Bodega" },
           { key: "turno", label: "Turno" },
           { key: "cantidad", label: "Cantidad", align: "right" },
+          { key: "rechazos", label: "Rechazos", align: "right" },
           { key: "responsable", label: "Responsable" },
           { key: "estado", label: "Estado" },
         ]} rows={orders.map((order) => ({
@@ -46,6 +47,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
           bodega: order.warehouse,
           turno: `${order.shift} ${order.schedule}`,
           cantidad: order.quantity,
+          rechazos: order.rejectedQuantity,
           responsable: order.responsible,
           estado: order.status.label,
         }))} /><ProductionEntryForm products={products} warehouses={warehouses} nextCode={nextCode} currentShift={currentShift} currentShiftRange={currentShiftRange} currentDateTime={currentDateTime} shiftSchedules={shiftSchedules} canManageShiftSchedules={canManageShiftSchedules} /></div>}
@@ -60,7 +62,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
         <MiniKpi label="Produccion total" value={`${totalProduced.toLocaleString("es-GT")} un`} detail="Unidades registradas" icon={Factory} tone="emerald" />
         <MiniKpi label="Ordenes" value={String(orders.length)} detail={`${registered} registradas`} icon={ClipboardList} tone="sky" />
         <MiniKpi label="Turno actual" value={currentShift} detail={currentShiftRange} icon={Clock3} tone="violet" />
-        <MiniKpi label="Bodegas destino" value={String(warehousesUsed)} detail="Con produccion reciente" icon={Warehouse} tone="amber" />
+        <MiniKpi label="Rechazos" value={`${totalRejected.toLocaleString("es-GT")} un`} detail="Merma registrada" icon={Warehouse} tone="amber" />
       </div>
 
       {products.length === 0 ? <p className="mt-6 rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Primero registra productos terminados en Inventario.</p> : null}
