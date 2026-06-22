@@ -8,16 +8,15 @@ import { SectionCard } from "@/components/ui/section-card";
 import { TableActions } from "@/components/ui/table-actions";
 import { requireCurrentUser } from "@/services/auth";
 import { getProductionModuleData } from "@/services/production";
-import { ClipboardList, Clock3, Factory, Warehouse } from "lucide-react";
+import { CalendarDays, Clock3, Factory, Warehouse } from "lucide-react";
 import { redirect } from "next/navigation";
 
 export default async function ProductionPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador"].includes(user.role.name)) redirect("/inventario");
-  const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules } = await getProductionModuleData();
+  const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules, productionToday, productionMonth } = await getProductionModuleData();
   const canManageShiftSchedules = ["Super admin", "Administrador"].includes(user.role.name);
-  const totalProduced = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
   const totalRejected = orders.reduce((sum, order) => sum + Number(order.rejectedQuantity || 0), 0);
   const registered = orders.filter((order) => order.status.label === "Registrada").length;
   const filteredOrders = filterRows(orders, params.search, (order) => [order.code, order.product, order.warehouse, order.shift, order.schedule, order.quantity, order.rejectedQuantity, order.responsible, order.status.label]);
@@ -28,10 +27,10 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       <PageHeading
         title="Produccion"
         actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
-          { label: "Produccion total", value: `${totalProduced.toLocaleString("es-GT")} un`, detail: "Unidades registradas" },
+          { label: "Produccion del dia", value: `${productionToday.toLocaleString("es-GT")} un`, detail: "Unidades de hoy" },
+          { label: "Produccion del mes", value: `${productionMonth.toLocaleString("es-GT")} un`, detail: "Acumulado mensual" },
           { label: "Rechazos", value: `${totalRejected.toLocaleString("es-GT")} un`, detail: "Merma de fabricacion" },
           { label: "Ordenes", value: String(orders.length), detail: `${registered} registradas` },
-          { label: "Turno actual", value: currentShift, detail: currentShiftRange },
         ]} columns={[
           { key: "codigo", label: "Orden" },
           { key: "productos", label: "Productos" },
@@ -59,8 +58,8 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredOrders.length} resultado(s).</div> : null}
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <MiniKpi label="Produccion total" value={`${totalProduced.toLocaleString("es-GT")} un`} detail="Unidades registradas" icon={Factory} tone="emerald" />
-        <MiniKpi label="Ordenes" value={String(orders.length)} detail={`${registered} registradas`} icon={ClipboardList} tone="sky" />
+        <MiniKpi label="Produccion del dia" value={`${productionToday.toLocaleString("es-GT")} un`} detail="Unidades de hoy" icon={Factory} tone="emerald" />
+        <MiniKpi label="Produccion del mes" value={`${productionMonth.toLocaleString("es-GT")} un`} detail="Acumulado mensual" icon={CalendarDays} tone="sky" />
         <MiniKpi label="Turno actual" value={currentShift} detail={currentShiftRange} icon={Clock3} tone="violet" />
         <MiniKpi label="Rechazos" value={`${totalRejected.toLocaleString("es-GT")} un`} detail="Merma registrada" icon={Warehouse} tone="amber" />
       </div>

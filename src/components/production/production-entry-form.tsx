@@ -65,7 +65,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
               <div className="grid gap-3 rounded-2xl border bg-card-muted/55 p-4 md:grid-cols-3">
                 <InfoBox label="Numero automatico" value={nextCode} />
                 <InfoBox label="Fecha y hora" value={currentDateTime} />
-                <InfoBox label="Turno automatico" value={`${currentShift} · ${currentShiftRange}`} />
+                <InfoBox label="Turno automatico" value={`${currentShift} - ${currentShiftRange}`} />
               </div>
 
               <div className="mt-4 space-y-3">
@@ -147,13 +147,13 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
 
                     return (
                       <div key={name} className="grid gap-3 rounded-2xl border bg-card-muted/45 p-3 md:grid-cols-[1fr_1fr_1fr] md:items-end">
-                        <p className="font-semibold">{name}</p>
+                        <p className="font-semibold">{displayShiftName(name)}</p>
                         <SimpleTimeField label="Hora inicio" name={`${name}.startTime`} defaultValue={schedule?.startTime || ""} />
                         <SimpleTimeField label="Hora fin" name={`${name}.endTime`} defaultValue={schedule?.endTime || ""} />
                       </div>
                     );
                   })}
-                  <p className="rounded-2xl border bg-card-muted/60 p-3 text-sm leading-6 text-muted">Ejemplo: si Manana queda 06:00 a 11:59, cualquier produccion registrada dentro de ese rango se guardara como turno Manana.</p>
+                  <p className="rounded-2xl border bg-card-muted/60 p-3 text-sm leading-6 text-muted">Ejemplo: si Mañana queda 06:00 a 11:59, cualquier produccion registrada dentro de ese rango se guardara como turno Mañana.</p>
                   <div className="flex justify-end">
                     <Button type="submit"><Clock size={16} /> Guardar turnos</Button>
                   </div>
@@ -217,6 +217,10 @@ function buildProductGroups(products: Product[]) {
   }
 
   return Array.from(groups.values()).sort((a, b) => a.title.localeCompare(b.title, "es"));
+}
+
+function displayShiftName(name: string) {
+  return name === "Manana" ? "Mañana" : name;
 }
 
 function newRow(): Row {

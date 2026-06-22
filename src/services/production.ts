@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
 async function getProductionModuleDataRaw() {
-  const [products, warehouses, orders, shiftSchedules] = await Promise.all([
+  const dayBounds = getGuatemalaPeriodBounds("day");
+  const monthBounds = getGuatemalaPeriodBounds("month");
+  const [products, warehouses, orders, shiftSchedules, dayProduction, monthProduction] = await Promise.all([
     prisma.product.findMany({ where: { type: "FINISHED_GOOD", isActive: true }, orderBy: [{ name: "asc" }, { modelName: "asc" }, { color: "asc" }] }),
     prisma.location.findMany({ where: { type: "WAREHOUSE", isActive: true }, orderBy: [{ isFactoryWarehouse: "desc" }, { name: "asc" }] }),
     prisma.productionOrder.findMany({
@@ -12,6 +14,14 @@ async function getProductionModuleDataRaw() {
       take: 20,
     }),
     getShiftSchedules(),
+    prisma.productionOrder.aggregate({
+      where: { status: "CLOSED", createdAt: { gte: dayBounds.start, lt: dayBounds.end } },
+      _sum: { producedQuantity: true },
+    }),
+    prisma.productionOrder.aggregate({
+      where: { status: "CLOSED", createdAt: { gte: monthBounds.start, lt: monthBounds.end } },
+      _sum: { producedQuantity: true },
+    }),
   ]);
   const nextCode = await getNextProductionCode();
   const currentShift = getCurrentShift(shiftSchedules);
@@ -29,16 +39,18 @@ async function getProductionModuleDataRaw() {
       isFactoryWarehouse: warehouse.isFactoryWarehouse,
     })),
     nextCode,
-    currentShift: currentShift.name,
+    currentShift: displayShiftName(currentShift.name),
     currentShiftRange: `${currentShift.startTime} - ${currentShift.endTime}`,
     shiftSchedules,
+    productionToday: Number(dayProduction._sum.producedQuantity || 0),
+    productionMonth: Number(monthProduction._sum.producedQuantity || 0),
     currentDateTime: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(new Date()),
     orders: orders.map((order) => ({
       id: order.id,
       code: order.code,
       product: formatOrderProducts(order.outputs),
       warehouse: order.destinationLocation?.name || "Sin bodega",
-      shift: order.shift,
+      shift: displayShiftName(order.shift),
       schedule: order.shiftStart && order.shiftEnd ? `${order.shiftStart} - ${order.shiftEnd}` : "Sin horario",
       quantity: order.producedQuantity.toString(),
       rejectedQuantity: order.outputs.reduce((sum, output) => sum + Number(output.rejectedQuantity), 0).toString(),
@@ -230,6 +242,28 @@ function getCurrentShift(schedules: Array<{ name: string; startTime: string; end
   const match = schedules.find((schedule) => isMinuteInsideRange(currentMinutes, schedule.startTime, schedule.endTime));
 
   return match || schedules[0] || { name: "Sin turno", startTime: "00:00", endTime: "23:59" };
+}
+
+function displayShiftName(name: string) {
+  const clean = name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (clean === "manana") return "Mañana";
+  return name;
+}
+
+function getGuatemalaPeriodBounds(period: "day" | "month") {
+  const offsetMs = 6 * 60 * 60 * 1000;
+  const guatemalaNow = new Date(Date.now() - offsetMs);
+  const year = guatemalaNow.getUTCFullYear();
+  const month = guatemalaNow.getUTCMonth();
+  const day = guatemalaNow.getUTCDate();
+  const start = period === "day"
+    ? new Date(Date.UTC(year, month, day, 6, 0, 0, 0))
+    : new Date(Date.UTC(year, month, 1, 6, 0, 0, 0));
+  const end = period === "day"
+    ? new Date(Date.UTC(year, month, day + 1, 6, 0, 0, 0))
+    : new Date(Date.UTC(year, month + 1, 1, 6, 0, 0, 0));
+
+  return { start, end };
 }
 
 function formatOrderProducts(outputs: Array<{ product: { name: string; modelName: string | null; color: string | null }; producedQuantity: Prisma.Decimal; rejectedQuantity: Prisma.Decimal }>) {
