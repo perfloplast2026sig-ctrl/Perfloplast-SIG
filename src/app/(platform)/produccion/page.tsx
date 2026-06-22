@@ -74,7 +74,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
               { header: "Productos", cell: (item) => <p className="max-w-[380px] whitespace-normal leading-6">{item.product}</p> },
               { header: "Bodega", cell: (item) => item.warehouse },
               { header: "Turno", cell: (item) => <div><p>{item.shift}</p><p className="text-xs text-muted">{item.schedule}</p></div> },
-              { header: "Cantidad", align: "right", cell: (item) => <span className="font-semibold">{item.quantity}</span> },
+              { header: "Cantidad", align: "right", cell: (item) => <div className="text-right"><p className="font-semibold">{item.quantity}</p>{Number(item.rejectedQuantity) > 0 ? <p className="text-xs text-red-600 dark:text-red-300">Rech. {item.rejectedQuantity}</p> : null}</div> },
               { header: "Responsable", cell: (item) => <span className="text-muted">{item.responsible}</span> },
               { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
               { header: "Ver", align: "right", cell: (item) => <TableActions><RecordDetailButton detail={buildProductionDetail(item)} /></TableActions> },
@@ -143,7 +143,8 @@ function buildProductionDetail(item: Awaited<ReturnType<typeof getProductionModu
           { label: "Turno", value: item.shift },
           { label: "Horario", value: item.schedule },
           { label: "Bodega", value: item.warehouse },
-          { label: "Cantidad", value: item.quantity },
+          { label: "Buenos", value: item.quantity },
+          { label: "Rechazados", value: item.rejectedQuantity },
           { label: "Responsable", value: item.responsible },
         ],
       },
@@ -151,8 +152,8 @@ function buildProductionDetail(item: Awaited<ReturnType<typeof getProductionModu
     items: item.items.map((row) => ({
       title: row.product,
       subtitle: row.color,
-      quantity: row.quantity,
-      total: row.quantity,
+      quantity: `Buenos ${row.quantity}`,
+      total: Number(row.rejectedQuantity) > 0 ? `Rechazados ${row.rejectedQuantity}` : row.quantity,
     })),
   };
 }

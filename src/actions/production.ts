@@ -13,6 +13,7 @@ export async function createProductionEntryAction(formData: FormData) {
         productId: String(productId || ""),
         warehouseId: String(formData.getAll("warehouseId")[index] || ""),
         quantity: String(formData.getAll("quantity")[index] || "0"),
+        rejectedQuantity: String(formData.getAll("rejectedQuantity")[index] || "0"),
       })),
       responsibleId: user.id,
     });

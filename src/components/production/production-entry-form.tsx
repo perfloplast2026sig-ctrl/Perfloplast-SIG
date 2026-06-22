@@ -30,6 +30,7 @@ type Row = {
   productTitle: string;
   productId: string;
   quantity: string;
+  rejectedQuantity: string;
   warehouseId: string;
 };
 
@@ -73,7 +74,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                   const colorOptions = selectedGroup?.products || [];
 
                   return (
-                    <div key={row.key} className="grid gap-3 rounded-2xl border bg-card p-3 xl:grid-cols-[1.2fr_0.8fr_0.65fr_1fr_auto]">
+                    <div key={row.key} className="grid gap-3 rounded-2xl border bg-card p-3 xl:grid-cols-[1.15fr_0.75fr_0.55fr_0.55fr_0.9fr_auto]">
                       <SelectField label={`Producto ${index + 1}`} name="" value={row.productTitle} onChange={(value) => updateRow(row.key, { productTitle: value, productId: "" })}>
                         <option value="">Seleccionar producto</option>
                         {productGroups.map((group) => <option key={group.title} value={group.title}>{group.title}</option>)}
@@ -84,7 +85,9 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                         {colorOptions.map((product) => <option key={product.id} value={product.id}>{product.color || "Sin color"}</option>)}
                       </SelectField>
 
-                      <InputField label="Cantidad" name="quantity" value={row.quantity} onChange={(value) => updateRow(row.key, { quantity: value })} required type="number" />
+                      <InputField label="Buenos" name="quantity" value={row.quantity} onChange={(value) => updateRow(row.key, { quantity: value })} type="number" />
+
+                      <InputField label="Rechazados" name="rejectedQuantity" value={row.rejectedQuantity} onChange={(value) => updateRow(row.key, { rejectedQuantity: value })} type="number" />
 
                       <SelectField label="Bodega destino" name="warehouseId" value={row.warehouseId} onChange={(value) => updateRow(row.key, { warehouseId: value })} required>
                         <option value="">Seleccionar bodega</option>
@@ -113,7 +116,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
               </div>
 
               <div className="mt-4 rounded-2xl border bg-card-muted/60 p-4 text-sm leading-6 text-muted">
-                Al guardar, el sistema genera el numero de produccion, toma la fecha/hora actual, busca el turno segun los rangos configurados y suma cada producto a su bodega destino.
+                Al guardar, la cantidad buena suma a bodega. Lo rechazado queda como merma de fabricacion y no entra al stock disponible.
               </div>
 
               <div className="mt-4 flex justify-end">
@@ -211,5 +214,5 @@ function buildProductGroups(products: Product[]) {
 }
 
 function newRow(): Row {
-  return { key: crypto.randomUUID(), productTitle: "", productId: "", quantity: "", warehouseId: "" };
+  return { key: crypto.randomUUID(), productTitle: "", productId: "", quantity: "", rejectedQuantity: "", warehouseId: "" };
 }

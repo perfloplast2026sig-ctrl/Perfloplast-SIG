@@ -41,6 +41,7 @@ async function getProductionModuleDataRaw() {
       shift: order.shift,
       schedule: order.shiftStart && order.shiftEnd ? `${order.shiftStart} - ${order.shiftEnd}` : "Sin horario",
       quantity: order.producedQuantity.toString(),
+      rejectedQuantity: order.outputs.reduce((sum, output) => sum + Number(output.rejectedQuantity), 0).toString(),
       responsible: order.responsible.name,
       createdAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(order.createdAt),
       closedAt: order.closedAt ? new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(order.closedAt) : "Sin cierre",
@@ -48,6 +49,7 @@ async function getProductionModuleDataRaw() {
         product: output.product.modelName || output.product.name,
         color: output.product.color || "Sin color",
         quantity: output.producedQuantity.toString(),
+        rejectedQuantity: output.rejectedQuantity.toString(),
       })),
       status: order.status === "CLOSED" ? { label: "Registrada", tone: "success" as const } : { label: "Planificada", tone: "info" as const },
     })),
@@ -66,18 +68,19 @@ export const getProductionModuleData = unstable_cache(
 );
 
 export async function createProductionEntry(input: {
-  items: Array<{ productId: string; warehouseId: string; quantity: string }>;
+  items: Array<{ productId: string; warehouseId: string; quantity: string; rejectedQuantity?: string }>;
   responsibleId: string;
 }) {
   const items = input.items
-    .map((item) => ({ ...item, quantityValue: parseQuantity(item.quantity) }))
-    .filter((item) => item.productId && item.warehouseId && item.quantityValue > 0);
+    .map((item) => ({ ...item, quantityValue: parseQuantity(item.quantity), rejectedQuantityValue: parseQuantity(item.rejectedQuantity || "0") }))
+    .filter((item) => item.productId && item.warehouseId && (item.quantityValue > 0 || item.rejectedQuantityValue > 0));
 
   if (items.length === 0) {
-    throw new Error("Agrega al menos un producto terminado con color, cantidad y bodega destino.");
+    throw new Error("Agrega al menos un producto producido o rechazado con color y bodega destino.");
   }
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantityValue, 0);
+  const totalRejected = items.reduce((sum, item) => sum + item.rejectedQuantityValue, 0);
   const shiftSchedule = getCurrentShift(await getShiftSchedules());
 
   return prisma.$transaction(async (tx) => {
@@ -101,39 +104,57 @@ export async function createProductionEntry(input: {
         shiftEnd: shiftSchedule.endTime,
         targetProductId: items[0].productId,
         destinationLocationId: items[0].warehouseId,
-        plannedQuantity: totalQuantity,
+        plannedQuantity: totalQuantity + totalRejected,
         producedQuantity: totalQuantity,
+        wasteNotes: totalRejected > 0 ? "Producto rechazado al registrar produccion" : null,
         responsibleId: input.responsibleId,
         closedAt: new Date(),
         outputs: {
           create: items.map((item) => ({
             productId: item.productId,
-            plannedQuantity: item.quantityValue,
+            plannedQuantity: item.quantityValue + item.rejectedQuantityValue,
             producedQuantity: item.quantityValue,
+            rejectedQuantity: item.rejectedQuantityValue,
           })),
         },
       },
     });
 
     for (const [index, item] of items.entries()) {
-      await tx.stockBalance.upsert({
-        where: { productId_locationId: { productId: item.productId, locationId: item.warehouseId } },
-        update: { quantity: { increment: item.quantityValue } },
-        create: { productId: item.productId, locationId: item.warehouseId, quantity: item.quantityValue },
-      });
+      if (item.quantityValue > 0) {
+        await tx.stockBalance.upsert({
+          where: { productId_locationId: { productId: item.productId, locationId: item.warehouseId } },
+          update: { quantity: { increment: item.quantityValue } },
+          create: { productId: item.productId, locationId: item.warehouseId, quantity: item.quantityValue },
+        });
 
-      await tx.inventoryMovement.create({
-        data: {
-          code: `PROD-${Date.now()}-${index + 1}`,
-          type: "PRODUCTION_IN",
-          productId: item.productId,
-          toLocationId: item.warehouseId,
-          quantity: item.quantityValue,
-          reason: `Produccion registrada en ${shiftSchedule.name}`,
-          productionOrderId: order.id,
-          createdById: input.responsibleId,
-        },
-      });
+        await tx.inventoryMovement.create({
+          data: {
+            code: `PROD-${Date.now()}-${index + 1}`,
+            type: "PRODUCTION_IN",
+            productId: item.productId,
+            toLocationId: item.warehouseId,
+            quantity: item.quantityValue,
+            reason: `Produccion registrada en ${shiftSchedule.name}`,
+            productionOrderId: order.id,
+            createdById: input.responsibleId,
+          },
+        });
+      }
+
+      if (item.rejectedQuantityValue > 0) {
+        await tx.inventoryMovement.create({
+          data: {
+            code: `MER-${Date.now()}-${index + 1}`,
+            type: "WASTE_OUT",
+            productId: item.productId,
+            quantity: item.rejectedQuantityValue,
+            reason: "Producto rechazado al fabricar",
+            productionOrderId: order.id,
+            createdById: input.responsibleId,
+          },
+        });
+      }
     }
 
     return order;
@@ -211,10 +232,13 @@ function getCurrentShift(schedules: Array<{ name: string; startTime: string; end
   return match || schedules[0] || { name: "Sin turno", startTime: "00:00", endTime: "23:59" };
 }
 
-function formatOrderProducts(outputs: Array<{ product: { name: string; modelName: string | null; color: string | null }; producedQuantity: Prisma.Decimal }>) {
+function formatOrderProducts(outputs: Array<{ product: { name: string; modelName: string | null; color: string | null }; producedQuantity: Prisma.Decimal; rejectedQuantity: Prisma.Decimal }>) {
   if (outputs.length === 0) return "Sin producto";
 
-  return outputs.map((output) => `${output.product.modelName || output.product.name} · ${output.product.color || "Sin color"} (${output.producedQuantity.toString()})`).join(", ");
+  return outputs.map((output) => {
+    const rejected = Number(output.rejectedQuantity) > 0 ? `, rech. ${output.rejectedQuantity.toString()}` : "";
+    return `${output.product.modelName || output.product.name} · ${output.product.color || "Sin color"} (${output.producedQuantity.toString()}${rejected})`;
+  }).join(", ");
 }
 
 function parseQuantity(value: string) {
