@@ -43,7 +43,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
         actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Produccion del dia", value: `${productionToday.toLocaleString("es-GT")} un`, detail: "Unidades de hoy" },
           { label: "Produccion del mes", value: `${productionMonth.toLocaleString("es-GT")} un`, detail: "Acumulado mensual" },
-          { label: "Rechazos", value: `${totalRejected.toLocaleString("es-GT")} un`, detail: "Merma de fabricacion" },
+          { label: "Rechazos", value: `${totalRejected.toLocaleString("es-GT")} un`, detail: "Producto no aceptado" },
           { label: "Ordenes", value: String(filteredOrders.length), detail: `${registered} registradas` },
         ]} columns={[
           { key: "codigo", label: "Orden" },
@@ -77,7 +77,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
         <MiniKpi label="Produccion del dia" value={`${productionToday.toLocaleString("es-GT")} un`} detail="Unidades de hoy" icon={Factory} tone="emerald" />
         <MiniKpi label="Produccion del mes" value={`${productionMonth.toLocaleString("es-GT")} un`} detail="Acumulado mensual" icon={CalendarDays} tone="sky" />
         <MiniKpi label="Turno actual" value={currentShift} detail={currentShiftRange} icon={Clock3} tone="violet" />
-        <MiniKpi label="Rechazos" value={`${totalRejected.toLocaleString("es-GT")} un`} detail="Merma registrada" icon={Warehouse} tone="amber" />
+        <MiniKpi label="Rechazos" value={`${totalRejected.toLocaleString("es-GT")} un`} detail="Producto no aceptado" icon={Warehouse} tone="amber" />
       </div>
 
       {products.length === 0 ? <p className="mt-6 rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Primero registra productos terminados en Inventario.</p> : null}

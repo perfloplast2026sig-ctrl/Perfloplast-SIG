@@ -190,7 +190,7 @@ function movementTypeLabel(type: string) {
     TRANSFER_IN: "Traslado entrada",
     ADJUSTMENT_IN: "Ajuste entrada",
     ADJUSTMENT_OUT: "Ajuste salida",
-    WASTE_OUT: "Merma",
+    WASTE_OUT: "Rechazo produccion",
     RETURN_IN: "Devolucion",
   };
   return labels[type] || type;

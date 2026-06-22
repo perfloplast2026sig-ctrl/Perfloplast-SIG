@@ -121,6 +121,9 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
                 <section className="rounded-2xl border bg-card-muted/40 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Paso 2</p>
                   <h4 className="mt-1 text-base font-semibold">Verificar productos y cantidades</h4>
+                  <p className="mt-2 rounded-2xl border bg-card p-3 text-sm leading-6 text-muted">
+                    En el campo Sale al camion escribe solo lo que realmente se subio. Si el pedido era 300 y escribes 200, el sistema registra 100 como rechazado. Usa Rechazar todo cuando nada de ese producto debe salir.
+                  </p>
                   <div className="mt-3 space-y-3">
                     {selected.map((preorder) => (
                       <div key={preorder.id} className="rounded-2xl border bg-card p-3">
@@ -147,9 +150,9 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
                                     <p className="text-sm text-muted">{item.color} - pedido: {item.quantity} un</p>
                                   </div>
                                   <label>
-                                    <span className="mb-1 block text-xs font-semibold text-muted">Cargado bueno</span>
+                                    <span className="mb-1 block text-xs font-semibold text-muted">Sale al camion</span>
                                     <input className="h-11 w-full rounded-xl border bg-card px-3 text-sm font-semibold outline-none focus:border-accent" inputMode="decimal" name={`loadedQuantity-${item.id}`} onChange={(event) => updateLoadedQuantity(item.id, event.target.value)} type="number" min="0" max={item.quantity} step="0.001" value={loadedQuantity} />
-                                    {rejectedQuantity > 0 ? <span className="mt-1 block text-xs font-semibold text-red-600 dark:text-red-300">Rechazo {rejectedQuantity.toLocaleString("es-GT")} un</span> : null}
+                                    {rejectedQuantity > 0 ? <span className="mt-1 block text-xs font-semibold text-red-600 dark:text-red-300">No sale: {rejectedQuantity.toLocaleString("es-GT")} un rechazadas</span> : null}
                                   </label>
                                   <label>
                                     <span className="mb-1 block text-xs font-semibold text-muted">Traer de otra bodega</span>
@@ -160,7 +163,7 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
                                   </label>
                                   <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-4 text-sm font-semibold text-red-700 dark:text-red-300">
                                     <input checked={rejected} className="h-4 w-4 accent-red-600" name="rejectedPreorderItemId" onChange={() => toggleRejected(item.id)} type="checkbox" value={item.id} />
-                                    Rechazo
+                                    Rechazar todo
                                   </label>
                                 </div>
                               </div>

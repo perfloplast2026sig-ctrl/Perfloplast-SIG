@@ -87,6 +87,6 @@ export const reports = [
   { name: "Inventario valorizado", area: "Inventario", cadence: "Diario", export: "PDF / Excel" },
   { name: "Movimientos Kardex", area: "Bodega", cadence: "Por rango", export: "Excel" },
   { name: "Preventas por estado", area: "Ventas", cadence: "Semanal", export: "PDF" },
-  { name: "Produccion y merma", area: "Produccion", cadence: "Por turno", export: "Excel" },
+  { name: "Produccion y rechazos", area: "Produccion", cadence: "Por turno", export: "Excel" },
   { name: "Despachos y entregas", area: "Logistica", cadence: "Diario", export: "PDF / Excel" },
 ];

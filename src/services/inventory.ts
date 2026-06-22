@@ -570,7 +570,7 @@ function movementTypeLabel(type: string) {
     TRANSFER_IN: "Traslado entrada",
     TRANSFER_OUT: "Traslado salida",
     SALE_OUT: "Salida venta",
-    WASTE_OUT: "Merma",
+    WASTE_OUT: "Rechazo produccion",
     RETURN_IN: "Devolucion",
   };
 
@@ -584,7 +584,7 @@ function movementCategory(type: string) {
   if (type.startsWith("ADJUSTMENT")) return "Ajuste";
   if (type === "PURCHASE_IN") return "Entrada";
   if (type === "RETURN_IN") return "Devolucion";
-  if (type === "WASTE_OUT") return "Merma";
+  if (type === "WASTE_OUT") return "Rechazo produccion";
   return "Movimiento";
 }
 

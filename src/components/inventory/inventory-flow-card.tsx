@@ -2,7 +2,7 @@ import { ArrowRightLeft, ClipboardCheck, PackagePlus, SlidersHorizontal } from "
 
 const flows = [
   { title: "Entradas", detail: "Compra, devolucion o produccion terminada", icon: PackagePlus },
-  { title: "Salidas", detail: "Venta, consumo, merma o ajuste negativo", icon: ClipboardCheck },
+  { title: "Salidas", detail: "Venta, consumo, rechazo o ajuste negativo", icon: ClipboardCheck },
   { title: "Traslados", detail: "Bodega a bodega, bodega a camion o retorno", icon: ArrowRightLeft },
   { title: "Ajustes", detail: "Correcciones auditadas con motivo obligatorio", icon: SlidersHorizontal },
 ];
