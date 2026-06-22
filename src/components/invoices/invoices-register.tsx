@@ -9,7 +9,7 @@ import { TableActions } from "@/components/ui/table-actions";
 import type { InvoiceRecord } from "@/services/invoices";
 import { printWithBodyClass } from "@/lib/print";
 
-export function InvoicesRegister({ generatedBy, initialSearch = "", invoices }: { generatedBy: string; initialSearch?: string; invoices: InvoiceRecord[] }) {
+export function InvoicesRegister({ generatedAt, generatedBy, initialSearch = "", invoices }: { generatedAt: string; generatedBy: string; initialSearch?: string; invoices: InvoiceRecord[] }) {
   const [selectedId, setSelectedId] = useState("");
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<InvoiceFilters>({ search: initialSearch, seller: "Todos", period: "Todos", from: "", to: "" });
@@ -67,7 +67,7 @@ export function InvoicesRegister({ generatedBy, initialSearch = "", invoices }: 
           <h2 className="mt-1 text-xl font-semibold">Facturas registradas</h2>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <OperationalReportExport title="Facturas" subtitle="Facturas filtradas" generatedAt={formatOperationalDate(new Date())} generatedBy={generatedBy} metrics={[
+          <OperationalReportExport title="Facturas" subtitle="Facturas filtradas" generatedAt={generatedAt} generatedBy={generatedBy} metrics={[
             { label: "Facturas", value: String(filteredInvoices.length), detail: "Registros filtrados" },
             { label: "Total", value: formatMoney(filteredInvoices.reduce((sum, invoice) => sum + moneyValue(invoice.total), 0)), detail: "Monto filtrado" },
             { label: "Vendedores", value: String(uniqueOptions(filteredInvoices.map((invoice) => invoice.seller)).length), detail: "En listado actual" },
@@ -265,10 +265,6 @@ function matchesPeriod(dateKey: string, period: string, from: string, to: string
 
 function currentGuatemalaDateKey() {
   return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
-}
-
-function formatOperationalDate(date: Date) {
-  return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function PaginationFooter({ currentPage, end, goToPage, start, total, totalPages }: { currentPage: number; end: number; goToPage: (page: number) => void; start: number; total: number; totalPages: number }) {

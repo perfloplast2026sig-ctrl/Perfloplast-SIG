@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import "./globals.css";
 
@@ -68,7 +69,9 @@ export default function RootLayout({
 
 function LocalDevServiceWorkerReset() {
   return (
-    <script
+    <Script
+      id="local-dev-service-worker-reset"
+      strategy="afterInteractive"
       dangerouslySetInnerHTML={{
         __html: `
           (function () {
