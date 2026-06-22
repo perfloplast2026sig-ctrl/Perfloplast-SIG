@@ -3,16 +3,19 @@
 import Image from "next/image";
 import { Eye, FileSpreadsheet, Printer, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { OperationalReportExport } from "@/components/reports/operational-report-export";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { TableActions } from "@/components/ui/table-actions";
 import type { InvoiceRecord } from "@/services/invoices";
 import { printWithBodyClass } from "@/lib/print";
 
-export function InvoicesRegister({ initialSearch = "", invoices }: { initialSearch?: string; invoices: InvoiceRecord[] }) {
+export function InvoicesRegister({ generatedBy, initialSearch = "", invoices }: { generatedBy: string; initialSearch?: string; invoices: InvoiceRecord[] }) {
   const [selectedId, setSelectedId] = useState("");
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<InvoiceFilters>({ search: initialSearch, seller: "Todos", period: "Todos", from: "", to: "" });
   const pageSize = 10;
-  const filteredInvoices = useMemo(() => filterInvoices(invoices, initialSearch), [initialSearch, invoices]);
+  const sellerOptions = useMemo(() => uniqueOptions(invoices.map((invoice) => invoice.seller)), [invoices]);
+  const filteredInvoices = useMemo(() => filterInvoices(invoices, filters), [filters, invoices]);
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * pageSize;
@@ -27,7 +30,7 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
   };
 
   const exportExcel = () => {
-    const rows = invoices.flatMap((invoice) => {
+    const rows = filteredInvoices.flatMap((invoice) => {
       const discount = moneyValue(invoice.discount);
       return invoice.items.map((item, index) => ({
         invoice: invoice.number.replace(/^FAC-\d{4}-0*/, "F-"),
@@ -64,6 +67,25 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
           <h2 className="mt-1 text-xl font-semibold">Facturas registradas</h2>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <OperationalReportExport title="Facturas" subtitle="Facturas filtradas" generatedAt={formatOperationalDate(new Date())} generatedBy={generatedBy} metrics={[
+            { label: "Facturas", value: String(filteredInvoices.length), detail: "Registros filtrados" },
+            { label: "Total", value: formatMoney(filteredInvoices.reduce((sum, invoice) => sum + moneyValue(invoice.total), 0)), detail: "Monto filtrado" },
+            { label: "Vendedores", value: String(uniqueOptions(filteredInvoices.map((invoice) => invoice.seller)).length), detail: "En listado actual" },
+          ]} columns={[
+            { key: "factura", label: "Factura" },
+            { key: "preventa", label: "Preventa" },
+            { key: "cliente", label: "Cliente" },
+            { key: "vendedor", label: "Vendedor" },
+            { key: "fecha", label: "Fecha" },
+            { key: "total", label: "Total", align: "right" },
+          ]} rows={filteredInvoices.map((invoice) => ({
+            factura: invoice.number,
+            preventa: invoice.preorder,
+            cliente: invoice.client,
+            vendedor: invoice.seller,
+            fecha: invoice.issuedAt,
+            total: invoice.total,
+          }))} />
           <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted sm:w-auto" onClick={exportExcel} type="button">
             <FileSpreadsheet size={16} /> Excel
           </button>
@@ -71,7 +93,7 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
         </div>
       </div>
 
-      {initialSearch ? <p className="mx-5 mt-5 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {initialSearch}. Mostrando {filteredInvoices.length} resultado(s).</p> : null}
+      <InvoiceFilterBar filters={filters} onChange={(patch) => { setFilters((current) => ({ ...current, ...patch })); setPage(1); }} sellers={sellerOptions} />
       {filteredInvoices.length === 0 ? (
         <p className="m-5 rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Aun no hay facturas generadas.</p>
       ) : (
@@ -170,14 +192,83 @@ export function InvoicesRegister({ initialSearch = "", invoices }: { initialSear
   );
 }
 
-function filterInvoices(invoices: InvoiceRecord[], query: string) {
-  const term = normalizeSearch(query);
-  if (!term) return invoices;
-  return invoices.filter((invoice) => normalizeSearch([invoice.number, invoice.preorder, invoice.client, invoice.taxId, invoice.phone, invoice.seller, invoice.total].join(" ")).includes(term));
+type InvoiceFilters = {
+  search: string;
+  seller: string;
+  period: string;
+  from: string;
+  to: string;
+};
+
+function InvoiceFilterBar({ filters, onChange, sellers }: { filters: InvoiceFilters; onChange: (patch: Partial<InvoiceFilters>) => void; sellers: string[] }) {
+  return (
+    <div className="invoice-no-print grid gap-3 border-b p-4 sm:p-5 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end">
+      <ClientFilterInput label="Buscar" placeholder="Factura, cliente, NIT..." value={filters.search} onChange={(value) => onChange({ search: value })} />
+      <ClientFilterSelect label="Vendedor" value={filters.seller} options={["Todos", ...sellers]} onChange={(value) => onChange({ seller: value })} />
+      <ClientFilterSelect label="Periodo" value={filters.period} options={["Todos", "Hoy", "Mes", "Personalizado"]} onChange={(value) => onChange({ period: value })} />
+      <ClientFilterInput label="Desde" type="date" value={filters.from} onChange={(value) => onChange({ from: value })} />
+      <ClientFilterInput label="Hasta" type="date" value={filters.to} onChange={(value) => onChange({ to: value })} />
+      <button className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={() => onChange({ search: "", seller: "Todos", period: "Todos", from: "", to: "" })} type="button">Todos</button>
+    </div>
+  );
+}
+
+function ClientFilterInput({ label, onChange, placeholder, type = "text", value }: { label: string; onChange: (value: string) => void; placeholder?: string; type?: string; value: string }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <input className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} value={value} />
+    </label>
+  );
+}
+
+function ClientFilterSelect({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <select className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" onChange={(event) => onChange(event.target.value)} value={value}>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function filterInvoices(invoices: InvoiceRecord[], filters: InvoiceFilters) {
+  const term = normalizeSearch(filters.search);
+  const today = currentGuatemalaDateKey();
+  const month = today.slice(0, 7);
+
+  return invoices.filter((invoice) => {
+    if (term && !normalizeSearch([invoice.number, invoice.preorder, invoice.client, invoice.taxId, invoice.phone, invoice.seller, invoice.total].join(" ")).includes(term)) return false;
+    if (filters.seller !== "Todos" && invoice.seller !== filters.seller) return false;
+    return matchesPeriod(invoice.issuedDateKey, filters.period, filters.from, filters.to, today, month);
+  });
 }
 
 function normalizeSearch(value: string) {
   return value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function uniqueOptions(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function matchesPeriod(dateKey: string, period: string, from: string, to: string, today: string, month: string) {
+  if (period === "Hoy") return dateKey === today;
+  if (period === "Mes") return dateKey.startsWith(month);
+  if (period === "Personalizado") {
+    if (from && dateKey < from) return false;
+    if (to && dateKey > to) return false;
+  }
+  return true;
+}
+
+function currentGuatemalaDateKey() {
+  return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
+}
+
+function formatOperationalDate(date: Date) {
+  return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function PaginationFooter({ currentPage, end, goToPage, start, total, totalPages }: { currentPage: number; end: number; goToPage: (page: number) => void; start: number; total: number; totalPages: number }) {
@@ -299,6 +390,10 @@ function compactSku(sku: string) {
 
 function moneyValue(value: string) {
   return Number(value.replace(/[^\d.-]/g, "")) || 0;
+}
+
+function formatMoney(value: number) {
+  return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function buildExcelTemplate(rows: Array<{ invoice: string; type: string; quantity: string; description: string; unitPrice: number; discount: number; total: number }>) {

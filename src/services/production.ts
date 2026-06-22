@@ -55,6 +55,7 @@ async function getProductionModuleDataRaw() {
       quantity: order.producedQuantity.toString(),
       rejectedQuantity: order.outputs.reduce((sum, output) => sum + Number(output.rejectedQuantity), 0).toString(),
       responsible: order.responsible.name,
+      dateKey: toGuatemalaDateKey(order.createdAt),
       createdAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(order.createdAt),
       closedAt: order.closedAt ? new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(order.closedAt) : "Sin cierre",
       items: order.outputs.map((output) => ({
@@ -306,6 +307,10 @@ function getGuatemalaMinutes() {
   const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
   const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
   return hour * 60 + minute;
+}
+
+function toGuatemalaDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function isMinuteInsideRange(currentMinutes: number, startTime: string, endTime: string) {

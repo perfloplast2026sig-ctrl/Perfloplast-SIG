@@ -14,7 +14,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeading title="Facturas" />
-      <InvoicesRegister initialSearch={params.search || ""} invoices={invoices} />
+      <InvoicesRegister generatedBy={user.name} initialSearch={params.search || ""} invoices={invoices} />
     </>
   );
 }

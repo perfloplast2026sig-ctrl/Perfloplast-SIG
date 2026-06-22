@@ -13,7 +13,19 @@ import { requireCurrentUser } from "@/services/auth";
 import { getLogisticsModuleData } from "@/services/logistics";
 import Link from "next/link";
 
-export default async function LogisticsPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; rejected?: string; cancelled?: string; search?: string }> }) {
+type LogisticsSearchParams = {
+  error?: string;
+  created?: string;
+  rejected?: string;
+  cancelled?: string;
+  search?: string;
+  driver?: string;
+  period?: string;
+  from?: string;
+  to?: string;
+};
+
+export default async function LogisticsPage({ searchParams }: { searchParams: Promise<LogisticsSearchParams> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (user.role.name === "Vendedor") redirect("/preventas");
@@ -22,7 +34,8 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const canSeeMap = ["Super admin", "Administrador"].includes(user.role.name);
   const canCreateDispatch = ["Super admin", "Administrador", "Bodeguero"].includes(user.role.name);
   const isDriver = user.role.name === "Piloto";
-  const visibleDispatches = filterRows(dispatches, params.search, (dispatch) => [dispatch.code, dispatch.preorder, dispatch.invoice, dispatch.client, dispatch.driver, dispatch.destination, dispatch.status.label, dispatch.rejectedLoad]);
+  const driverOptions = uniqueOptions(dispatches.map((dispatch) => dispatch.driver));
+  const visibleDispatches = filterDispatchRows(dispatches, params);
   const driverOrders = deliveryMapOrders;
   const totalLoad = visibleDispatches.reduce((sum, dispatch) => sum + Number(dispatch.load.replace(/[^\d.-]/g, "") || 0), 0);
   const delivered = visibleDispatches.filter((dispatch) => dispatch.status.label === "Entregado").length;
@@ -67,6 +80,8 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
       {params.cancelled ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Despacho anulado correctamente.</div> : null}
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {visibleDispatches.length} resultado(s).</div> : null}
 
+      <LogisticsFilters params={params} driverOptions={driverOptions} />
+
       <SectionCard title="Despachos" eyebrow="Rutas, piloto y valoracion">
         <DataTable
           data={visibleDispatches}
@@ -94,14 +109,76 @@ function formatOperationalDate(date: Date) {
   return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
-function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
-  const term = normalizeSearch(query || "");
-  if (!term) return rows;
-  return rows.filter((row) => normalizeSearch(fields(row).join(" ")).includes(term));
+function filterDispatchRows(rows: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"], params: LogisticsSearchParams) {
+  const today = currentGuatemalaDateKey();
+  const month = today.slice(0, 7);
+  const term = normalizeSearch(params.search || "");
+  const driver = params.driver || "Todos";
+  const period = params.period || "Todos";
+
+  return rows.filter((row) => {
+    if (term && !normalizeSearch([row.code, row.preorder, row.invoice, row.client, row.driver, row.destination, row.status.label, row.rejectedLoad].join(" ")).includes(term)) return false;
+    if (driver !== "Todos" && row.driver !== driver) return false;
+    return matchesPeriod(row.scheduledDateKey, period, params.from, params.to, today, month);
+  });
 }
 
 function normalizeSearch(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function LogisticsFilters({ params, driverOptions }: { params: LogisticsSearchParams; driverOptions: string[] }) {
+  return (
+    <form className="mb-6 grid gap-3 rounded-[24px] border bg-card p-4 shadow-sm lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end" method="get">
+      <FilterInput label="Buscar" name="search" placeholder="Despacho, cliente, destino..." defaultValue={params.search || ""} />
+      <FilterSelect label="Piloto" name="driver" defaultValue={params.driver || "Todos"} options={["Todos", ...driverOptions]} />
+      <FilterSelect label="Periodo" name="period" defaultValue={params.period || "Todos"} options={["Todos", "Hoy", "Mes", "Personalizado"]} />
+      <FilterInput label="Desde" name="from" type="date" defaultValue={params.from || ""} />
+      <FilterInput label="Hasta" name="to" type="date" defaultValue={params.to || ""} />
+      <div className="flex gap-2">
+        <a className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/logistica">Todos</a>
+        <button className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" type="submit">Filtrar</button>
+      </div>
+    </form>
+  );
+}
+
+function FilterInput({ defaultValue, label, name, placeholder, type = "text" }: { defaultValue: string; label: string; name: string; placeholder?: string; type?: string }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <input className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name} placeholder={placeholder} type={type} />
+    </label>
+  );
+}
+
+function FilterSelect({ defaultValue, label, name, options }: { defaultValue: string; label: string; name: string; options: string[] }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <select className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name}>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function uniqueOptions(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function matchesPeriod(dateKey: string, period: string, from: string | undefined, to: string | undefined, today: string, month: string) {
+  if (period === "Hoy") return dateKey === today;
+  if (period === "Mes") return dateKey.startsWith(month);
+  if (period === "Personalizado") {
+    if (from && dateKey < from) return false;
+    if (to && dateKey > to) return false;
+  }
+  return true;
+}
+
+function currentGuatemalaDateKey() {
+  return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
 }
 
 function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {

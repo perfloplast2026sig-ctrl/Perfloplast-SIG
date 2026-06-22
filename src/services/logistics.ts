@@ -104,6 +104,7 @@ async function getLogisticsModuleDataRaw(viewer?: Viewer) {
         destinationLatitude: dispatch.destinationLatitude ? Number(dispatch.destinationLatitude) : null,
         destinationLongitude: dispatch.destinationLongitude ? Number(dispatch.destinationLongitude) : null,
         scheduledAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(dispatch.scheduledAt),
+        scheduledDateKey: toGuatemalaDateKey(dispatch.scheduledAt),
         deliveredAt: dispatch.deliveredAt ? new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(dispatch.deliveredAt) : "Sin entrega",
         load: `${dispatch.items.reduce((sum, item) => sum + Number(item.quantity), 0)} un`,
         value: formatGTQ(dispatch.preorder?.totalGTQ || 0),
@@ -999,6 +1000,10 @@ function returnStatusLabel(resolution: string | null, resolvedAt: Date | null) {
 
 function formatDateTime(date: Date) {
   return new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
+}
+
+function toGuatemalaDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
 function buildMovementCode(prefix: string) {

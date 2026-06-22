@@ -35,6 +35,7 @@ export async function getInvoicesModuleData(viewer?: Viewer) {
     amountReceived: formatGTQ(invoice.preorder.amountReceivedGTQ),
     change: formatGTQ(Math.max(0, Number(invoice.preorder.amountReceivedGTQ) - Number(invoice.totalGTQ))),
     total: formatGTQ(invoice.totalGTQ),
+    issuedDateKey: new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(invoice.issuedAt),
     issuedAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(invoice.issuedAt),
     generatedAt: new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(invoice.createdAt),
     companyAddress: invoice.companyAddress,

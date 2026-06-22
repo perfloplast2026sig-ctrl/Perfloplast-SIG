@@ -11,15 +11,29 @@ import { getProductionModuleData } from "@/services/production";
 import { CalendarDays, Clock3, Factory, Warehouse } from "lucide-react";
 import { redirect } from "next/navigation";
 
-export default async function ProductionPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; search?: string }> }) {
+type ProductionSearchParams = {
+  error?: string;
+  created?: string;
+  updated?: string;
+  search?: string;
+  responsible?: string;
+  period?: string;
+  rejected?: string;
+  from?: string;
+  to?: string;
+};
+
+export default async function ProductionPage({ searchParams }: { searchParams: Promise<ProductionSearchParams> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador"].includes(user.role.name)) redirect("/inventario");
   const { products, warehouses, orders, nextCode, currentShift, currentShiftRange, currentDateTime, shiftSchedules, productionToday, productionMonth } = await getProductionModuleData();
   const canManageShiftSchedules = ["Super admin", "Administrador"].includes(user.role.name);
-  const totalRejected = orders.reduce((sum, order) => sum + Number(order.rejectedQuantity || 0), 0);
-  const registered = orders.filter((order) => order.status.label === "Registrada").length;
-  const filteredOrders = filterRows(orders, params.search, (order) => [order.code, order.product, order.warehouse, order.shift, order.schedule, order.quantity, order.rejectedQuantity, order.responsible, order.status.label]);
+  const responsibleOptions = uniqueOptions(orders.map((order) => order.responsible));
+  const filteredOrders = filterProductionRows(orders, params);
+  const totalRejected = filteredOrders.reduce((sum, order) => sum + Number(order.rejectedQuantity || 0), 0);
+  const registered = filteredOrders.filter((order) => order.status.label === "Registrada").length;
+  const producedInFilter = filteredOrders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
   const generatedAt = formatOperationalDate(new Date());
 
   return (
@@ -30,7 +44,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
           { label: "Produccion del dia", value: `${productionToday.toLocaleString("es-GT")} un`, detail: "Unidades de hoy" },
           { label: "Produccion del mes", value: `${productionMonth.toLocaleString("es-GT")} un`, detail: "Acumulado mensual" },
           { label: "Rechazos", value: `${totalRejected.toLocaleString("es-GT")} un`, detail: "Merma de fabricacion" },
-          { label: "Ordenes", value: String(orders.length), detail: `${registered} registradas` },
+          { label: "Ordenes", value: String(filteredOrders.length), detail: `${registered} registradas` },
         ]} columns={[
           { key: "codigo", label: "Orden" },
           { key: "productos", label: "Productos" },
@@ -40,7 +54,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
           { key: "rechazos", label: "Rechazos", align: "right" },
           { key: "responsable", label: "Responsable" },
           { key: "estado", label: "Estado" },
-        ]} rows={orders.map((order) => ({
+        ]} rows={filteredOrders.map((order) => ({
           codigo: order.code,
           productos: order.product,
           bodega: order.warehouse,
@@ -57,6 +71,8 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       {params.updated === "shifts" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Turnos actualizados correctamente.</div> : null}
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredOrders.length} resultado(s).</div> : null}
 
+      <ProductionFilters params={params} responsibleOptions={responsibleOptions} />
+
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <MiniKpi label="Produccion del dia" value={`${productionToday.toLocaleString("es-GT")} un`} detail="Unidades de hoy" icon={Factory} tone="emerald" />
         <MiniKpi label="Produccion del mes" value={`${productionMonth.toLocaleString("es-GT")} un`} detail="Acumulado mensual" icon={CalendarDays} tone="sky" />
@@ -67,7 +83,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
       {products.length === 0 ? <p className="mt-6 rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">Primero registra productos terminados en Inventario.</p> : null}
 
       <div className="mt-6">
-        <SectionCard title="Ordenes registradas" eyebrow="Produccion y entrada a bodega" action={<Badge label="Kardex automatico" tone="info" />}>
+        <SectionCard title="Ordenes registradas" eyebrow="Produccion y entrada a bodega" action={<div className="flex flex-wrap items-center gap-2"><Badge label={`${producedInFilter.toLocaleString("es-GT")} un filtradas`} tone="info" /><Badge label="Kardex automatico" tone="info" /></div>}>
           <DataTable
             data={filteredOrders}
             columns={[
@@ -91,14 +107,80 @@ function formatOperationalDate(date: Date) {
   return new Intl.DateTimeFormat("es-GT", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guatemala" }).format(date);
 }
 
-function filterRows<T>(rows: T[], query: string | undefined, fields: (row: T) => Array<string | number | null | undefined>) {
-  const term = normalizeSearch(query || "");
-  if (!term) return rows;
-  return rows.filter((row) => normalizeSearch(fields(row).join(" ")).includes(term));
+function filterProductionRows(rows: Awaited<ReturnType<typeof getProductionModuleData>>["orders"], params: ProductionSearchParams) {
+  const today = currentGuatemalaDateKey();
+  const month = today.slice(0, 7);
+  const term = normalizeSearch(params.search || "");
+  const responsible = params.responsible || "Todos";
+  const rejected = params.rejected || "Todos";
+  const period = params.period || "Todos";
+
+  return rows.filter((row) => {
+    if (term && !normalizeSearch([row.code, row.product, row.warehouse, row.shift, row.schedule, row.quantity, row.rejectedQuantity, row.responsible, row.status.label].join(" ")).includes(term)) return false;
+    if (responsible !== "Todos" && row.responsible !== responsible) return false;
+    if (rejected === "Con rechazos" && Number(row.rejectedQuantity) <= 0) return false;
+    if (rejected === "Sin rechazos" && Number(row.rejectedQuantity) > 0) return false;
+    return matchesPeriod(row.dateKey, period, params.from, params.to, today, month);
+  });
 }
 
 function normalizeSearch(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function ProductionFilters({ params, responsibleOptions }: { params: ProductionSearchParams; responsibleOptions: string[] }) {
+  return (
+    <form className="mb-6 grid gap-3 rounded-[24px] border bg-card p-4 shadow-sm lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end" method="get">
+      <FilterInput label="Buscar" name="search" placeholder="Orden, producto, bodega..." defaultValue={params.search || ""} />
+      <FilterSelect label="Responsable" name="responsible" defaultValue={params.responsible || "Todos"} options={["Todos", ...responsibleOptions]} />
+      <FilterSelect label="Periodo" name="period" defaultValue={params.period || "Todos"} options={["Todos", "Hoy", "Mes", "Personalizado"]} />
+      <FilterInput label="Desde" name="from" type="date" defaultValue={params.from || ""} />
+      <FilterInput label="Hasta" name="to" type="date" defaultValue={params.to || ""} />
+      <FilterSelect label="Rechazos" name="rejected" defaultValue={params.rejected || "Todos"} options={["Todos", "Con rechazos", "Sin rechazos"]} />
+      <div className="flex gap-2 lg:col-span-6 lg:justify-end">
+        <a className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/produccion">Todos</a>
+        <button className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" type="submit">Aplicar filtros</button>
+      </div>
+    </form>
+  );
+}
+
+function FilterInput({ defaultValue, label, name, placeholder, type = "text" }: { defaultValue: string; label: string; name: string; placeholder?: string; type?: string }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <input className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name} placeholder={placeholder} type={type} />
+    </label>
+  );
+}
+
+function FilterSelect({ defaultValue, label, name, options }: { defaultValue: string; label: string; name: string; options: string[] }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <select className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name}>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function uniqueOptions(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function matchesPeriod(dateKey: string, period: string, from: string | undefined, to: string | undefined, today: string, month: string) {
+  if (period === "Hoy") return dateKey === today;
+  if (period === "Mes") return dateKey.startsWith(month);
+  if (period === "Personalizado") {
+    if (from && dateKey < from) return false;
+    if (to && dateKey > to) return false;
+  }
+  return true;
+}
+
+function currentGuatemalaDateKey() {
+  return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
 }
 
 function MiniKpi({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof Factory; tone: "emerald" | "sky" | "violet" | "amber" }) {
