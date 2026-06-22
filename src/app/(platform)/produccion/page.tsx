@@ -130,14 +130,14 @@ function normalizeSearch(value: string) {
 
 function ProductionFilters({ params, responsibleOptions }: { params: ProductionSearchParams; responsibleOptions: string[] }) {
   return (
-    <form className="mb-6 grid gap-3 rounded-[24px] border bg-card p-4 shadow-sm lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end" method="get">
+    <form className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 shadow-sm sm:gap-3 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.85fr_0.85fr_0.9fr_auto] lg:items-end" method="get">
       <FilterInput label="Buscar" name="search" placeholder="Orden, producto, bodega..." defaultValue={params.search || ""} />
       <FilterSelect label="Responsable" name="responsible" defaultValue={params.responsible || "Todos"} options={["Todos", ...responsibleOptions]} />
       <FilterSelect label="Periodo" name="period" defaultValue={params.period || "Todos"} options={["Todos", "Hoy", "Mes", "Personalizado"]} />
       <FilterInput label="Desde" name="from" type="date" defaultValue={params.from || ""} />
       <FilterInput label="Hasta" name="to" type="date" defaultValue={params.to || ""} />
       <FilterSelect label="Rechazos" name="rejected" defaultValue={params.rejected || "Todos"} options={["Todos", "Con rechazos", "Sin rechazos"]} />
-      <div className="flex gap-2 lg:col-span-6 lg:justify-end">
+      <div className="col-span-2 flex gap-2 lg:col-span-1 lg:justify-end">
         <a className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/produccion">Todos</a>
         <button className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" type="submit">Aplicar filtros</button>
       </div>
@@ -148,8 +148,8 @@ function ProductionFilters({ params, responsibleOptions }: { params: ProductionS
 function FilterInput({ defaultValue, label, name, placeholder, type = "text" }: { defaultValue: string; label: string; name: string; placeholder?: string; type?: string }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
-      <input className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name} placeholder={placeholder} type={type} />
+      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <input className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name} placeholder={placeholder} type={type} />
     </label>
   );
 }
@@ -157,8 +157,8 @@ function FilterInput({ defaultValue, label, name, placeholder, type = "text" }: 
 function FilterSelect({ defaultValue, label, name, options }: { defaultValue: string; label: string; name: string; options: string[] }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
-      <select className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name}>
+      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <select className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-accent" defaultValue={defaultValue} name={name}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>

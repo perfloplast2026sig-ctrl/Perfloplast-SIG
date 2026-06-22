@@ -30,6 +30,7 @@ type Row = {
   productTitle: string;
   productId: string;
   quantity: string;
+  rejectedQuantity: string;
   isRejected: boolean;
   warehouseId: string;
 };
@@ -74,7 +75,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                   const colorOptions = selectedGroup?.products || [];
 
                   return (
-                    <div key={row.key} className={`grid gap-3 rounded-2xl border p-3 xl:grid-cols-[1.15fr_0.75fr_0.55fr_0.9fr_auto_auto] ${row.isRejected ? "border-red-500/30 bg-red-500/10" : "bg-card"}`}>
+                    <div key={row.key} className={`grid gap-3 rounded-2xl border p-3 xl:grid-cols-[1.1fr_0.7fr_0.55fr_0.55fr_0.85fr_auto_auto] ${row.isRejected ? "border-red-500/30 bg-red-500/10" : "bg-card"}`}>
                       <SelectField label={`Producto ${index + 1}`} name="" value={row.productTitle} onChange={(value) => updateRow(row.key, { productTitle: value, productId: "" })}>
                         <option value="">Seleccionar producto</option>
                         {productGroups.map((group) => <option key={group.title} value={group.title}>{group.title}</option>)}
@@ -85,9 +86,8 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
                         {colorOptions.map((product) => <option key={product.id} value={product.id}>{product.color || "Sin color"}</option>)}
                       </SelectField>
 
-                      <InputField label="Cantidad" name="" value={row.quantity} onChange={(value) => updateRow(row.key, { quantity: value })} type="number" />
-                      <input name="quantity" type="hidden" value={row.isRejected ? "0" : row.quantity} />
-                      <input name="rejectedQuantity" type="hidden" value={row.isRejected ? row.quantity : "0"} />
+                      <InputField label="Buenos" name="quantity" value={row.quantity} onChange={(value) => updateRow(row.key, { quantity: value })} type="number" />
+                      {row.isRejected ? <InputField label="Rechazados" name="rejectedQuantity" value={row.rejectedQuantity} onChange={(value) => updateRow(row.key, { rejectedQuantity: value })} type="number" /> : <input name="rejectedQuantity" type="hidden" value="0" />}
 
                       <SelectField label="Bodega destino" name="warehouseId" value={row.warehouseId} onChange={(value) => updateRow(row.key, { warehouseId: value })} required>
                         <option value="">Seleccionar bodega</option>
@@ -122,7 +122,7 @@ export function ProductionEntryForm({ products, warehouses, nextCode, currentShi
               </div>
 
               <div className="mt-4 rounded-2xl border bg-card-muted/60 p-4 text-sm leading-6 text-muted">
-                Si marcas Rechazo, esa cantidad queda como merma de fabricacion y no entra al stock disponible.
+                Coloca la cantidad buena que entra a bodega. Si hubo producto malo, activa Rechazo y escribe solo la cantidad rechazada.
               </div>
 
               <div className="mt-4 flex justify-end">
@@ -224,5 +224,5 @@ function displayShiftName(name: string) {
 }
 
 function newRow(): Row {
-  return { key: crypto.randomUUID(), productTitle: "", productId: "", quantity: "", isRejected: false, warehouseId: "" };
+  return { key: crypto.randomUUID(), productTitle: "", productId: "", quantity: "", rejectedQuantity: "", isRejected: false, warehouseId: "" };
 }

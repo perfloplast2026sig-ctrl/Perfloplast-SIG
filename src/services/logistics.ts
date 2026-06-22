@@ -304,7 +304,22 @@ export async function createDispatches(input: {
       if (preorder.dispatches.length > 0) throw new Error(`La preventa ${preorder.code} ya tiene despacho asignado.`);
       if (!preorder.originLocationId) throw new Error(`La preventa ${preorder.code} no tiene bodega de origen.`);
 
-      const approvedItems = preorder.items.filter((item) => !rejectedByItemId.has(item.id));
+      const loadPlan = preorder.items.map((item) => {
+        const requestedQuantity = Number(item.quantity);
+        const explicitRejected = rejectedByItemId.has(item.id);
+        const loadedQuantity = explicitRejected ? 0 : approveLoad ? loadedByItemId.get(item.id) : requestedQuantity;
+        if (loadedQuantity === undefined) throw new Error(`Verifica la cantidad cargada de ${preorder.code}.`);
+        if (loadedQuantity < 0) throw new Error(`La cantidad cargada no puede ser negativa en ${preorder.code}.`);
+        if (loadedQuantity > requestedQuantity) throw new Error(`La cantidad cargada no puede ser mayor al pedido en ${preorder.code}.`);
+        return {
+          item,
+          loadedQuantity,
+          rejectedQuantity: requestedQuantity - loadedQuantity,
+          rejectionReason: explicitRejected ? rejectedByItemId.get(item.id) : loadedQuantity < requestedQuantity ? "Rechazo parcial en revision de carga" : "",
+        };
+      });
+      const approvedItems = loadPlan.filter((row) => row.loadedQuantity > 0);
+      const rejectedItems = loadPlan.filter((row) => row.rejectedQuantity > 0);
       if (approvedItems.length === 0) {
         const dispatch = await tx.dispatch.create({
           data: {
@@ -363,44 +378,36 @@ export async function createDispatches(input: {
         dispatches.push(dispatch);
         continue;
       }
-      if (approveLoad) {
-        for (const item of approvedItems) {
-          const loadedQuantity = loadedByItemId.get(item.id);
-          if (loadedQuantity === undefined || loadedQuantity <= 0) throw new Error(`Verifica la cantidad cargada de ${preorder.code}.`);
-          if (loadedQuantity !== Number(item.quantity)) throw new Error(`La cantidad cargada no coincide en ${preorder.code}. Rechaza el producto si no corresponde.`);
-        }
-      }
-
-      for (const item of approvedItems) {
-        const sourceLocationId = transferByItemId.get(item.id);
+      for (const row of approvedItems) {
+        const sourceLocationId = transferByItemId.get(row.item.id);
         if (!sourceLocationId || sourceLocationId === preorder.originLocationId) continue;
         const sourceBalance = await tx.stockBalance.findUnique({
-          where: { productId_locationId: { productId: item.productId, locationId: sourceLocationId } },
+          where: { productId_locationId: { productId: row.item.productId, locationId: sourceLocationId } },
           include: { location: true },
         });
-        if (!sourceBalance || Number(sourceBalance.quantity) - Number(sourceBalance.reserved) < Number(item.quantity)) {
+        if (!sourceBalance || Number(sourceBalance.quantity) - Number(sourceBalance.reserved) < row.loadedQuantity) {
           throw new Error(`No hay existencia libre suficiente en la bodega alterna para ${preorder.code}.`);
         }
         await tx.stockBalance.update({
-          where: { productId_locationId: { productId: item.productId, locationId: sourceLocationId } },
-          data: { quantity: { decrement: item.quantity } },
+          where: { productId_locationId: { productId: row.item.productId, locationId: sourceLocationId } },
+          data: { quantity: { decrement: row.loadedQuantity } },
         });
         await tx.stockBalance.upsert({
-          where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
-          update: { quantity: { increment: item.quantity } },
-          create: { productId: item.productId, locationId: preorder.originLocationId, quantity: item.quantity },
+          where: { productId_locationId: { productId: row.item.productId, locationId: preorder.originLocationId } },
+          update: { quantity: { increment: row.loadedQuantity } },
+          create: { productId: row.item.productId, locationId: preorder.originLocationId, quantity: row.loadedQuantity },
         });
         await tx.inventoryMovement.create({
           data: {
             code: buildMovementCode("TRS"),
             type: "TRANSFER_OUT",
-            productId: item.productId,
+            productId: row.item.productId,
             fromLocationId: sourceLocationId,
             toLocationId: preorder.originLocationId,
-            quantity: item.quantity,
+            quantity: row.loadedQuantity,
             reason: "Traslado para carga verificada",
             reference: preorder.code,
-            preorderItemId: item.id,
+            preorderItemId: row.item.id,
             createdById: input.approvedById || preorder.createdById,
           },
         });
@@ -420,16 +427,21 @@ export async function createDispatches(input: {
           status: approveLoad ? "LOADED" : "SCHEDULED",
           loadedAt: approveLoad ? new Date() : null,
           items: {
-            create: approvedItems.map((item) => ({
-              productId: item.productId,
-              preorderItemId: item.id,
-              quantity: item.quantity,
+            create: approvedItems.map((row) => ({
+              productId: row.item.productId,
+              preorderItemId: row.item.id,
+              quantity: row.loadedQuantity,
             })),
           },
         },
       });
 
-      await tx.preorder.update({ where: { id: preorder.id }, data: { status: "CONFIRMED", confirmedAt: new Date() } });
+      const subtotal = loadPlan.reduce((sum, row) => sum + row.loadedQuantity * Number(row.item.unitPrice), 0);
+      const discount = Math.min(Number(preorder.discountGTQ), subtotal);
+      await tx.preorder.update({ where: { id: preorder.id }, data: { status: "CONFIRMED", confirmedAt: new Date(), totalGTQ: subtotal - discount } });
+      for (const row of loadPlan) {
+        await tx.preorderItem.update({ where: { id: row.item.id }, data: { quantity: row.loadedQuantity, reservedQuantity: row.loadedQuantity } });
+      }
       const existingInvoice = await tx.invoice.findUnique({ where: { preorderId: preorder.id } });
       if (!existingInvoice) {
         await tx.invoice.create({
@@ -438,16 +450,15 @@ export async function createDispatches(input: {
             preorderId: preorder.id,
             companyAddress: "Aldea Chijou, Santa Cruz Verapaz",
             companyPhone: "Tel: 44235941 / 53146115",
-            totalGTQ: preorder.totalGTQ,
+            totalGTQ: subtotal - discount,
           },
         });
       }
-      for (const item of preorder.items.filter((row) => rejectedByItemId.has(row.id))) {
+      for (const row of rejectedItems) {
         await tx.stockBalance.update({
-          where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
-          data: { reserved: { decrement: item.reservedQuantity } },
+          where: { productId_locationId: { productId: row.item.productId, locationId: preorder.originLocationId } },
+          data: { reserved: { decrement: row.rejectedQuantity } },
         });
-        await tx.preorderItem.update({ where: { id: item.id }, data: { reservedQuantity: 0 } });
         await tx.auditLog.create({
           data: {
             userId: input.approvedById || preorder.createdById,
@@ -457,9 +468,9 @@ export async function createDispatches(input: {
             metadata: {
               code: dispatch.code,
               preorder: preorder.code,
-              product: productTitle(item.product),
-              quantity: item.quantity.toString(),
-              reason: rejectedByItemId.get(item.id),
+              product: productTitle(row.item.product),
+              quantity: String(row.rejectedQuantity),
+              reason: row.rejectionReason,
               previousStatus: "PRE_DISPATCH_REVIEW",
               inventoryRestored: false,
             },
@@ -476,7 +487,7 @@ export async function createDispatches(input: {
             metadata: {
               code: dispatch.code,
               preorder: preorder.code,
-              rejectedItems: preorder.items.filter((row) => rejectedByItemId.has(row.id)).length,
+              rejectedItems: rejectedItems.length,
               previousStatus: "PRE_DISPATCH_REVIEW",
               inventoryRestored: false,
             },

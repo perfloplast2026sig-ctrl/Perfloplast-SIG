@@ -37,6 +37,7 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [rejectedIds, setRejectedIds] = useState<string[]>([]);
+  const [loadedQuantities, setLoadedQuantities] = useState<Record<string, string>>({});
   const [transferSources, setTransferSources] = useState<Record<string, string>>({});
   const selected = useMemo(() => preorders.filter((preorder) => selectedIds.includes(preorder.id)), [selectedIds, preorders]);
   const selectedItemCount = selected.reduce((sum, preorder) => sum + preorder.items.length, 0);
@@ -48,6 +49,10 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
 
   function toggleRejected(id: string) {
     setRejectedIds((current) => current.includes(id) ? current.filter((row) => row !== id) : [...current, id]);
+  }
+
+  function updateLoadedQuantity(id: string, quantity: string) {
+    setLoadedQuantities((current) => ({ ...current, [id]: quantity }));
   }
 
   return (
@@ -130,6 +135,8 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
                           {preorder.items.map((item) => {
                             const rejected = rejectedIds.includes(item.id);
                             const transferSource = transferSources[item.id] || "";
+                            const loadedQuantity = rejected ? "0" : loadedQuantities[item.id] ?? item.quantity;
+                            const rejectedQuantity = Math.max(0, Number(item.quantity) - Number(loadedQuantity || 0));
                             return (
                               <div key={item.id} className={`rounded-2xl border p-3 ${rejected ? "border-red-500/30 bg-red-500/10" : "bg-card-muted/30"}`}>
                                 <input name="loadedPreorderItemId" type="hidden" value={item.id} />
@@ -140,8 +147,9 @@ export function DispatchCreateModal({ preorders, drivers, warehouses }: { preord
                                     <p className="text-sm text-muted">{item.color} - pedido: {item.quantity} un</p>
                                   </div>
                                   <label>
-                                    <span className="mb-1 block text-xs font-semibold text-muted">Cantidad cargada</span>
-                                    <input className="h-11 w-full rounded-xl border bg-card px-3 text-sm font-semibold outline-none focus:border-accent" defaultValue={item.quantity} disabled={rejected} inputMode="decimal" name={`loadedQuantity-${item.id}`} type="number" min="0" step="0.001" />
+                                    <span className="mb-1 block text-xs font-semibold text-muted">Cargado bueno</span>
+                                    <input className="h-11 w-full rounded-xl border bg-card px-3 text-sm font-semibold outline-none focus:border-accent" inputMode="decimal" name={`loadedQuantity-${item.id}`} onChange={(event) => updateLoadedQuantity(item.id, event.target.value)} type="number" min="0" max={item.quantity} step="0.001" value={loadedQuantity} />
+                                    {rejectedQuantity > 0 ? <span className="mt-1 block text-xs font-semibold text-red-600 dark:text-red-300">Rechazo {rejectedQuantity.toLocaleString("es-GT")} un</span> : null}
                                   </label>
                                   <label>
                                     <span className="mb-1 block text-xs font-semibold text-muted">Traer de otra bodega</span>

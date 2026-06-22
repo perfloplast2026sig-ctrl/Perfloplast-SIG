@@ -202,7 +202,7 @@ type InvoiceFilters = {
 
 function InvoiceFilterBar({ filters, onChange, sellers }: { filters: InvoiceFilters; onChange: (patch: Partial<InvoiceFilters>) => void; sellers: string[] }) {
   return (
-    <div className="invoice-no-print grid gap-3 border-b p-4 sm:p-5 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end">
+    <div className="invoice-no-print grid grid-cols-2 gap-2 border-b p-3 sm:gap-3 sm:p-4 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end">
       <ClientFilterInput label="Buscar" placeholder="Factura, cliente, NIT..." value={filters.search} onChange={(value) => onChange({ search: value })} />
       <ClientFilterSelect label="Vendedor" value={filters.seller} options={["Todos", ...sellers]} onChange={(value) => onChange({ seller: value })} />
       <ClientFilterSelect label="Periodo" value={filters.period} options={["Todos", "Hoy", "Mes", "Personalizado"]} onChange={(value) => onChange({ period: value })} />
@@ -216,8 +216,8 @@ function InvoiceFilterBar({ filters, onChange, sellers }: { filters: InvoiceFilt
 function ClientFilterInput({ label, onChange, placeholder, type = "text", value }: { label: string; onChange: (value: string) => void; placeholder?: string; type?: string; value: string }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
-      <input className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} value={value} />
+      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <input className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-accent" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type={type} value={value} />
     </label>
   );
 }
@@ -225,8 +225,8 @@ function ClientFilterInput({ label, onChange, placeholder, type = "text", value 
 function ClientFilterSelect({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.14em] text-muted">{label}</span>
-      <select className="h-11 w-full rounded-2xl border bg-background px-4 text-sm outline-none transition focus:border-accent" onChange={(event) => onChange(event.target.value)} value={value}>
+      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.14em] text-muted">{label}</span>
+      <select className="h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none transition focus:border-accent" onChange={(event) => onChange(event.target.value)} value={value}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
