@@ -69,15 +69,15 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
             </div>
 
             <div className="max-h-[calc(96dvh-84px)] overflow-y-auto p-4 sm:max-h-[calc(94vh-84px)] sm:p-5">
-              <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid items-start gap-3 lg:grid-cols-3">
                 {detail.sections.map((section) => (
-                  <section key={section.title} className="rounded-2xl border bg-card-muted/20 p-4 shadow-sm">
+                  <section key={section.title} className="min-w-0 rounded-2xl border bg-card-muted/20 p-4 shadow-sm">
                     <p className="border-b pb-2 text-[11px] font-black uppercase tracking-[0.18em] text-muted">{section.title}</p>
-                    <dl className="mt-3 space-y-2.5">
+                    <dl className="mt-3 divide-y">
                       {section.rows.map((row) => (
-                        <div key={`${section.title}-${row.label}`} className="grid grid-cols-[minmax(90px,0.45fr)_1fr] items-start gap-3 text-sm">
+                        <div key={`${section.title}-${row.label}`} className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-3 py-2 text-sm first:pt-0 last:pb-0">
                           <dt className="text-[10px] font-black uppercase leading-5 tracking-[0.12em] text-muted">{row.label}</dt>
-                          <dd className="min-w-0 break-words text-right font-semibold leading-5 sm:text-left">{row.href ? <a className="text-accent underline-offset-4 hover:underline" href={row.href}>{row.value}</a> : row.value}</dd>
+                          <dd className="min-w-0 overflow-hidden whitespace-normal break-words font-semibold leading-5">{row.href ? <a className="break-words text-accent underline-offset-4 hover:underline" href={row.href}>{row.value}</a> : row.value}</dd>
                         </div>
                       ))}
                     </dl>

@@ -299,7 +299,7 @@ function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow
       {
         title: "Resumen",
         rows: [
-          { label: "Despachos", value: group.code },
+          { label: "Despachos", value: group.dispatches.length === 1 ? group.code : `${group.dispatches.length} despachos` },
           { label: "Pedidos", value: String(group.dispatches.length) },
           { label: "Estado", value: group.status.label },
           { label: "Programado", value: group.dispatches[0].scheduledAt },
@@ -308,9 +308,9 @@ function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow
       {
         title: "Documentos",
         rows: [
+          { label: "Rango", value: group.code },
           { label: "Preventas", value: group.preorder },
           { label: "Facturas", value: group.invoice },
-          { label: "Programado", value: group.dispatches[0].scheduledAt },
         ],
       },
       {
