@@ -72,6 +72,7 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
   const approvedDispatches = dispatches.filter((dispatch) => APPROVED_STATUS.has(dispatch.statusKey));
   const rows = sortDispatches(approvedDispatches.length ? approvedDispatches : [current]);
   const totalLoad = rows.reduce((sum, dispatch) => sum + parseQuantity(dispatch.load), 0);
+  const totalValue = rows.reduce((sum, dispatch) => sum + parseMoney(dispatch.value), 0);
   const detailRows = rows.flatMap((dispatch) => dispatch.items.map((item, index) => ({ dispatch, item, first: index === 0 })));
   const clients = unique(rows.map((dispatch) => dispatch.client));
   const hasRejections = rows.some((dispatch) => dispatch.rejectedLoad !== "Sin rechazos");
@@ -103,7 +104,7 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
         <LineField label="Piloto" value={current.driver} />
         <LineField label="Destino" value={current.destination} />
         <LineField label="Cliente(s)" value={clients.join(", ")} />
-        <LineField label="Pedidos" value={`${rows.length} pedido(s) - ${formatQuantity(totalLoad)} un`} />
+        <LineField label="Pedidos" value={`${rows.length} pedido(s) - ${formatQuantity(totalLoad)} un - ${formatMoney(totalValue)}`} />
       </section>
 
       <section className="mt-4 flex-1">
@@ -140,6 +141,7 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
           <div className="border-2 border-slate-900 p-2 text-right">
             <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Total carga</p>
             <p className="text-lg font-black">{formatQuantity(totalLoad)} un</p>
+            <p className="mt-1 font-mono text-sm font-black">{formatMoney(totalValue)}</p>
           </div>
         </div>
       </section>
@@ -200,6 +202,14 @@ function parseQuantity(value: string) {
   return Number(value.replace(/[^\d.-]/g, "")) || 0;
 }
 
+function parseMoney(value: string) {
+  return Number(value.replace(/[^\d.-]/g, "")) || 0;
+}
+
 function formatQuantity(value: number) {
   return value.toLocaleString("es-GT", { maximumFractionDigits: 3 });
+}
+
+function formatMoney(value: number) {
+  return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

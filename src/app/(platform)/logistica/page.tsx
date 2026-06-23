@@ -39,6 +39,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const driverOptions = uniqueOptions(dispatches.map((dispatch) => dispatch.driver));
   const visibleDispatches = filterDispatchRows(dispatches, params);
   const dispatchGroups = groupDispatchesForApproval(visibleDispatches);
+  const visibleDispatchGroups = buildVisibleDispatchGroups(visibleDispatches, dispatchGroups);
   const driverOrders = deliveryMapOrders;
   const totalLoad = visibleDispatches.reduce((sum, dispatch) => sum + Number(dispatch.load.replace(/[^\d.-]/g, "") || 0), 0);
   const delivered = visibleDispatches.filter((dispatch) => dispatch.status.label === "Entregado").length;
@@ -87,22 +88,20 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
 
       <SectionCard title="Despachos" eyebrow="Rutas, piloto y valoracion">
         <DataTable
-          data={visibleDispatches}
+          data={visibleDispatchGroups}
           columns={[
-            { header: "Despacho", cell: (item) => <span className="font-mono text-xs font-semibold">{item.code}</span> },
-            { header: "Preventa", cell: (item) => <div><p className="font-medium">{item.preorder}</p><p className="text-xs text-muted">{item.invoice}</p></div> },
-            { header: "Cliente", cell: (item) => item.client },
-            { header: "Piloto", cell: (item) => <span className="font-medium">{item.driver}</span> },
-            { header: "Destino", cell: (item) => <span className="text-muted">{item.destination}</span> },
-            { header: "Carga", align: "right", cell: (item) => <span className="font-semibold">{item.load}</span> },
-            { header: "Rechazos", cell: (item) => item.rejectedLoad === "Sin rechazos" ? <span className="text-xs text-muted">Sin rechazos</span> : <span className="block max-w-52 whitespace-normal text-xs font-semibold text-red-600 dark:text-red-300">{item.rejectedLoad}</span> },
-            { header: "Valor", align: "right", cell: (item) => <span className="font-semibold">{item.value}</span> },
-            { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
-            { header: "Accion", align: "right", cell: (item) => {
-              const group = dispatchGroups.get(dispatchApprovalGroupKey(item)) || [item];
-              const printable = group.find((dispatch) => isApprovalPdfAvailable(dispatch.statusKey));
-              const showGroupPdf = printable?.id === item.id;
-              return <TableActions>{showGroupPdf ? <DispatchApprovalPrintButton dispatch={item} dispatches={group} /> : null}<RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions>;
+            { header: "Despacho", cell: (group) => <span className="font-mono text-xs font-semibold">{group.code}</span> },
+            { header: "Preventa", cell: (group) => <div><p className="font-medium">{group.preorder}</p><p className="text-xs text-muted">{group.invoice}</p></div> },
+            { header: "Cliente", cell: (group) => group.client },
+            { header: "Piloto", cell: (group) => <span className="font-medium">{group.driver}</span> },
+            { header: "Destino", cell: (group) => <span className="text-muted">{group.destination}</span> },
+            { header: "Carga", align: "right", cell: (group) => <span className="font-semibold">{group.load}</span> },
+            { header: "Rechazos", cell: (group) => group.rejectedLoad === "Sin rechazos" ? <span className="text-xs text-muted">Sin rechazos</span> : <span className="block max-w-52 whitespace-normal text-xs font-semibold text-red-600 dark:text-red-300">{group.rejectedLoad}</span> },
+            { header: "Valor", align: "right", cell: (group) => <span className="font-semibold">{group.value}</span> },
+            { header: "Estado", cell: (group) => <div><Badge label={group.status.label} tone={group.status.tone} />{group.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{group.latestReturnReason}</p> : null}</div> },
+            { header: "Accion", align: "right", cell: (group) => {
+              const dispatch = group.dispatches[0];
+              return <TableActions>{group.canPrint ? <DispatchApprovalPrintButton dispatch={dispatch} dispatches={group.dispatches} /> : null}<RecordDetailButton detail={buildDispatchGroupDetail(group)} />{group.dispatches.length === 1 ? <DispatchStatusActions dispatch={dispatch} roleName={user.role.name} /> : null}</TableActions>;
             } },
           ]}
         />
@@ -140,6 +139,46 @@ function groupDispatchesForApproval(rows: Awaited<ReturnType<typeof getLogistics
   return groups;
 }
 
+function buildVisibleDispatchGroups(rows: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"], groups: Map<string, typeof rows>) {
+  const seen = new Set<string>();
+  const visible = [];
+  for (const row of rows) {
+    const key = dispatchApprovalGroupKey(row);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const groupRows = groups.get(key) || [row];
+    visible.push(buildDispatchGroupRow(groupRows));
+  }
+  return visible;
+}
+
+function buildDispatchGroupRow(rows: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"]) {
+  const sorted = [...rows].sort((a, b) => a.code.localeCompare(b.code, "es", { numeric: true }));
+  const first = sorted[0];
+  const totalLoad = sorted.reduce((sum, row) => sum + numericValue(row.load), 0);
+  const totalValue = sorted.reduce((sum, row) => sum + numericValue(row.value), 0);
+  const clients = uniqueOptions(sorted.map((row) => row.client));
+  const statuses = uniqueOptions(sorted.map((row) => row.status.label));
+  const rejected = sorted.filter((row) => row.rejectedLoad !== "Sin rechazos").map((row) => `${row.preorder}: ${row.rejectedLoad}`);
+  const printable = sorted.some((row) => isApprovalPdfAvailable(row.statusKey));
+  return {
+    key: dispatchApprovalGroupKey(first),
+    code: formatDispatchRange(sorted),
+    preorder: formatListRange(sorted.map((row) => row.preorder)),
+    invoice: formatListRange(sorted.map((row) => row.invoice)),
+    client: clients.join(", "),
+    driver: first.driver,
+    destination: first.destination,
+    load: `${formatNumber(totalLoad)} un`,
+    rejectedLoad: rejected.length ? rejected.join(" | ") : "Sin rechazos",
+    value: formatMoney(totalValue),
+    status: statuses.length === 1 ? first.status : { label: "Agrupado", tone: "info" as const },
+    latestReturnReason: sorted.find((row) => row.latestReturnReason)?.latestReturnReason || null,
+    canPrint: printable,
+    dispatches: sorted,
+  };
+}
+
 function dispatchApprovalGroupKey(row: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {
   return [row.driverId, row.routeName || "Ruta directa", row.destination, row.scheduledAt].join("|");
 }
@@ -150,6 +189,29 @@ function isApprovalPdfAvailable(statusKey: string) {
 
 function normalizeSearch(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function numericValue(value: string) {
+  return Number(value.replace(/[^\d.-]/g, "")) || 0;
+}
+
+function formatNumber(value: number) {
+  return value.toLocaleString("es-GT", { maximumFractionDigits: 3 });
+}
+
+function formatMoney(value: number) {
+  return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatDispatchRange(rows: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"]) {
+  if (rows.length === 1) return rows[0].code;
+  return `${rows[0].code} a ${rows.at(-1)?.code || rows[0].code}`;
+}
+
+function formatListRange(values: string[]) {
+  const uniqueValues = uniqueOptions(values);
+  if (uniqueValues.length <= 2) return uniqueValues.join(", ");
+  return `${uniqueValues[0]} + ${uniqueValues.length - 1} mas`;
 }
 
 function LogisticsFilters({ params, driverOptions }: { params: LogisticsSearchParams; driverOptions: string[] }) {
@@ -205,57 +267,60 @@ function currentGuatemalaDateKey() {
   return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
 }
 
-function buildDispatchDetail(item: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {
-  const audits = (item.auditTrail || []).map((log: DispatchAuditTrailEntry) => ({
-    title: log.action,
-    subtitle: `${log.user} - ${log.date}`,
-    rows: [
-      { label: "Motivo", value: log.reason },
-      { label: "Usuario", value: log.user },
-      { label: "Fecha", value: log.date },
-      { label: "Estado previo", value: log.previousStatus },
-      { label: "Inventario", value: log.inventoryEffect },
-      { label: "Preventa", value: log.preorder },
-    ],
-  }));
+function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow>) {
+  const audits = group.dispatches.flatMap((dispatch) =>
+    (dispatch.auditTrail || []).map((log: DispatchAuditTrailEntry) => ({
+      title: `${dispatch.code} - ${log.action}`,
+      subtitle: `${log.user} - ${log.date}`,
+      rows: [
+        { label: "Preventa", value: dispatch.preorder },
+        { label: "Motivo", value: log.reason },
+        { label: "Usuario", value: log.user },
+        { label: "Fecha", value: log.date },
+        { label: "Estado previo", value: log.previousStatus },
+        { label: "Inventario", value: log.inventoryEffect },
+      ],
+    }))
+  );
+  const items = group.dispatches.flatMap((dispatch) =>
+    (dispatch.items || []).map((row: DispatchDetailItem) => ({
+      title: row.product,
+      subtitle: `${row.color} - ${dispatch.preorder}`,
+      quantity: row.quantity,
+      total: row.quantity,
+    }))
+  );
 
   return {
-    title: item.code,
-    subtitle: `${item.client} - ${item.destination}`,
-    badge: item.status.label,
+    title: group.code,
+    subtitle: `${group.client} - ${group.destination}`,
+    badge: group.status.label,
     sections: [
       {
-        title: "Despacho",
+        title: "Carga agrupada",
         rows: [
-          { label: "Codigo", value: item.code },
-          { label: "Preventa", value: item.preorder },
-          { label: "Factura", value: item.invoice },
-          { label: "Ruta", value: item.routeName || "Ruta directa" },
-          { label: "Programado", value: item.scheduledAt },
-          { label: "Entregado", value: item.deliveredAt },
+          { label: "Despachos", value: group.code },
+          { label: "Preventas", value: group.preorder },
+          { label: "Facturas", value: group.invoice },
+          { label: "Pedidos", value: String(group.dispatches.length) },
+          { label: "Programado", value: group.dispatches[0].scheduledAt },
         ],
       },
       {
         title: "Entrega",
         rows: [
-          { label: "Cliente", value: item.client },
-          { label: "NIT", value: item.taxId },
-          { label: "Telefono", value: item.phone },
-          { label: "Piloto", value: item.driver },
-          { label: "Destino", value: item.destination },
-          { label: "Rechazos", value: item.rejectedLoad },
-          { label: "Valor", value: item.value },
-          { label: "Estado", value: item.status.label },
+          { label: "Cliente(s)", value: group.client },
+          { label: "Piloto", value: group.driver },
+          { label: "Destino", value: group.destination },
+          { label: "Carga", value: group.load },
+          { label: "Valor", value: group.value },
+          { label: "Rechazos", value: group.rejectedLoad },
+          { label: "Estado", value: group.status.label },
         ],
       },
     ],
     audits,
-    items: (item.items || []).map((row: DispatchDetailItem) => ({
-      title: row.product,
-      subtitle: row.color,
-      quantity: row.quantity,
-      total: row.quantity,
-    })),
+    items,
   };
 }
 
