@@ -117,7 +117,7 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
       { label: "Motivo", value: log.reason },
       { label: "Usuario", value: log.user },
       { label: "Fecha", value: log.date },
-      { label: "Estado previo", value: log.previousStatus },
+      { label: "Estado previo", value: readablePreorderState(log.previousStatus) },
       { label: "Inventario", value: log.inventoryEffect },
       { label: "Venta", value: log.salesEffect },
     ],
@@ -129,20 +129,29 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
     badge: item.status.label,
     sections: [
       {
-        title: "Cliente",
+        title: "Resumen",
         rows: [
-          { label: "Nombre", value: item.client },
-          { label: "NIT", value: item.taxId },
-          { label: "Telefono", value: item.phone },
-          { label: "Direccion", value: item.address },
-          { label: "Entrega", value: item.deliveryAddress },
+          { label: "Codigo", value: item.code },
+          { label: "Estado", value: item.status.label },
+          { label: "Fecha", value: item.date },
+          { label: "Total", value: item.total },
         ],
       },
       {
-        title: "Venta",
+        title: "Cliente y entrega",
+        rows: [
+          { label: "Cliente", value: item.client },
+          { label: "NIT", value: item.taxId },
+          { label: "Telefono", value: item.phone },
+          { label: "Direccion fiscal", value: item.address },
+          { label: "Direccion entrega", value: item.deliveryAddress },
+          { label: "Bodega", value: item.warehouse },
+        ],
+      },
+      {
+        title: "Pago",
         rows: [
           { label: "Vendedor", value: item.seller },
-          { label: "Bodega", value: item.warehouse },
           { label: "Pago", value: item.payment },
           { label: "Descuento", value: item.discount },
           { label: "Recibido", value: item.amountReceived },
@@ -159,6 +168,17 @@ function buildPreorderDetail(item: Awaited<ReturnType<typeof getPreorderModuleDa
       total: row.subtotal,
     })),
   };
+}
+
+function readablePreorderState(status: string) {
+  const labels: Record<string, string> = {
+    QUOTE: "Cotizacion",
+    PENDING: "Pendiente",
+    CONFIRMED: "Confirmada",
+    DISPATCHED: "Entregada",
+    CANCELLED: "Cancelada",
+  };
+  return labels[status] || status;
 }
 
 type PreorderAuditTrailEntry = Awaited<ReturnType<typeof getPreorderModuleData>>["preorders"][number]["auditTrail"][number];

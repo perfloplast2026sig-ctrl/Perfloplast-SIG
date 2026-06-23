@@ -273,11 +273,11 @@ function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow
       title: `${dispatch.code} - ${log.action}`,
       subtitle: `${log.user} - ${log.date}`,
       rows: [
-        { label: "Preventa", value: dispatch.preorder },
+        { label: "Preventa", value: dispatch.preorder, href: `/preventas?search=${encodeURIComponent(dispatch.preorder)}` },
         { label: "Motivo", value: log.reason },
         { label: "Usuario", value: log.user },
         { label: "Fecha", value: log.date },
-        { label: "Estado previo", value: log.previousStatus },
+        { label: "Estado previo", value: readableDispatchState(log.previousStatus) },
         { label: "Inventario", value: log.inventoryEffect },
       ],
     }))
@@ -297,12 +297,19 @@ function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow
     badge: group.status.label,
     sections: [
       {
-        title: "Carga agrupada",
+        title: "Resumen",
         rows: [
           { label: "Despachos", value: group.code },
+          { label: "Pedidos", value: String(group.dispatches.length) },
+          { label: "Estado", value: group.status.label },
+          { label: "Programado", value: group.dispatches[0].scheduledAt },
+        ],
+      },
+      {
+        title: "Documentos",
+        rows: [
           { label: "Preventas", value: group.preorder },
           { label: "Facturas", value: group.invoice },
-          { label: "Pedidos", value: String(group.dispatches.length) },
           { label: "Programado", value: group.dispatches[0].scheduledAt },
         ],
       },
@@ -315,13 +322,27 @@ function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow
           { label: "Carga", value: group.load },
           { label: "Valor", value: group.value },
           { label: "Rechazos", value: group.rejectedLoad },
-          { label: "Estado", value: group.status.label },
         ],
       },
     ],
     audits,
     items,
   };
+}
+
+function readableDispatchState(status: string) {
+  const labels: Record<string, string> = {
+    PRE_DISPATCH_REVIEW: "Revision de bodega antes de despacho",
+    SCHEDULED: "Programado",
+    LOADED: "Cargado",
+    IN_ROUTE: "En ruta",
+    DELIVERED: "Entregado",
+    RETURN_REQUESTED: "Devolucion solicitada",
+    RETURNED_TO_WAREHOUSE: "Devuelto a bodega",
+    RESCHEDULED: "Reasignado",
+    CANCELLED: "Cancelado",
+  };
+  return labels[status] || status;
 }
 
 type DispatchAuditTrailEntry = Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]["auditTrail"][number];

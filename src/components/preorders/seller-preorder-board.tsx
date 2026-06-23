@@ -120,20 +120,29 @@ function buildPreorderDetail(item: PreorderRow) {
     badge: item.status.label,
     sections: [
       {
-        title: "Cliente",
+        title: "Resumen",
         rows: [
-          { label: "Nombre", value: item.client },
-          { label: "NIT", value: item.taxId },
-          { label: "Telefono", value: item.phone },
-          { label: "Direccion", value: item.address },
-          { label: "Entrega", value: item.deliveryAddress },
+          { label: "Codigo", value: item.code },
+          { label: "Estado", value: item.status.label },
+          { label: "Fecha", value: item.date },
+          { label: "Total", value: item.total },
         ],
       },
       {
-        title: "Venta",
+        title: "Cliente y entrega",
+        rows: [
+          { label: "Cliente", value: item.client },
+          { label: "NIT", value: item.taxId },
+          { label: "Telefono", value: item.phone },
+          { label: "Direccion fiscal", value: item.address },
+          { label: "Direccion entrega", value: item.deliveryAddress },
+          { label: "Bodega", value: item.warehouse },
+        ],
+      },
+      {
+        title: "Pago",
         rows: [
           { label: "Vendedor", value: item.seller },
-          { label: "Bodega", value: item.warehouse },
           { label: "Pago", value: item.payment },
           { label: "Descuento", value: item.discount },
           { label: "Recibido", value: item.amountReceived },
