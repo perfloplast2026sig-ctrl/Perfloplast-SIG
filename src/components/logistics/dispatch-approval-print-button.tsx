@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { FileText } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { printWithBodyClass } from "@/lib/print";
 
 type DispatchApprovalRow = {
@@ -30,13 +30,20 @@ const APPROVED_STATUS = new Set(["LOADED", "IN_ROUTE", "DELIVERED"]);
 
 export function DispatchApprovalPrintButton({ dispatch }: { dispatch: DispatchApprovalRow }) {
   const [active, setActive] = useState(false);
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
 
   if (!APPROVED_STATUS.has(dispatch.statusKey)) return null;
 
   function openPreview() {
     setActive(true);
     window.setTimeout(() => {
-      printWithBodyClass("printing-dispatch", { delay: 0 });
+      cleanupRef.current = printWithBodyClass("printing-dispatch", {
+        delay: 0,
+        onClose: () => {
+          setActive(false);
+          cleanupRef.current = undefined;
+        },
+      });
     }, 50);
   }
 
@@ -65,34 +72,34 @@ function DispatchApprovalDocument({ dispatch }: { dispatch: DispatchApprovalRow 
   const hasRejections = dispatch.rejectedLoad !== "Sin rechazos";
 
   return (
-    <article className="dispatch-print-target mx-auto max-w-[920px] bg-white px-9 py-8 text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.10)] ring-1 ring-slate-200 print:shadow-none print:ring-0">
-      <header className="dispatch-print-header flex items-start justify-between gap-8 border-b border-slate-200 pb-5">
+    <article className="dispatch-print-target mx-auto flex min-h-[11in] w-[8.5in] flex-col bg-white p-[0.48in] text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ring-1 ring-slate-200">
+      <header className="dispatch-print-header grid grid-cols-[1fr_auto] items-start gap-8 border-b-4 border-[#0f4c81] pb-5">
         <div className="flex items-start gap-4">
-          <Image alt="Perfloplast" className="h-16 w-20 object-contain" height={64} src="/company-logo.svg.png" width={80} />
+          <Image alt="Perfloplast" className="h-20 w-24 object-contain" height={80} src="/company-logo.svg.png" width={96} />
           <div>
-            <p className="text-2xl font-black tracking-tight text-[#0f4c81]">PERFLOPLAST</p>
-            <p className="mt-1 text-xs font-medium text-slate-600">Aldea Chijou, Santa Cruz Verapaz</p>
-            <p className="text-xs text-slate-500">Tel: 44235941 / 53146115</p>
+            <p className="text-3xl font-black tracking-tight text-[#0f4c81]">PERFLOPLAST</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">Aldea Chijou, Santa Cruz Verapaz</p>
+            <p className="text-sm text-slate-500">Tel: 44235941 / 53146115</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-lg font-black uppercase tracking-wide">Comprobante de despacho</p>
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Comprobante de despacho</p>
           <p className="mt-1 text-2xl font-black text-orange-600">{dispatch.code}</p>
-          <div className="mt-3 inline-block rounded-lg border-2 border-emerald-700 px-4 py-2 text-center text-sm font-black uppercase tracking-[0.18em] text-emerald-700">
+          <div className="mt-3 inline-flex min-w-48 items-center justify-center rounded-md border-2 border-emerald-700 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-emerald-700">
             Carga aprobada
           </div>
         </div>
       </header>
 
-      <section className="dispatch-print-info grid gap-10 py-8 md:grid-cols-2">
-        <DispatchInfo title="Datos del despacho" rows={[
+      <section className="mt-6 grid grid-cols-2 gap-5">
+        <DispatchPanel title="Datos del despacho" rows={[
           ["Despacho", dispatch.code],
           ["Preventa", dispatch.preorder],
           ["Factura", dispatch.invoice],
           ["Estado", dispatch.status.label],
           ["Fecha", dispatch.scheduledAt],
         ]} />
-        <DispatchInfo title="Cliente y ruta" rows={[
+        <DispatchPanel title="Cliente y entrega" rows={[
           ["Cliente", dispatch.client],
           ["NIT", dispatch.taxId],
           ["Telefono", dispatch.phone],
@@ -101,63 +108,65 @@ function DispatchApprovalDocument({ dispatch }: { dispatch: DispatchApprovalRow 
         ]} />
       </section>
 
-      <section className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-        <div className="grid gap-4 md:grid-cols-3">
-          <SummaryItem label="Ruta" value={dispatch.routeName || "Ruta directa"} />
-          <SummaryItem label="Carga aprobada" value={dispatch.load} />
-          <SummaryItem label="Valor" value={dispatch.value} />
-        </div>
+      <section className="my-6 grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-center">
+        <SummaryItem label="Ruta" value={dispatch.routeName || "Ruta directa"} />
+        <SummaryItem label="Carga aprobada" value={dispatch.load} />
+        <SummaryItem label="Valor" value={dispatch.value} />
       </section>
 
-      <div className="overflow-hidden border-y border-slate-200">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
-            <tr>
-              <th className="py-3 pr-4">Producto</th>
-              <th className="px-4 py-3">Color</th>
-              <th className="py-3 pl-4 text-right">Cantidad aprobada</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {dispatch.items.map((item) => (
-              <tr key={item.id} className="align-top">
-                <td className="py-3 pr-4 font-bold">{item.product}</td>
-                <td className="px-4 py-3 text-slate-600">{item.color}</td>
-                <td className="py-3 pl-4 text-right font-black">{item.quantity} un</td>
+      <section className="flex-1">
+        <div className="overflow-hidden rounded-xl border border-slate-200">
+          <table className="w-full text-sm">
+            <thead className="bg-[#0f4c81] text-left text-[11px] font-black uppercase tracking-[0.12em] text-white">
+              <tr>
+                <th className="px-4 py-3">Producto</th>
+                <th className="px-4 py-3">Color</th>
+                <th className="px-4 py-3 text-right">Cantidad aprobada</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {dispatch.items.map((item) => (
+                <tr key={item.id} className="align-top">
+                  <td className="px-4 py-3 font-bold">{item.product}</td>
+                  <td className="px-4 py-3 text-slate-600">{item.color}</td>
+                  <td className="px-4 py-3 text-right font-black">{item.quantity} un</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <section className={hasRejections ? "mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" : "mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"}>
-        <p className="font-black uppercase tracking-[0.12em]">{hasRejections ? "Productos no aprobados" : "Carga sin rechazos"}</p>
-        <p className="mt-2">{hasRejections ? dispatch.rejectedLoad : "Todos los productos fueron aprobados para salir a ruta."}</p>
+        <div className={hasRejections ? "mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" : "mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"}>
+          <p className="font-black uppercase tracking-[0.12em]">{hasRejections ? "Productos no aprobados" : "Carga sin rechazos"}</p>
+          <p className="mt-2">{hasRejections ? dispatch.rejectedLoad : "Todos los productos fueron aprobados para salir a ruta."}</p>
+        </div>
       </section>
 
-      <footer className="mt-10 grid gap-8 text-xs text-slate-500 md:grid-cols-2">
-        <div>
-          <p>Documento generado por Perflo-SIG para salida de bodega.</p>
-          <p>El piloto recibe solo la carga aprobada en esta revision.</p>
+      <footer className="mt-10 grid grid-cols-2 gap-10 text-xs text-slate-500">
+        <div className="border-t border-slate-300 pt-3 text-center">
+          <p className="font-bold text-slate-700">Firma de bodega</p>
+          <p>Producto verificado antes de salida</p>
         </div>
-        <div className="text-right">
-          <p className="font-bold text-slate-700">Aprobacion de bodega</p>
-          <p>Sello digital: {dispatch.code}</p>
+        <div className="border-t border-slate-300 pt-3 text-center">
+          <p className="font-bold text-slate-700">Firma de piloto</p>
+          <p>Recibe carga aprobada</p>
         </div>
       </footer>
+
+      <p className="mt-8 text-center text-[11px] text-slate-400">Documento generado por Perflo-SIG. Sello digital: {dispatch.code}</p>
     </article>
   );
 }
 
-function DispatchInfo({ title, rows }: { title: string; rows: Array<[string, string]> }) {
+function DispatchPanel({ title, rows }: { title: string; rows: Array<[string, string]> }) {
   return (
-    <div>
-      <h3 className="border-b border-slate-200 pb-2 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">{title}</h3>
-      <dl className="mt-3 space-y-2 text-sm">
+    <div className="rounded-xl border border-slate-200 p-4">
+      <h3 className="border-b border-slate-200 pb-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#0f4c81]">{title}</h3>
+      <dl className="mt-3 space-y-2.5 text-sm">
         {rows.map(([label, value]) => (
-          <div key={label} className="grid grid-cols-[118px_1fr] gap-4">
-            <dt className="font-bold">{label}:</dt>
-            <dd className="text-slate-700">{value}</dd>
+          <div key={label} className="grid grid-cols-[92px_1fr] gap-4">
+            <dt className="font-bold text-slate-950">{label}:</dt>
+            <dd className="text-right text-slate-700">{value}</dd>
           </div>
         ))}
       </dl>
@@ -167,7 +176,7 @@ function DispatchInfo({ title, rows }: { title: string; rows: Array<[string, str
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="border-r border-slate-200 p-4 last:border-r-0">
       <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
       <p className="mt-1 text-base font-black text-slate-950">{value}</p>
     </div>

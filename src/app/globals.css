@@ -429,6 +429,10 @@ body {
     background: #ffffff !important;
   }
 
+  body.printing-dispatch {
+    background: #edf1ee !important;
+  }
+
   body.printing-dispatch aside,
   body.printing-dispatch header,
   body.printing-dispatch .app-main > *:not(:has(.dispatch-print-stage)):not(.dispatch-print-stage) {
@@ -445,23 +449,32 @@ body {
   }
 
   body.printing-dispatch .dispatch-print-stage {
-    display: block !important;
-    width: 100% !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483000 !important;
+    display: flex !important;
+    width: 100vw !important;
+    height: 100vh !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 32px 32px 104px !important;
+    overflow: auto !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    background: #edf1ee !important;
   }
 
   body.printing-dispatch .dispatch-print-target {
-    width: 100% !important;
-    max-width: none !important;
-    min-height: auto !important;
+    width: 8.5in !important;
+    min-width: 8.5in !important;
+    max-width: 8.5in !important;
+    min-height: 11in !important;
     margin: 0 !important;
-    padding: 7mm 8mm 6mm !important;
+    padding: 12mm !important;
     color: #020617 !important;
     background: #ffffff !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    font-size: 10.5px !important;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18) !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 12px !important;
     line-height: 1.35 !important;
   }
 
@@ -479,6 +492,34 @@ body {
     gap: 12mm !important;
     padding: 5mm 0 !important;
   }
+
+@media print {
+  body.printing-dispatch,
+  body.printing-dispatch .dispatch-print-stage {
+    background: #ffffff !important;
+  }
+
+  body.printing-dispatch .dispatch-print-stage {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.printing-dispatch .dispatch-print-target {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: auto !important;
+    padding: 7mm 8mm 6mm !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    font-size: 10px !important;
+  }
+}
 
   body.printing-quote .app-shell,
   body.printing-quote .app-content,

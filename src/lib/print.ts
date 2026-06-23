@@ -1,5 +1,6 @@
 type PrintOptions = {
   delay?: number;
+  onClose?: () => void;
 };
 
 let activePreviewCleanup: (() => void) | undefined;
@@ -18,6 +19,7 @@ export function printWithBodyClass(className: string, options: PrintOptions = {}
     toolbar?.remove();
     document.body.classList.remove(className);
     window.removeEventListener("keydown", handleKeydown);
+    options.onClose?.();
     if (activePreviewCleanup === cleanup) activePreviewCleanup = undefined;
   };
 
