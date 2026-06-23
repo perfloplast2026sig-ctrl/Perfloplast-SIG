@@ -28,7 +28,7 @@ type DispatchApprovalRow = {
 
 const APPROVED_STATUS = new Set(["LOADED", "IN_ROUTE", "DELIVERED"]);
 
-export function DispatchApprovalPrintButton({ dispatch }: { dispatch: DispatchApprovalRow }) {
+export function DispatchApprovalPrintButton({ dispatch, dispatches }: { dispatch: DispatchApprovalRow; dispatches: DispatchApprovalRow[] }) {
   const [active, setActive] = useState(false);
   const cleanupRef = useRef<(() => void) | undefined>(undefined);
 
@@ -51,7 +51,7 @@ export function DispatchApprovalPrintButton({ dispatch }: { dispatch: DispatchAp
     <>
       {active ? (
         <div className="dispatch-print-stage" aria-hidden="true">
-          <DispatchApprovalDocument dispatch={dispatch} />
+          <DispatchApprovalDocument current={dispatch} dispatches={dispatches} />
         </div>
       ) : null}
       <button
@@ -68,8 +68,18 @@ export function DispatchApprovalPrintButton({ dispatch }: { dispatch: DispatchAp
   );
 }
 
-function DispatchApprovalDocument({ dispatch }: { dispatch: DispatchApprovalRow }) {
-  const hasRejections = dispatch.rejectedLoad !== "Sin rechazos";
+function DispatchApprovalDocument({ current, dispatches }: { current: DispatchApprovalRow; dispatches: DispatchApprovalRow[] }) {
+  const approvedDispatches = dispatches.filter((dispatch) => APPROVED_STATUS.has(dispatch.statusKey));
+  const rows = approvedDispatches.length ? approvedDispatches : [current];
+  const totalLoad = rows.reduce((sum, dispatch) => sum + parseQuantity(dispatch.load), 0);
+  const totalValue = rows.reduce((sum, dispatch) => sum + parseMoney(dispatch.value), 0);
+  const totalProducts = rows.reduce((sum, dispatch) => sum + dispatch.items.length, 0);
+  const codes = rows.map((dispatch) => dispatch.code).join(", ");
+  const preorders = rows.map((dispatch) => dispatch.preorder).join(", ");
+  const invoices = rows.map((dispatch) => dispatch.invoice).join(", ");
+  const clients = unique(rows.map((dispatch) => dispatch.client));
+  const hasRejections = rows.some((dispatch) => dispatch.rejectedLoad !== "Sin rechazos");
+  const titleCode = rows.length > 1 ? `${current.code} + ${rows.length - 1}` : current.code;
 
   return (
     <article className="dispatch-print-target mx-auto flex min-h-[11in] w-[8.5in] flex-col bg-white p-[0.48in] text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ring-1 ring-slate-200">
@@ -83,8 +93,8 @@ function DispatchApprovalDocument({ dispatch }: { dispatch: DispatchApprovalRow 
           </div>
         </div>
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Comprobante de despacho</p>
-          <p className="mt-1 text-2xl font-black text-orange-600">{dispatch.code}</p>
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Comprobante de carga</p>
+          <p className="mt-1 text-2xl font-black text-orange-600">{titleCode}</p>
           <div className="mt-3 inline-flex min-w-48 items-center justify-center rounded-md border-2 border-emerald-700 px-4 py-2 text-sm font-black uppercase tracking-[0.18em] text-emerald-700">
             Carga aprobada
           </div>
@@ -92,53 +102,69 @@ function DispatchApprovalDocument({ dispatch }: { dispatch: DispatchApprovalRow 
       </header>
 
       <section className="mt-6 grid grid-cols-2 gap-5">
-        <DispatchPanel title="Datos del despacho" rows={[
-          ["Despacho", dispatch.code],
-          ["Preventa", dispatch.preorder],
-          ["Factura", dispatch.invoice],
-          ["Estado", dispatch.status.label],
-          ["Fecha", dispatch.scheduledAt],
+        <DispatchPanel title="Datos de la carga" rows={[
+          ["Despachos", codes],
+          ["Preventas", preorders],
+          ["Facturas", invoices],
+          ["Estado", current.status.label],
+          ["Fecha", current.scheduledAt],
         ]} />
-        <DispatchPanel title="Cliente y entrega" rows={[
-          ["Cliente", dispatch.client],
-          ["NIT", dispatch.taxId],
-          ["Telefono", dispatch.phone],
-          ["Piloto", dispatch.driver],
-          ["Destino", dispatch.destination],
+        <DispatchPanel title="Ruta y responsable" rows={[
+          ["Piloto", current.driver],
+          ["Ruta", current.routeName || "Ruta directa"],
+          ["Destino", current.destination],
+          ["Clientes", clients.join(", ")],
+          ["Pedidos", `${rows.length}`],
         ]} />
       </section>
 
-      <section className="my-6 grid grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-center">
-        <SummaryItem label="Ruta" value={dispatch.routeName || "Ruta directa"} />
-        <SummaryItem label="Carga aprobada" value={dispatch.load} />
-        <SummaryItem label="Valor" value={dispatch.value} />
+      <section className="my-6 grid grid-cols-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-center">
+        <SummaryItem label="Pedidos" value={String(rows.length)} />
+        <SummaryItem label="Productos" value={String(totalProducts)} />
+        <SummaryItem label="Carga aprobada" value={`${formatQuantity(totalLoad)} un`} />
+        <SummaryItem label="Valor total" value={formatMoney(totalValue)} />
       </section>
 
       <section className="flex-1">
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <table className="w-full text-sm">
-            <thead className="bg-[#0f4c81] text-left text-[11px] font-black uppercase tracking-[0.12em] text-white">
-              <tr>
-                <th className="px-4 py-3">Producto</th>
-                <th className="px-4 py-3">Color</th>
-                <th className="px-4 py-3 text-right">Cantidad aprobada</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {dispatch.items.map((item) => (
-                <tr key={item.id} className="align-top">
-                  <td className="px-4 py-3 font-bold">{item.product}</td>
-                  <td className="px-4 py-3 text-slate-600">{item.color}</td>
-                  <td className="px-4 py-3 text-right font-black">{item.quantity} un</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {rows.map((dispatch) => (
+            <section key={dispatch.id} className="overflow-hidden rounded-xl border border-slate-200">
+              <div className="grid grid-cols-[1fr_auto] gap-4 bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#0f4c81]">{dispatch.code} / {dispatch.preorder}</p>
+                  <p className="mt-1 text-sm font-bold">{dispatch.client}</p>
+                  <p className="text-xs text-slate-500">{dispatch.invoice} - {dispatch.destination}</p>
+                </div>
+                <div className="text-right text-sm">
+                  <p className="font-black">{dispatch.load}</p>
+                  <p className="font-bold text-orange-600">{dispatch.value}</p>
+                </div>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="bg-[#0f4c81] text-left text-[11px] font-black uppercase tracking-[0.12em] text-white">
+                  <tr>
+                    <th className="px-4 py-2.5">Producto</th>
+                    <th className="px-4 py-2.5">Color</th>
+                    <th className="px-4 py-2.5 text-right">Cantidad aprobada</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {dispatch.items.map((item) => (
+                    <tr key={item.id} className="align-top">
+                      <td className="px-4 py-2.5 font-bold">{item.product}</td>
+                      <td className="px-4 py-2.5 text-slate-600">{item.color}</td>
+                      <td className="px-4 py-2.5 text-right font-black">{item.quantity} un</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ))}
         </div>
 
         <div className={hasRejections ? "mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" : "mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"}>
           <p className="font-black uppercase tracking-[0.12em]">{hasRejections ? "Productos no aprobados" : "Carga sin rechazos"}</p>
-          <p className="mt-2">{hasRejections ? dispatch.rejectedLoad : "Todos los productos fueron aprobados para salir a ruta."}</p>
+          <p className="mt-2">{hasRejections ? rows.filter((dispatch) => dispatch.rejectedLoad !== "Sin rechazos").map((dispatch) => `${dispatch.preorder}: ${dispatch.rejectedLoad}`).join(" | ") : "Todos los productos fueron aprobados para salir a ruta."}</p>
         </div>
       </section>
 
@@ -153,7 +179,7 @@ function DispatchApprovalDocument({ dispatch }: { dispatch: DispatchApprovalRow 
         </div>
       </footer>
 
-      <p className="mt-8 text-center text-[11px] text-slate-400">Documento generado por Perflo-SIG. Sello digital: {dispatch.code}</p>
+      <p className="mt-8 text-center text-[11px] text-slate-400">Documento generado por Perflo-SIG. Sello digital: {codes}</p>
     </article>
   );
 }
@@ -181,4 +207,24 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-base font-black text-slate-950">{value}</p>
     </div>
   );
+}
+
+function unique(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function parseQuantity(value: string) {
+  return Number(value.replace(/[^\d.-]/g, "")) || 0;
+}
+
+function parseMoney(value: string) {
+  return Number(value.replace(/[^\d.-]/g, "")) || 0;
+}
+
+function formatQuantity(value: number) {
+  return value.toLocaleString("es-GT", { maximumFractionDigits: 3 });
+}
+
+function formatMoney(value: number) {
+  return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

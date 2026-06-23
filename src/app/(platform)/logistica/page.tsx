@@ -38,6 +38,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
   const isDriver = user.role.name === "Piloto";
   const driverOptions = uniqueOptions(dispatches.map((dispatch) => dispatch.driver));
   const visibleDispatches = filterDispatchRows(dispatches, params);
+  const dispatchGroups = groupDispatchesForApproval(visibleDispatches);
   const driverOrders = deliveryMapOrders;
   const totalLoad = visibleDispatches.reduce((sum, dispatch) => sum + Number(dispatch.load.replace(/[^\d.-]/g, "") || 0), 0);
   const delivered = visibleDispatches.filter((dispatch) => dispatch.status.label === "Entregado").length;
@@ -97,7 +98,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
             { header: "Rechazos", cell: (item) => item.rejectedLoad === "Sin rechazos" ? <span className="text-xs text-muted">Sin rechazos</span> : <span className="block max-w-52 whitespace-normal text-xs font-semibold text-red-600 dark:text-red-300">{item.rejectedLoad}</span> },
             { header: "Valor", align: "right", cell: (item) => <span className="font-semibold">{item.value}</span> },
             { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
-            { header: "Accion", align: "right", cell: (item) => <TableActions><DispatchApprovalPrintButton dispatch={item} /><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
+            { header: "Accion", align: "right", cell: (item) => <TableActions><DispatchApprovalPrintButton dispatch={item} dispatches={dispatchGroups.get(dispatchApprovalGroupKey(item)) || [item]} /><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
           ]}
         />
       </SectionCard>
@@ -123,6 +124,19 @@ function filterDispatchRows(rows: Awaited<ReturnType<typeof getLogisticsModuleDa
     if (driver !== "Todos" && row.driver !== driver) return false;
     return matchesPeriod(row.scheduledDateKey, period, params.from, params.to, today, month);
   });
+}
+
+function groupDispatchesForApproval(rows: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"]) {
+  const groups = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const key = dispatchApprovalGroupKey(row);
+    groups.set(key, [...(groups.get(key) || []), row]);
+  }
+  return groups;
+}
+
+function dispatchApprovalGroupKey(row: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {
+  return [row.driverId, row.routeName || "Ruta directa", row.destination, row.scheduledAt].join("|");
 }
 
 function normalizeSearch(value: string) {
