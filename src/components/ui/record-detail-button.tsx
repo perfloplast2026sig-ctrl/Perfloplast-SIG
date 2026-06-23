@@ -88,7 +88,23 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
               {detail.items?.length ? (
                 <section className="mt-5 rounded-2xl border bg-card-muted/30 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Productos asociados</p>
-                  <div className="mt-4 overflow-x-auto rounded-2xl border bg-card">
+                  <div className="mt-4 space-y-2 sm:hidden">
+                    {detail.items.map((item, index) => (
+                      <article key={`${item.title}-mobile-${index}`} className="rounded-2xl border bg-card p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="break-words text-sm font-black">{item.title}</p>
+                            <p className="mt-1 break-words text-xs leading-5 text-muted">{item.subtitle || "-"}</p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-black">{item.quantity || "-"}</p>
+                            <p className="mt-1 text-xs font-bold text-muted">{item.total || "-"}</p>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  <div className="mt-4 hidden overflow-x-auto rounded-2xl border bg-card sm:block">
                     <table className="w-full min-w-[680px] text-left text-sm">
                       <thead className="bg-card-muted text-xs uppercase tracking-[0.14em] text-muted">
                         <tr>
