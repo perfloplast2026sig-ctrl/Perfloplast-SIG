@@ -72,115 +72,100 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
   const approvedDispatches = dispatches.filter((dispatch) => APPROVED_STATUS.has(dispatch.statusKey));
   const rows = sortDispatches(approvedDispatches.length ? approvedDispatches : [current]);
   const totalLoad = rows.reduce((sum, dispatch) => sum + parseQuantity(dispatch.load), 0);
-  const totalValue = rows.reduce((sum, dispatch) => sum + parseMoney(dispatch.value), 0);
   const detailRows = rows.flatMap((dispatch) => dispatch.items.map((item, index) => ({ dispatch, item, first: index === 0 })));
-  const totalProducts = detailRows.length;
   const clients = unique(rows.map((dispatch) => dispatch.client));
   const hasRejections = rows.some((dispatch) => dispatch.rejectedLoad !== "Sin rechazos");
   const manifestCode = buildManifestCode(rows);
 
   return (
-    <article className="dispatch-print-target mx-auto flex min-h-[11in] w-[8.5in] flex-col bg-white p-[0.48in] text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ring-1 ring-slate-200">
-      <header className="dispatch-print-header grid grid-cols-[1fr_250px] items-start gap-8 border-b-4 border-[#0f4c81] pb-5">
-        <div className="flex items-start gap-4">
-          <Image alt="Perfloplast" className="h-20 w-24 object-contain" height={80} src="/company-logo.svg.png" width={96} />
-          <div>
-            <p className="text-3xl font-black tracking-tight text-[#0f4c81]">PERFLOPLAST</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">Aldea Chijou, Santa Cruz Verapaz</p>
-            <p className="text-sm text-slate-500">Tel: 44235941 / 53146115</p>
+    <article className="dispatch-print-target mx-auto flex min-h-[11in] w-[8.5in] flex-col bg-white p-[0.46in] text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ring-1 ring-slate-200">
+      <header className="dispatch-print-header grid grid-cols-[1fr_210px] items-start gap-6 border-b-2 border-slate-900 pb-4">
+        <div className="grid grid-cols-[82px_1fr] gap-3">
+          <Image alt="Perfloplast" className="h-16 w-20 object-contain" height={64} src="/company-logo.svg.png" width={80} />
+          <div className="text-center">
+            <p className="text-2xl font-black tracking-tight text-[#0f4c81]">PERFLO PLAST</p>
+            <p className="text-[11px] font-semibold uppercase text-slate-700">Industria de plastico, S.A.</p>
+            <p className="mt-1 text-[11px] text-slate-600">Aldea Chijou, Santa Cruz Verapaz, Alta Verapaz</p>
+            <p className="text-[11px] text-slate-600">Tel: 44235941 / 53146115</p>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-right">
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Manifiesto de carga</p>
-          <p className="mt-1 break-words text-xl font-black text-orange-600">{manifestCode}</p>
-          <div className="mt-3 inline-flex items-center justify-center rounded-md border-2 border-emerald-700 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-            Carga aprobada
-          </div>
+        <div className="text-right">
+          <p className="text-sm font-black uppercase tracking-[0.12em] text-slate-950">Boleta de despacho</p>
+          <p className="mt-1 text-[11px] font-bold uppercase text-slate-500">No.</p>
+          <p className="font-mono text-xl font-black text-red-600">{manifestCode}</p>
+          <p className="mt-2 inline-block border-2 border-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950">Despacho aprobado</p>
         </div>
       </header>
 
-      <section className="mt-6 grid grid-cols-[1fr_1fr_1.3fr] gap-3">
-        <CompactInfo label="Piloto" value={current.driver} />
-        <CompactInfo label="Fecha" value={current.scheduledAt} />
-        <CompactInfo label="Ruta / destino" value={`${current.routeName || "Ruta directa"} - ${current.destination}`} />
-        <CompactInfo label="Clientes" value={clients.join(", ")} />
-        <CompactInfo label="Estado" value={current.status.label} />
-        <CompactInfo label="Documento" value={manifestCode} />
+      <section className="mt-4 grid grid-cols-2 gap-x-8 gap-y-2 text-[12px]">
+        <LineField label="Fecha" value={current.scheduledAt} />
+        <LineField label="Ruta" value={current.routeName || "Ruta directa"} />
+        <LineField label="Piloto" value={current.driver} />
+        <LineField label="Destino" value={current.destination} />
+        <LineField label="Cliente(s)" value={clients.join(", ")} />
+        <LineField label="Pedidos" value={`${rows.length} pedido(s) - ${formatQuantity(totalLoad)} un`} />
       </section>
 
-      <section className="my-5 grid grid-cols-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-center">
-        <SummaryItem label="Pedidos" value={String(rows.length)} />
-        <SummaryItem label="Productos" value={String(totalProducts)} />
-        <SummaryItem label="Carga aprobada" value={`${formatQuantity(totalLoad)} un`} />
-        <SummaryItem label="Valor total" value={formatMoney(totalValue)} />
-      </section>
-
-      <section className="flex-1">
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#0f4c81] text-left text-[10px] font-black uppercase tracking-[0.11em] text-white">
+      <section className="mt-4 flex-1">
+        <div className="border-2 border-slate-900">
+          <table className="w-full border-collapse text-[12px]">
+            <thead className="bg-slate-100 text-left text-[10px] font-black uppercase tracking-[0.08em] text-slate-900">
               <tr>
-                <th className="px-3 py-3">Pedido</th>
-                <th className="px-3 py-3">Cliente</th>
-                <th className="px-3 py-3">Factura</th>
-                <th className="px-3 py-3">Producto</th>
-                <th className="px-3 py-3">Color</th>
-                <th className="px-3 py-3 text-right">Cantidad</th>
-                <th className="px-3 py-3 text-right">Valor</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2 text-center">Cant.</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2">Descripcion</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2">Color</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2">Pedido</th>
+                <th className="border-b-2 border-slate-900 px-2 py-2">Cliente</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {detailRows.map(({ dispatch, first, item }) => (
                 <tr key={`${dispatch.id}-${item.id}`} className="align-top">
-                  <td className="px-3 py-2.5 font-mono text-[11px] font-black text-[#0f4c81]">{first ? dispatch.preorder : ""}</td>
-                  <td className="px-3 py-2.5 font-semibold">{first ? dispatch.client : ""}</td>
-                  <td className="px-3 py-2.5 font-mono text-[11px] text-slate-500">{first ? dispatch.invoice : ""}</td>
-                  <td className="px-3 py-2.5 font-bold">{item.product}</td>
-                  <td className="px-3 py-2.5 text-slate-600">{item.color}</td>
-                  <td className="px-3 py-2.5 text-right font-black">{item.quantity} un</td>
-                  <td className="px-3 py-2.5 text-right font-black text-orange-600">{first ? dispatch.value : ""}</td>
+                  <td className="border-r border-t border-slate-300 px-2 py-2 text-center font-black">{formatQuantity(parseQuantity(item.quantity))}</td>
+                  <td className="border-r border-t border-slate-300 px-2 py-2 font-bold">{item.product}</td>
+                  <td className="border-r border-t border-slate-300 px-2 py-2 text-slate-700">{item.color}</td>
+                  <td className="border-r border-t border-slate-300 px-2 py-2 font-mono text-[11px] font-bold">{first ? dispatch.preorder : ""}</td>
+                  <td className="border-t border-slate-300 px-2 py-2 font-semibold">{first ? dispatch.client : ""}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <div className={hasRejections ? "mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" : "mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"}>
-          <p className="font-black uppercase tracking-[0.12em]">{hasRejections ? "Productos no aprobados" : "Carga sin rechazos"}</p>
-          <p className="mt-2">{hasRejections ? rows.filter((dispatch) => dispatch.rejectedLoad !== "Sin rechazos").map((dispatch) => `${dispatch.preorder}: ${dispatch.rejectedLoad}`).join(" | ") : "Todos los productos fueron aprobados para salir a ruta."}</p>
+        <div className="mt-3 grid grid-cols-[1fr_180px] items-start gap-4 text-[12px]">
+          <div className="min-h-16 border-2 border-slate-900 p-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Observaciones</p>
+            <p className="mt-1 font-semibold">{hasRejections ? rows.filter((dispatch) => dispatch.rejectedLoad !== "Sin rechazos").map((dispatch) => `${dispatch.preorder}: ${dispatch.rejectedLoad}`).join(" | ") : "Carga sin rechazos."}</p>
+          </div>
+          <div className="border-2 border-slate-900 p-2 text-right">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Total carga</p>
+            <p className="text-lg font-black">{formatQuantity(totalLoad)} un</p>
+          </div>
         </div>
       </section>
 
-      <footer className="mt-10 grid grid-cols-2 gap-10 text-xs text-slate-500">
-        <div className="border-t border-slate-300 pt-3 text-center">
-          <p className="font-bold text-slate-700">Firma de bodega</p>
-          <p>Producto verificado antes de salida</p>
+      <footer className="mt-8 grid grid-cols-3 gap-7 text-[11px] text-slate-600">
+        <div className="pt-8 text-center">
+          <div className="border-t-2 border-slate-900 pt-1 font-bold text-slate-900">Encargado de bodega</div>
         </div>
-        <div className="border-t border-slate-300 pt-3 text-center">
-          <p className="font-bold text-slate-700">Firma de piloto</p>
-          <p>Recibe carga aprobada</p>
+        <div className="grid place-items-center">
+          <div className="rotate-[-8deg] border-4 border-[#0f4c81] px-4 py-2 text-center text-sm font-black uppercase tracking-[0.08em] text-[#0f4c81]">Despacho<br />Perflo Plast</div>
+        </div>
+        <div className="pt-8 text-center">
+          <div className="border-t-2 border-slate-900 pt-1 font-bold text-slate-900">Recibido por piloto</div>
         </div>
       </footer>
 
-      <p className="mt-8 text-center text-[11px] text-slate-400">Documento generado por Perflo-SIG. Codigo de carga: {manifestCode}</p>
+      <p className="mt-4 text-center text-[10px] text-slate-400">Documento generado por Perflo-SIG. Codigo: {manifestCode}</p>
     </article>
   );
 }
 
-function CompactInfo({ label, value }: { label: string; value: string }) {
+function LineField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.13em] text-slate-500">{label}</p>
-      <p className="mt-1 break-words text-sm font-black text-slate-950">{value}</p>
-    </div>
-  );
-}
-
-function SummaryItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-r border-slate-200 p-4 last:border-r-0">
-      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-black text-slate-950">{value}</p>
+    <div className="grid grid-cols-[82px_1fr] items-end gap-2">
+      <span className="font-black">{label}:</span>
+      <span className="min-h-6 border-b border-slate-900 px-1 pb-0.5 font-bold">{value}</span>
     </div>
   );
 }
@@ -204,14 +189,6 @@ function parseQuantity(value: string) {
   return Number(value.replace(/[^\d.-]/g, "")) || 0;
 }
 
-function parseMoney(value: string) {
-  return Number(value.replace(/[^\d.-]/g, "")) || 0;
-}
-
 function formatQuantity(value: number) {
   return value.toLocaleString("es-GT", { maximumFractionDigits: 3 });
-}
-
-function formatMoney(value: number) {
-  return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
