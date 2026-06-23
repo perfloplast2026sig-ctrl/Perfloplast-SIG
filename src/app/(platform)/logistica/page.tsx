@@ -98,7 +98,12 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
             { header: "Rechazos", cell: (item) => item.rejectedLoad === "Sin rechazos" ? <span className="text-xs text-muted">Sin rechazos</span> : <span className="block max-w-52 whitespace-normal text-xs font-semibold text-red-600 dark:text-red-300">{item.rejectedLoad}</span> },
             { header: "Valor", align: "right", cell: (item) => <span className="font-semibold">{item.value}</span> },
             { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
-            { header: "Accion", align: "right", cell: (item) => <TableActions><DispatchApprovalPrintButton dispatch={item} dispatches={dispatchGroups.get(dispatchApprovalGroupKey(item)) || [item]} /><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
+            { header: "Accion", align: "right", cell: (item) => {
+              const group = dispatchGroups.get(dispatchApprovalGroupKey(item)) || [item];
+              const printable = group.find((dispatch) => isApprovalPdfAvailable(dispatch.statusKey));
+              const showGroupPdf = printable?.id === item.id;
+              return <TableActions>{showGroupPdf ? <DispatchApprovalPrintButton dispatch={item} dispatches={group} /> : null}<RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions>;
+            } },
           ]}
         />
       </SectionCard>
@@ -137,6 +142,10 @@ function groupDispatchesForApproval(rows: Awaited<ReturnType<typeof getLogistics
 
 function dispatchApprovalGroupKey(row: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"][number]) {
   return [row.driverId, row.routeName || "Ruta directa", row.destination, row.scheduledAt].join("|");
+}
+
+function isApprovalPdfAvailable(statusKey: string) {
+  return ["LOADED", "IN_ROUTE", "DELIVERED"].includes(statusKey);
 }
 
 function normalizeSearch(value: string) {
