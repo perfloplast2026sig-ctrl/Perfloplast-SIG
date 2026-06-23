@@ -73,11 +73,11 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
                 {detail.sections.map((section) => (
                   <section key={section.title} className="min-w-0 rounded-2xl border bg-card-muted/20 p-4 shadow-sm">
                     <p className="border-b pb-2 text-[11px] font-black uppercase tracking-[0.18em] text-muted">{section.title}</p>
-                    <dl className="mt-3 divide-y">
+                    <dl className="mt-3 grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-1">
                       {section.rows.map((row) => (
-                        <div key={`${section.title}-${row.label}`} className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-3 py-2 text-sm first:pt-0 last:pb-0">
-                          <dt className="text-[10px] font-black uppercase leading-5 tracking-[0.12em] text-muted">{row.label}</dt>
-                          <dd className="min-w-0 overflow-hidden whitespace-normal break-words font-semibold leading-5">{row.href ? <a className="break-words text-accent underline-offset-4 hover:underline" href={row.href}>{row.value}</a> : row.value}</dd>
+                        <div key={`${section.title}-${row.label}`} className="min-w-0 border-b pb-2 last:border-b-0 last:pb-0">
+                          <dt className="text-[10px] font-black uppercase leading-4 tracking-[0.12em] text-muted">{row.label}</dt>
+                          <dd className="mt-1 min-w-0 whitespace-normal break-words text-sm font-semibold leading-5">{row.href ? <a className="break-words text-accent underline-offset-4 hover:underline" href={row.href}>{row.value}</a> : row.value}</dd>
                         </div>
                       ))}
                     </dl>
@@ -138,11 +138,11 @@ export function RecordDetailButton({ detail }: { detail: RecordDetail }) {
                           </div>
                           <span className="w-fit rounded-full border bg-background px-3 py-1 text-xs font-black text-muted">Evento {index + 1}</span>
                         </div>
-                        <dl className="grid gap-x-4 gap-y-2 p-4 text-sm sm:grid-cols-2">
+                        <dl className="grid gap-x-6 gap-y-3 p-4 text-sm sm:grid-cols-2">
                           {audit.rows.map((row) => (
-                            <div key={`${audit.title}-${row.label}`} className={row.label === "Motivo" ? "rounded-xl border bg-card-muted/20 p-3 sm:col-span-2" : "grid grid-cols-[115px_1fr] gap-3 rounded-xl border bg-card-muted/10 p-3"}>
+                            <div key={`${audit.title}-${row.label}`} className={row.label === "Motivo" ? "border-b pb-3 sm:col-span-2" : "min-w-0 border-b pb-3"}>
                               <dt className="text-[11px] font-black uppercase tracking-[0.14em] text-muted">{row.label}</dt>
-                              <dd className="break-words font-semibold leading-5">{row.href ? <a className="text-accent underline-offset-4 hover:underline" href={row.href}>{row.value}</a> : row.value}</dd>
+                              <dd className="mt-1 min-w-0 whitespace-normal break-words font-semibold leading-5">{row.href ? <a className="break-words text-accent underline-offset-4 hover:underline" href={row.href}>{row.value}</a> : row.value}</dd>
                             </div>
                           ))}
                         </dl>
