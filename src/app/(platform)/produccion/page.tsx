@@ -2,6 +2,7 @@ import { PageHeading } from "@/components/layout/page-heading";
 import { ProductionEntryForm } from "@/components/production/production-entry-form";
 import { OperationalReportExport } from "@/components/reports/operational-report-export";
 import { Badge } from "@/components/ui/badge";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
 import { SectionCard } from "@/components/ui/section-card";
@@ -130,7 +131,7 @@ function normalizeSearch(value: string) {
 
 function ProductionFilters({ params, responsibleOptions }: { params: ProductionSearchParams; responsibleOptions: string[] }) {
   return (
-    <form className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 shadow-sm sm:gap-3 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.85fr_0.85fr_0.9fr_auto] lg:items-end" method="get">
+    <AutoFilterForm className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 shadow-sm sm:gap-3 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.85fr_0.85fr_0.9fr_auto] lg:items-end">
       <FilterInput label="Buscar" name="search" placeholder="Orden, producto, bodega..." defaultValue={params.search || ""} />
       <FilterSelect label="Responsable" name="responsible" defaultValue={params.responsible || "Todos"} options={["Todos", ...responsibleOptions]} />
       <FilterSelect label="Periodo" name="period" defaultValue={params.period || "Todos"} options={["Todos", "Hoy", "Mes", "Personalizado"]} />
@@ -139,9 +140,8 @@ function ProductionFilters({ params, responsibleOptions }: { params: ProductionS
       <FilterSelect label="Rechazos" name="rejected" defaultValue={params.rejected || "Todos"} options={["Todos", "Con rechazos", "Sin rechazos"]} />
       <div className="col-span-2 flex gap-2 lg:col-span-1 lg:justify-end">
         <a className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/produccion">Todos</a>
-        <button className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" type="submit">Aplicar filtros</button>
       </div>
-    </form>
+    </AutoFilterForm>
   );
 }
 

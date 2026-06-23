@@ -225,6 +225,7 @@ body {
 }
 
 .invoice-print-stage,
+.dispatch-print-stage,
 .activity-report-print-stage,
 .operational-report-print-stage,
 .quote-print-stage,
@@ -414,6 +415,69 @@ body {
   body.printing-invoice .invoice-print-target img {
     max-width: 18mm !important;
     max-height: 14mm !important;
+  }
+
+  body.printing-dispatch .app-shell,
+  body.printing-dispatch .app-content,
+  body.printing-dispatch .app-main {
+    display: block !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-dispatch aside,
+  body.printing-dispatch header,
+  body.printing-dispatch .app-main > *:not(:has(.dispatch-print-stage)):not(.dispatch-print-stage) {
+    display: none !important;
+  }
+
+  body.printing-dispatch .app-main *:not(.dispatch-print-stage):not(.dispatch-print-stage *) {
+    visibility: hidden !important;
+  }
+
+  body.printing-dispatch .dispatch-print-stage,
+  body.printing-dispatch .dispatch-print-stage * {
+    visibility: visible !important;
+  }
+
+  body.printing-dispatch .dispatch-print-stage {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-dispatch .dispatch-print-target {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 7mm 8mm 6mm !important;
+    color: #020617 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  body.printing-dispatch .dispatch-print-header {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: start !important;
+    gap: 16mm !important;
+    padding-bottom: 4mm !important;
+  }
+
+  body.printing-dispatch .dispatch-print-info {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12mm !important;
+    padding: 5mm 0 !important;
   }
 
   body.printing-quote .app-shell,

@@ -1,10 +1,12 @@
 import { DispatchCreateModal } from "@/components/logistics/dispatch-create-modal";
+import { DispatchApprovalPrintButton } from "@/components/logistics/dispatch-approval-print-button";
 import { DispatchStatusActions } from "@/components/logistics/dispatch-status-actions";
 import { LogisticsLiveMaps } from "@/components/logistics/logistics-live-maps";
 import { redirect } from "next/navigation";
 import { PageHeading } from "@/components/layout/page-heading";
 import { OperationalReportExport } from "@/components/reports/operational-report-export";
 import { Badge } from "@/components/ui/badge";
+import { AutoFilterForm } from "@/components/ui/auto-filter-form";
 import { DataTable } from "@/components/ui/data-table";
 import { RecordDetailButton } from "@/components/ui/record-detail-button";
 import { SectionCard } from "@/components/ui/section-card";
@@ -95,7 +97,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
             { header: "Rechazos", cell: (item) => item.rejectedLoad === "Sin rechazos" ? <span className="text-xs text-muted">Sin rechazos</span> : <span className="block max-w-52 whitespace-normal text-xs font-semibold text-red-600 dark:text-red-300">{item.rejectedLoad}</span> },
             { header: "Valor", align: "right", cell: (item) => <span className="font-semibold">{item.value}</span> },
             { header: "Estado", cell: (item) => <div><Badge label={item.status.label} tone={item.status.tone} />{item.latestReturnReason ? <p className="mt-1 max-w-44 truncate text-xs text-muted">{item.latestReturnReason}</p> : null}</div> },
-            { header: "Accion", align: "right", cell: (item) => <TableActions><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
+            { header: "Accion", align: "right", cell: (item) => <TableActions><DispatchApprovalPrintButton dispatch={item} /><RecordDetailButton detail={buildDispatchDetail(item)} /><DispatchStatusActions dispatch={item} roleName={user.role.name} /></TableActions> },
           ]}
         />
       </SectionCard>
@@ -129,7 +131,7 @@ function normalizeSearch(value: string) {
 
 function LogisticsFilters({ params, driverOptions }: { params: LogisticsSearchParams; driverOptions: string[] }) {
   return (
-    <form className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 shadow-sm sm:gap-3 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end" method="get">
+    <AutoFilterForm className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-card p-3 shadow-sm sm:gap-3 lg:grid-cols-[1.2fr_0.9fr_0.9fr_0.85fr_0.85fr_auto] lg:items-end">
       <FilterInput label="Buscar" name="search" placeholder="Despacho, cliente, destino..." defaultValue={params.search || ""} />
       <FilterSelect label="Piloto" name="driver" defaultValue={params.driver || "Todos"} options={["Todos", ...driverOptions]} />
       <FilterSelect label="Periodo" name="period" defaultValue={params.period || "Todos"} options={["Todos", "Hoy", "Mes", "Personalizado"]} />
@@ -137,9 +139,8 @@ function LogisticsFilters({ params, driverOptions }: { params: LogisticsSearchPa
       <FilterInput label="Hasta" name="to" type="date" defaultValue={params.to || ""} />
       <div className="col-span-2 flex gap-2 lg:col-span-1">
         <a className="inline-flex h-10 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/logistica">Todos</a>
-        <button className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" type="submit">Filtrar</button>
       </div>
-    </form>
+    </AutoFilterForm>
   );
 }
 
