@@ -79,10 +79,10 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
 
   return (
     <article className="dispatch-print-target mx-auto flex min-h-[11in] w-[8.5in] flex-col bg-white p-[0.46in] text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ring-1 ring-slate-200">
-      <header className="dispatch-print-header grid grid-cols-[1fr_210px] items-start gap-6 border-b-2 border-slate-900 pb-4">
-        <div className="grid grid-cols-[82px_1fr] gap-3">
+      <header className="dispatch-print-header grid grid-cols-[1fr_260px] items-start gap-6 border-b-2 border-slate-900 pb-4">
+        <div className="grid grid-cols-[82px_1fr] gap-3 pr-4">
           <Image alt="Perfloplast" className="h-16 w-20 object-contain" height={64} src="/company-logo.svg.png" width={80} />
-          <div className="text-center">
+          <div className="text-center leading-tight">
             <p className="text-2xl font-black tracking-tight text-[#0f4c81]">PERFLO PLAST</p>
             <p className="text-[11px] font-semibold uppercase text-slate-700">Industria de plastico, S.A.</p>
             <p className="mt-1 text-[11px] text-slate-600">Aldea Chijou, Santa Cruz Verapaz, Alta Verapaz</p>
@@ -92,8 +92,8 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
         <div className="text-right">
           <p className="text-sm font-black uppercase tracking-[0.12em] text-slate-950">Boleta de despacho</p>
           <p className="mt-1 text-[11px] font-bold uppercase text-slate-500">No.</p>
-          <p className="font-mono text-xl font-black text-red-600">{manifestCode}</p>
-          <p className="mt-2 inline-block border-2 border-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950">Despacho aprobado</p>
+          <p className="font-mono text-[21px] font-black leading-tight text-red-600">{manifestCode}</p>
+          <p className="mt-2 inline-block border-2 border-slate-900 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950">Despacho aprobado</p>
         </div>
       </header>
 
@@ -149,7 +149,13 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
           <div className="border-t-2 border-slate-900 pt-1 font-bold text-slate-900">Encargado de bodega</div>
         </div>
         <div className="grid place-items-center">
-          <div className="rotate-[-8deg] border-4 border-[#0f4c81] px-4 py-2 text-center text-sm font-black uppercase tracking-[0.08em] text-[#0f4c81]">Despacho<br />Perflo Plast</div>
+          <div className="relative rotate-[-8deg] rounded-sm border-[3px] border-[#0f4c81] px-5 py-2 text-center text-[13px] font-black uppercase leading-tight tracking-[0.08em] text-[#0f4c81] opacity-95 shadow-[inset_0_0_0_2px_rgba(15,76,129,0.18)]">
+            <span className="absolute -left-2 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-[3px] border-[#0f4c81] bg-white" />
+            <span className="absolute -right-2 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-[3px] border-[#0f4c81] bg-white" />
+            <span className="block text-[10px] tracking-[0.18em]">Aprobado</span>
+            <span className="block text-base">Despacho</span>
+            <span className="block text-[10px] tracking-[0.14em]">Perflo Plast</span>
+          </div>
         </div>
         <div className="pt-8 text-center">
           <div className="border-t-2 border-slate-900 pt-1 font-bold text-slate-900">Recibido por piloto</div>
@@ -179,10 +185,15 @@ function sortDispatches(rows: DispatchApprovalRow[]) {
 }
 
 function buildManifestCode(rows: DispatchApprovalRow[]) {
-  if (rows.length === 1) return rows[0]?.code || "Sin codigo";
-  const first = rows[0]?.code || "";
-  const last = rows.at(-1)?.code || "";
+  if (rows.length === 1) return compactDispatchCode(rows[0]?.code || "");
+  const first = compactDispatchCode(rows[0]?.code || "");
+  const last = compactDispatchCode(rows.at(-1)?.code || "");
   return `${first} a ${last}`;
+}
+
+function compactDispatchCode(code: string) {
+  const match = /^DSP-\d{4}-(\d+)$/.exec(code);
+  return match ? `DP-${match[1]}` : code.replace(/^DSP-\d{4}-/, "DP-");
 }
 
 function parseQuantity(value: string) {
