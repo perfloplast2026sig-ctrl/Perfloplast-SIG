@@ -169,12 +169,12 @@ export async function createPreorder(input: {
   if (!input.originLocationId) throw new Error("Selecciona bodega de origen.");
   if (items.length === 0) throw new Error("Agrega al menos un producto.");
 
+  const deliveryAddress = input.deliveryAddress.trim();
   const subtotal = items.reduce((sum, item) => sum + item.quantityValue * item.unitPriceValue, 0);
   const discount = parseMoney(input.discount);
   const amountReceived = parseMoney(input.amountReceived);
   const total = Math.max(subtotal - discount, 0);
   const isQuote = input.mode === "quote";
-  const deliveryAddress = input.deliveryAddress.trim();
   const saleLatitude = parseOptionalCoordinate(input.saleLatitude);
   const saleLongitude = parseOptionalCoordinate(input.saleLongitude);
   const saleAccuracy = parseOptionalCoordinate(input.saleAccuracy);
@@ -375,6 +375,7 @@ export async function updatePreorder(input: {
   if (!input.originLocationId) throw new Error("Selecciona bodega de origen.");
   if (items.length === 0) throw new Error("Agrega al menos un producto.");
 
+  const deliveryAddress = input.deliveryAddress.trim();
   const subtotal = items.reduce((sum, item) => sum + item.quantityValue * item.unitPriceValue, 0);
   const discount = parseMoney(input.discount);
   const amountReceived = parseMoney(input.amountReceived);
@@ -426,7 +427,7 @@ export async function updatePreorder(input: {
       data: {
         clientId: client.id,
         originLocationId: input.originLocationId,
-        deliveryAddress: input.deliveryAddress.trim(),
+        deliveryAddress,
         paymentMethod: input.paymentMethod || null,
         discountGTQ: discount,
         amountReceivedGTQ: amountReceived,
