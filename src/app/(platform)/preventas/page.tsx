@@ -1,5 +1,6 @@
 import { PreorderCreateModal } from "@/components/preorders/preorder-create-modal";
 import { PreorderCancelButton } from "@/components/preorders/preorder-cancel-button";
+import { PreorderEditModal } from "@/components/preorders/preorder-edit-modal";
 import { PreorderReportExport } from "@/components/preorders/preorder-report-export";
 import { QuotePrintLauncher } from "@/components/preorders/quote-print-launcher";
 import { SellerPreorderBoard } from "@/components/preorders/seller-preorder-board";
@@ -15,7 +16,7 @@ import { getPreorderModuleData } from "@/services/preorders";
 import { CheckCircle2, FileText, ReceiptText, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
-export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; cancelled?: string; quote?: string; search?: string }> }) {
+export default async function PreordersPage({ searchParams }: { searchParams: Promise<{ error?: string; created?: string; updated?: string; cancelled?: string; quote?: string; search?: string }> }) {
   const params = await searchParams;
   const user = await requireCurrentUser();
   if (!["Super admin", "Administrador", "Vendedor"].includes(user.role.name)) redirect("/");
@@ -37,6 +38,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
       {params.created === "quote" ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Cotizacion creada. Usa el boton PDF para revisar o imprimir.</div> : null}
       {params.created && params.created !== "quote" ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Preventa creada y stock reservado.</div> : null}
+      {params.updated ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Preventa actualizada correctamente. El correlativo se mantiene.</div> : null}
       {params.cancelled ? <div className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">Venta anulada correctamente.</div> : null}
       {params.search ? <div className="mb-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm font-medium text-sky-700 dark:text-sky-300">Busqueda aplicada: {params.search}. Mostrando {filteredPreorders.length} resultado(s).</div> : null}
 
@@ -65,7 +67,7 @@ export default async function PreordersPage({ searchParams }: { searchParams: Pr
             { header: "Fecha", cell: (item) => <span className="text-muted">{item.date}</span> },
             { header: "Total", align: "right", cell: (item) => <span className="font-semibold">{item.total}</span> },
             { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
-            { header: "Ver", align: "right", cell: (item) => <TableActions>{item.status.label === "Cotizacion" ? <Link aria-label={`Generar PDF de ${item.code}`} className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} />{isSuperAdmin && item.status.label !== "Cancelada" ? <PreorderCancelButton code={item.code} kind={item.status.label === "Cotizacion" ? "quote" : "sale"} preorderId={item.id} /> : null}</TableActions> },
+            { header: "Ver", align: "right", cell: (item) => <TableActions>{item.canEdit ? <PreorderEditModal preorder={{ id: item.id, code: item.code, client: item.client, taxId: item.taxId, phone: item.phone, address: item.address, deliveryAddress: item.deliveryAddress, warehouseId: item.warehouseId, payment: item.payment, discount: item.discount, amountReceived: item.amountReceived, status: item.status, items: item.items.map((row) => ({ productId: row.productId, quantity: row.quantity })) }} products={products} warehouses={warehouses} /> : null}{item.status.label === "Cotizacion" ? <Link aria-label={`Generar PDF de ${item.code}`} className="grid size-10 shrink-0 place-items-center rounded-full border bg-card-muted text-sky-600 transition hover:border-sky-400 hover:bg-sky-500/10" href={`/preventas?quote=${item.id}`} title="Generar PDF de cotizacion"><FileText size={17} /></Link> : null}<RecordDetailButton detail={buildPreorderDetail(item)} />{isSuperAdmin && item.status.label !== "Cancelada" ? <PreorderCancelButton code={item.code} kind={item.status.label === "Cotizacion" ? "quote" : "sale"} preorderId={item.id} /> : null}</TableActions> },
           ]}
         />
       </SectionCard>

@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCurrentUser, requireSuperAdmin } from "@/services/auth";
-import { cancelPreorder, createPreorder } from "@/services/preorders";
+import { cancelPreorder, createPreorder, updatePreorder } from "@/services/preorders";
 
 export async function createPreorderAction(formData: FormData) {
   const mode = String(formData.get("mode") || "preorder");
@@ -75,4 +75,43 @@ export async function cancelPreorderAction(formData: FormData) {
   }
 
   redirect("/preventas?cancelled=1");
+}
+
+export async function updatePreorderAction(formData: FormData) {
+  try {
+    const user = await requireCurrentUser();
+    await updatePreorder({
+      preorderId: String(formData.get("preorderId") || ""),
+      clientName: String(formData.get("clientName") || ""),
+      taxId: String(formData.get("taxId") || ""),
+      phone: String(formData.get("phone") || ""),
+      address: String(formData.get("address") || ""),
+      deliveryAddress: String(formData.get("deliveryAddress") || ""),
+      originLocationId: String(formData.get("originLocationId") || ""),
+      paymentMethod: String(formData.get("paymentMethod") || ""),
+      discount: String(formData.get("discount") || "0"),
+      amountReceived: String(formData.get("amountReceived") || "0"),
+      items: formData.getAll("productId").map((productId, index) => ({
+        productId: String(productId || ""),
+        quantity: String(formData.getAll("quantity")[index] || "0"),
+        unitPrice: String(formData.getAll("unitPrice")[index] || "0"),
+      })),
+      userId: user.id,
+      roleName: user.role.name,
+    });
+    revalidatePath("/preventas");
+    revalidatePath("/inventario");
+    revalidatePath("/logistica");
+    revalidatePath("/facturas");
+    revalidatePath("/reportes");
+    revalidateTag("preorders", "default");
+    revalidateTag("inventory", "default");
+    revalidateTag("logistics", "default");
+    revalidateTag("dashboard", "default");
+    revalidateTag("header", "default");
+  } catch (error) {
+    redirect(`/preventas?error=${encodeURIComponent(error instanceof Error ? error.message : "No se pudo editar la preventa.")}`);
+  }
+
+  redirect("/preventas?updated=1");
 }

@@ -30,6 +30,7 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
         client: true,
         items: { include: { product: true } },
         createdBy: true,
+        dispatches: { select: { id: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 25,
@@ -84,6 +85,7 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
       seller: preorder.createdBy.name,
       sellerEmail: preorder.createdBy.email,
       products: `${preorder.items.length} productos`,
+      warehouseId: preorder.originLocationId || "",
       warehouse: warehouses.find((warehouse) => warehouse.id === preorder.originLocationId)?.name || "Sin bodega",
       totalNumber: Number(preorder.totalGTQ),
       total: formatGTQ(preorder.totalGTQ),
@@ -98,8 +100,12 @@ async function getPreorderModuleDataRaw(viewer?: Viewer) {
       dateKey: preorder.createdAt.toISOString().slice(0, 10),
       date: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(preorder.createdAt),
       status: statusLabel(preorder.status),
+      statusKey: preorder.status,
+      canEdit: ["QUOTE", "PENDING", "CONFIRMED"].includes(preorder.status) && preorder.dispatches.length === 0,
       quoteWhatsappUrl: preorder.status === "QUOTE" ? buildQuoteWhatsappUrl(preorder.client.phone || "", preorder.code, preorder.client.name, preorder.totalGTQ) : "",
       items: preorder.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
         product: productTitle(item.product),
         color: item.product.color || "Sin color",
         quantity: item.quantity.toString(),
@@ -341,6 +347,135 @@ export async function cancelPreorder(input: { preorderId: string; reason: string
   });
 }
 
+export async function updatePreorder(input: {
+  preorderId: string;
+  clientName: string;
+  taxId?: string;
+  phone?: string;
+  address?: string;
+  deliveryAddress?: string;
+  originLocationId: string;
+  paymentMethod?: string;
+  discount: string;
+  amountReceived: string;
+  items: Array<{ productId: string; quantity: string; unitPrice: string }>;
+  userId: string;
+  roleName: string;
+}) {
+  const items = input.items
+    .map((item) => ({ ...item, quantityValue: parseMoney(item.quantity), unitPriceValue: parseMoney(item.unitPrice) }))
+    .filter((item) => item.productId && item.quantityValue > 0);
+
+  if (!input.preorderId) throw new Error("Selecciona la preventa que deseas editar.");
+  if (!input.clientName.trim()) throw new Error("El nombre del cliente es obligatorio.");
+  if (!input.taxId?.trim()) throw new Error("Ingresa NIT o CF.");
+  if (!isValidGuatemalaPhone(input.phone || "")) throw new Error("El telefono debe tener exactamente 8 digitos.");
+  if (!input.address?.trim()) throw new Error("La direccion fiscal es obligatoria.");
+  if (!input.deliveryAddress?.trim()) throw new Error("La direccion de entrega es obligatoria.");
+  if (!input.originLocationId) throw new Error("Selecciona bodega de origen.");
+  if (items.length === 0) throw new Error("Agrega al menos un producto.");
+
+  const subtotal = items.reduce((sum, item) => sum + item.quantityValue * item.unitPriceValue, 0);
+  const discount = parseMoney(input.discount);
+  const amountReceived = parseMoney(input.amountReceived);
+  const total = Math.max(subtotal - discount, 0);
+  const canEditAny = ["Super admin", "Administrador"].includes(input.roleName);
+
+  return prisma.$transaction(async (tx) => {
+    const preorder = await tx.preorder.findUnique({
+      where: { id: input.preorderId },
+      include: {
+        items: true,
+        dispatches: { select: { id: true } },
+        invoice: true,
+      },
+    });
+
+    if (!preorder) throw new Error("Preventa no encontrada.");
+    if (!canEditAny && preorder.createdById !== input.userId) throw new Error("Solo puedes editar tus propias preventas.");
+    if (!["QUOTE", "PENDING", "CONFIRMED"].includes(preorder.status)) throw new Error("Solo se pueden editar preventas pendientes, confirmadas o cotizaciones.");
+    if (preorder.dispatches.length > 0) throw new Error("Esta preventa ya tiene despacho. Debe corregirse desde administracion o anularse con auditoria.");
+
+    const isQuote = preorder.status === "QUOTE";
+    const warehouse = await tx.location.findFirst({ where: { id: input.originLocationId, type: "WAREHOUSE", isActive: true } });
+    if (!warehouse) throw new Error("Bodega de origen no encontrada.");
+
+    if (!isQuote && preorder.originLocationId) {
+      for (const item of preorder.items) {
+        if (Number(item.reservedQuantity) <= 0) continue;
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
+          data: { reserved: { decrement: item.reservedQuantity } },
+        });
+      }
+    }
+
+    if (!isQuote) {
+      for (const item of items) {
+        const balance = await tx.stockBalance.findUnique({ where: { productId_locationId: { productId: item.productId, locationId: input.originLocationId } } });
+        if (!balance || Number(balance.quantity) - Number(balance.reserved) < item.quantityValue) {
+          throw new Error("No hay existencia disponible suficiente para uno de los productos.");
+        }
+      }
+    }
+
+    const client = await findOrCreateClient(tx, input);
+    await tx.preorderItem.deleteMany({ where: { preorderId: preorder.id } });
+    const updated = await tx.preorder.update({
+      where: { id: preorder.id },
+      data: {
+        clientId: client.id,
+        originLocationId: input.originLocationId,
+        deliveryAddress: input.deliveryAddress.trim(),
+        paymentMethod: input.paymentMethod || null,
+        discountGTQ: discount,
+        amountReceivedGTQ: amountReceived,
+        totalGTQ: total,
+        items: {
+          create: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantityValue,
+            reservedQuantity: isQuote ? 0 : item.quantityValue,
+            unitPrice: item.unitPriceValue,
+          })),
+        },
+      },
+    });
+
+    if (!isQuote) {
+      for (const item of items) {
+        await tx.stockBalance.update({
+          where: { productId_locationId: { productId: item.productId, locationId: input.originLocationId } },
+          data: { reserved: { increment: item.quantityValue } },
+        });
+      }
+      if (preorder.invoice) {
+        await tx.invoice.update({ where: { id: preorder.invoice.id }, data: { totalGTQ: total } });
+      }
+    }
+
+    await tx.auditLog.create({
+      data: {
+        userId: input.userId,
+        action: "PREORDER_UPDATED",
+        entity: "Preorder",
+        entityId: preorder.id,
+        metadata: {
+          code: preorder.code,
+          previousStatus: preorder.status,
+          reason: "Preventa editada antes de despacho",
+          previousTotal: preorder.totalGTQ.toString(),
+          newTotal: String(total),
+          affectsInventory: isQuote ? false : true,
+          affectsSales: !isQuote,
+        },
+      },
+    });
+
+    return updated;
+  });
+}
+
 export async function getNextPreorderCode() {
   const year = new Date().getFullYear();
   const count = await prisma.preorder.count({ where: { code: { startsWith: `PV-${year}-` } } });
@@ -472,6 +607,7 @@ function auditActionLabel(action: string) {
   const labels: Record<string, string> = {
     QUOTE_CANCELLED: "Cotizacion cancelada",
     PREORDER_CANCELLED: "Venta anulada",
+    PREORDER_UPDATED: "Preventa editada",
   };
   return labels[action] || action;
 }
@@ -483,12 +619,15 @@ function auditReason(metadata: Prisma.JsonValue | null) {
 function auditInventoryEffect(metadata: Prisma.JsonValue | null) {
   const restored = auditMetadataValue(metadata, "deliveredDispatchesRestored");
   if (auditMetadataValue(metadata, "affectsInventory") === "false") return "No afecto inventario";
+  if (auditMetadataValue(metadata, "newTotal")) return "Reserva actualizada antes de despacho";
   if (restored && restored !== "[]") return `Inventario devuelto: ${restored}`;
   return "Reserva liberada o sin movimiento fisico";
 }
 
 function auditSalesEffect(metadata: Prisma.JsonValue | null) {
   if (auditMetadataValue(metadata, "affectsSales") === "false") return "No se registro como venta";
+  const newTotal = auditMetadataValue(metadata, "newTotal");
+  if (newTotal) return `Venta actualizada. Nuevo total ${formatGTQ(Number(newTotal))}`;
   return "Registro comercial cancelado";
 }
 
