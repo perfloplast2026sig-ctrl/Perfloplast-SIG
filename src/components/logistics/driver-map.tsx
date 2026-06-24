@@ -45,8 +45,7 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
   const selectedOrder = orders.find((order) => `order:${order.code}` === selectedKey) || null;
   const userMarkerType = label.toLowerCase().includes("vendedor") ? "seller" : "driver";
   const showUserLegend = located.length > 0;
-  const totalSideItems = points.length + orders.length;
-  const layoutClass = totalSideItems <= 1 ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.46fr)]" : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.72fr)]";
+  const layoutClass = "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.42fr)]";
 
   const focusUser = (point: UserPoint) => {
     if (point.latitude === null || point.longitude === null) return;
@@ -222,16 +221,26 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
             </div>
           </button>
         ))}
-        {orders.length > 0 ? <p className="pt-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Pedidos activos del mapa</p> : null}
-        {orders.map((order) => (
-          <button key={order.code} className={`w-full rounded-2xl border bg-card/50 hover:bg-card hover:shadow-md p-4 text-left transition-all ${selectedKey === `order:${order.code}` ? "ring-2 ring-accent shadow-md bg-card" : ""}`} onClick={() => focusOrder(order)} type="button">
-            <div className="flex items-start justify-between gap-3">
-              <div><p className="font-semibold">{order.code}</p><p className="text-xs text-muted-foreground">{order.client}</p></div>
-              <span className="rounded-full bg-background px-2.5 py-1 text-xs font-medium ring-1 ring-border shadow-sm">{order.status.label}</span>
+        {orders.length > 0 ? (
+          <section className="rounded-2xl border bg-card/50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Pedidos activos</p>
+              <span className="rounded-full border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground">{orders.length}</span>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{order.destination}</p>
-          </button>
-        ))}
+            <div className="mt-3 max-h-[360px] divide-y overflow-y-auto overscroll-contain pr-1">
+              {orders.map((order) => (
+                <button key={order.code} className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3 text-left transition hover:bg-card-muted/50 ${selectedKey === `order:${order.code}` ? "bg-card-muted/70" : ""}`} onClick={() => focusOrder(order)} type="button">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-xs font-black">{order.code}</p>
+                    <p className="mt-0.5 truncate text-xs font-semibold text-muted-foreground">{order.client}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{order.destination}</p>
+                  </div>
+                  <span className="rounded-full bg-background px-2.5 py-1 text-[11px] font-bold ring-1 ring-border shadow-sm">{order.status.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
         {points.length === 0 && orders.length === 0 ? (
           <div className="rounded-2xl border bg-card/60 p-4 text-sm text-muted-foreground shadow-sm">
             {isOrdersOnly ? "Tus entregas completadas se archivan automaticamente y ya no aparecen aqui." : "No hay registros para mostrar."}
