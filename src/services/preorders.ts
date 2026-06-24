@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { availableStock, lockStockBalance } from "@/services/stock-locks";
 import type { Role } from "@/types";
 import { unstable_cache } from "next/cache";
 
@@ -183,9 +184,9 @@ export async function createPreorder(input: {
     const warehouse = await tx.location.findFirst({ where: { id: input.originLocationId, type: "WAREHOUSE", isActive: true } });
     if (!warehouse) throw new Error("Bodega de origen no encontrada.");
 
-    for (const item of items) {
-      const balance = await tx.stockBalance.findUnique({ where: { productId_locationId: { productId: item.productId, locationId: input.originLocationId } } });
-      if (!isQuote && (!balance || Number(balance.quantity) - Number(balance.reserved) < item.quantityValue)) {
+    for (const item of aggregateStockItems(items)) {
+      const balance = await lockStockBalance(tx, item.productId, input.originLocationId);
+      if (!isQuote && availableStock(balance) < item.quantityValue) {
         throw new Error("No hay existencia disponible suficiente para uno de los productos.");
       }
     }
@@ -218,7 +219,7 @@ export async function createPreorder(input: {
     });
 
     if (!isQuote) {
-      for (const item of items) {
+      for (const item of aggregateStockItems(items)) {
         await tx.stockBalance.update({
           where: { productId_locationId: { productId: item.productId, locationId: input.originLocationId } },
           data: { reserved: { increment: item.quantityValue } },
@@ -412,9 +413,9 @@ export async function updatePreorder(input: {
     }
 
     if (!isQuote) {
-      for (const item of items) {
-        const balance = await tx.stockBalance.findUnique({ where: { productId_locationId: { productId: item.productId, locationId: input.originLocationId } } });
-        if (!balance || Number(balance.quantity) - Number(balance.reserved) < item.quantityValue) {
+      for (const item of aggregateStockItems(items)) {
+        const balance = await lockStockBalance(tx, item.productId, input.originLocationId);
+        if (availableStock(balance) < item.quantityValue) {
           throw new Error("No hay existencia disponible suficiente para uno de los productos.");
         }
       }
@@ -444,7 +445,7 @@ export async function updatePreorder(input: {
     });
 
     if (!isQuote) {
-      for (const item of items) {
+      for (const item of aggregateStockItems(items)) {
         await tx.stockBalance.update({
           where: { productId_locationId: { productId: item.productId, locationId: input.originLocationId } },
           data: { reserved: { increment: item.quantityValue } },
@@ -565,6 +566,16 @@ function parseMoney(value: string) {
   const parsed = Number(value || 0);
   if (!Number.isFinite(parsed) || parsed < 0) throw new Error("Los montos y cantidades deben ser numeros mayores o iguales a cero.");
   return parsed;
+}
+
+function aggregateStockItems<T extends { productId: string; quantityValue: number }>(items: T[]) {
+  const totals = new Map<string, number>();
+  for (const item of items) {
+    totals.set(item.productId, (totals.get(item.productId) || 0) + item.quantityValue);
+  }
+  return Array.from(totals.entries())
+    .map(([productId, quantityValue]) => ({ productId, quantityValue }))
+    .sort((a, b) => a.productId.localeCompare(b.productId));
 }
 
 function parseOptionalCoordinate(value?: string) {

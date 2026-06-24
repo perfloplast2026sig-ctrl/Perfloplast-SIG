@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { availableStock, lockStockBalance } from "@/services/stock-locks";
 import { unstable_cache } from "next/cache";
 
 type Viewer = { id: string; role: { name: string } };
@@ -338,6 +339,7 @@ export async function createDispatches(input: {
         });
         for (const item of preorder.items) {
           if (Number(item.reservedQuantity) <= 0) continue;
+          await lockStockBalance(tx, item.productId, preorder.originLocationId);
           await tx.stockBalance.update({
             where: { productId_locationId: { productId: item.productId, locationId: preorder.originLocationId } },
             data: { reserved: { decrement: item.reservedQuantity } },
@@ -381,11 +383,8 @@ export async function createDispatches(input: {
       for (const row of approvedItems) {
         const sourceLocationId = transferByItemId.get(row.item.id);
         if (!sourceLocationId || sourceLocationId === preorder.originLocationId) continue;
-        const sourceBalance = await tx.stockBalance.findUnique({
-          where: { productId_locationId: { productId: row.item.productId, locationId: sourceLocationId } },
-          include: { location: true },
-        });
-        if (!sourceBalance || Number(sourceBalance.quantity) - Number(sourceBalance.reserved) < row.loadedQuantity) {
+        const sourceBalance = await lockStockBalance(tx, row.item.productId, sourceLocationId);
+        if (availableStock(sourceBalance) < row.loadedQuantity) {
           throw new Error(`No hay existencia libre suficiente en la bodega alterna para ${preorder.code}.`);
         }
         await tx.stockBalance.update({
@@ -455,6 +454,7 @@ export async function createDispatches(input: {
         });
       }
       for (const row of rejectedItems) {
+        await lockStockBalance(tx, row.item.productId, preorder.originLocationId);
         await tx.stockBalance.update({
           where: { productId_locationId: { productId: row.item.productId, locationId: preorder.originLocationId } },
           data: { reserved: { decrement: row.rejectedQuantity } },
@@ -524,6 +524,7 @@ export async function verifyDispatchLoad(input: { dispatchId: string; userId: st
     if (!dispatch.preorder || !dispatch.preorder.originLocationId) throw new Error("El despacho no tiene preventa o bodega de origen.");
     if (rejectedIds.size >= dispatch.items.length) {
       for (const item of dispatch.items) {
+        await lockStockBalance(tx, item.productId, dispatch.preorder.originLocationId);
         await tx.stockBalance.update({
           where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
           data: { reserved: { decrement: item.quantity } },
@@ -556,6 +557,7 @@ export async function verifyDispatchLoad(input: { dispatchId: string; userId: st
       const item = dispatch.items.find((row) => row.id === rejected.dispatchItemId);
       if (!item) throw new Error("Producto rechazado no pertenece al despacho.");
 
+      await lockStockBalance(tx, item.productId, dispatch.preorder.originLocationId);
       await tx.stockBalance.update({
         where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
         data: { reserved: { decrement: item.quantity } },
@@ -670,9 +672,7 @@ export async function updateDispatchStatus(input: { dispatchId: string; status: 
     if (!current.preorder || !current.preorder.originLocationId) throw new Error("El despacho no tiene preventa o bodega de origen.");
 
     for (const item of current.items) {
-      const balance = await tx.stockBalance.findUnique({
-        where: { productId_locationId: { productId: item.productId, locationId: current.preorder.originLocationId } },
-      });
+      const balance = await lockStockBalance(tx, item.productId, current.preorder.originLocationId);
       if (!balance || Number(balance.quantity) < Number(item.quantity)) {
         throw new Error("No hay stock suficiente para cerrar la entrega.");
       }
@@ -755,6 +755,7 @@ export async function cancelDispatch(input: { dispatchId: string; reason: string
     } else {
       for (const item of dispatch.preorder.items) {
         if (Number(item.reservedQuantity) <= 0) continue;
+        await lockStockBalance(tx, item.productId, dispatch.preorder.originLocationId);
         await tx.stockBalance.update({
           where: { productId_locationId: { productId: item.productId, locationId: dispatch.preorder.originLocationId } },
           data: { reserved: { decrement: item.reservedQuantity } },

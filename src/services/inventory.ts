@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { availableStock, lockStockBalance } from "@/services/stock-locks";
 import { unstable_cache } from "next/cache";
 
 async function getInventoryModuleDataRaw() {
@@ -256,10 +257,9 @@ export async function adjustFinishedStock(input: {
   }
 
   return prisma.$transaction(async (tx) => {
-    const [product, warehouse, currentBalance] = await Promise.all([
+    const [product, warehouse] = await Promise.all([
       tx.product.findFirst({ where: { id: input.productId, type: "FINISHED_GOOD", isActive: true } }),
       tx.location.findFirst({ where: { id: input.warehouseId, type: "WAREHOUSE", isActive: true } }),
-      tx.stockBalance.findUnique({ where: { productId_locationId: { productId: input.productId, locationId: input.warehouseId } } }),
     ]);
 
     if (!product) {
@@ -270,7 +270,12 @@ export async function adjustFinishedStock(input: {
       throw new Error("Bodega no encontrada o inactiva.");
     }
 
+    const currentBalance = await lockStockBalance(tx, input.productId, input.warehouseId);
     const currentQuantity = Number(currentBalance?.quantity || 0);
+    const currentReserved = Number(currentBalance?.reserved || 0);
+    if (physicalQuantity < currentReserved) {
+      throw new Error(`No puedes ajustar por debajo de lo reservado (${formatQuantity(currentReserved)} un).`);
+    }
     const delta = physicalQuantity - currentQuantity;
 
     if (delta === 0) {
@@ -335,13 +340,11 @@ export async function transferFinishedStock(input: {
     const reference = `TR-${Date.now()}`;
     const movements = [];
     for (const item of groupedItems) {
-      const [product, currentBalance] = await Promise.all([
-        tx.product.findFirst({ where: { id: item.productId, type: "FINISHED_GOOD", isActive: true } }),
-        tx.stockBalance.findUnique({ where: { productId_locationId: { productId: item.productId, locationId: input.fromWarehouseId } } }),
-      ]);
+      const product = await tx.product.findFirst({ where: { id: item.productId, type: "FINISHED_GOOD", isActive: true } });
 
       if (!product) throw new Error("Producto terminado no encontrado o inactivo.");
-      const available = Number(currentBalance?.quantity || 0) - Number(currentBalance?.reserved || 0);
+      const currentBalance = await lockStockBalance(tx, item.productId, input.fromWarehouseId);
+      const available = availableStock(currentBalance);
       if (available < item.quantity) {
         throw new Error(`${productTitle(product)} solo tiene ${formatQuantity(Math.max(0, available))} unidades disponibles para trasladar.`);
       }
