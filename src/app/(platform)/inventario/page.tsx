@@ -1,6 +1,7 @@
 import { AlertTriangle, ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Boxes, Coins, Factory, Layers3, PackageCheck, Warehouse } from "lucide-react";
 import { FinishedProductCreateModal } from "@/components/inventory/finished-product-create-modal";
 import { FinishedProductsBrowser } from "@/components/inventory/finished-products-browser";
+import { InventoryImportPanel } from "@/components/inventory/inventory-import-panel";
 import { InventoryMovementsModal } from "@/components/inventory/inventory-movements-modal";
 import { StockAdjustmentModal } from "@/components/inventory/stock-adjustment-modal";
 import { StockTransferModal } from "@/components/inventory/stock-transfer-modal";
@@ -79,6 +80,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
           );
         })}
       </div>
+
+      <InventoryImportPanel canManage={canManageInventory} />
 
       <SectionCard title="Existencias por bodega" className="mt-6" action={<Factory className="text-accent" size={20} />}>
         <WarehouseStockCards warehouses={warehouseStockCards} />
