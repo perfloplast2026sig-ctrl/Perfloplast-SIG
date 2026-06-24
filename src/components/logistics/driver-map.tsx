@@ -41,8 +41,6 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
   const centerTileX = Math.floor(centerPixel.x / TILE_SIZE);
   const centerTileY = Math.floor(centerPixel.y / TILE_SIZE);
   const tiles = buildTiles(centerTileX, centerTileY, centerPixel, zoom);
-  const selectedUser = points.find((point) => `user:${point.email}` === selectedKey) || null;
-  const selectedOrder = orders.find((order) => `order:${order.code}` === selectedKey) || null;
   const userMarkerType = label.toLowerCase().includes("vendedor") ? "seller" : "driver";
   const showUserLegend = located.length > 0;
   const layoutClass = "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.42fr)]";
@@ -208,19 +206,27 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
       </div>
 
       <div className="space-y-3">
-        {points.map((point) => (
-          <button key={point.email} className={`w-full rounded-2xl border bg-card/50 p-4 text-left transition-all hover:bg-card hover:shadow-md ${pointBorderClass(point.freshness)} ${selectedKey === `user:${point.email}` ? "ring-2 ring-accent shadow-md bg-card" : ""}`} onClick={() => focusUser(point)} type="button">
-            <div className="flex items-start justify-between gap-3">
-              <div><p className="font-semibold">{point.driver}</p><p className="text-xs text-muted-foreground">{point.email}</p></div>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${pointStatusBadgeClass(point.freshness)}`}>{point.freshnessLabel}</span>
+        {points.length > 0 ? (
+          <section className="rounded-2xl border bg-card/50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+              <span className="rounded-full border bg-background px-2.5 py-1 text-xs font-bold text-muted-foreground">{points.length}</span>
             </div>
-            <p className="mt-3 text-sm">{point.latitude === null ? "Sin ubicacion registrada" : `${point.latitude}, ${point.longitude}`}</p>
-            <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
-              <p>Ultimo punto: {point.recordedAt}</p>
-              <p>{point.ageLabel}{point.accuracy ? ` · Precision aprox. ${Math.round(point.accuracy)} m` : ""}</p>
+            <div className="mt-3 max-h-[260px] divide-y overflow-y-auto overscroll-contain pr-1">
+              {points.map((point) => (
+                <button key={point.email} className={`grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3 text-left transition hover:bg-card-muted/50 ${selectedKey === `user:${point.email}` ? "bg-card-muted/70" : ""}`} onClick={() => focusUser(point)} type="button">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black">{point.driver}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{point.email}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{point.latitude === null ? "Sin ubicacion" : `${point.latitude}, ${point.longitude}`}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{point.ageLabel}{point.accuracy ? ` - ${Math.round(point.accuracy)} m` : ""}</p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm ${pointStatusBadgeClass(point.freshness)}`}>{point.freshnessLabel}</span>
+                </button>
+              ))}
             </div>
-          </button>
-        ))}
+          </section>
+        ) : null}
         {orders.length > 0 ? (
           <section className="rounded-2xl border bg-card/50 p-3">
             <div className="flex items-center justify-between gap-3">
@@ -244,31 +250,6 @@ export function DriverMap({ points, label = "pilotos", orders = [] }: { points: 
         {points.length === 0 && orders.length === 0 ? (
           <div className="rounded-2xl border bg-card/60 p-4 text-sm text-muted-foreground shadow-sm">
             {isOrdersOnly ? "Tus entregas completadas se archivan automaticamente y ya no aparecen aqui." : "No hay registros para mostrar."}
-          </div>
-        ) : null}
-        {(selectedUser || selectedOrder) ? (
-          <div className="rounded-2xl border bg-card p-4 shadow-lg ring-1 ring-black/5 dark:ring-white/5">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Detalle seleccionado</p>
-              <button
-                aria-label="Cerrar detalle"
-                className="grid size-8 shrink-0 place-items-center rounded-full border bg-muted hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setSelectedKey(null);
-                }}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
-                type="button"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            {selectedUser ? <p className="mt-2 font-semibold">{selectedUser.driver}</p> : null}
-            {selectedOrder ? <p className="mt-2 font-semibold">{selectedOrder.code} · {selectedOrder.client}</p> : null}
           </div>
         ) : null}
       </div>
@@ -330,17 +311,6 @@ function pointStatusTextClass(freshness: UserPoint["freshness"]) {
     stale: "font-semibold text-red-600",
     missing: "font-semibold text-muted-foreground",
     loggedOut: "font-semibold text-slate-600 dark:text-slate-300",
-  };
-  return classes[freshness];
-}
-
-function pointBorderClass(freshness: UserPoint["freshness"]) {
-  const classes = {
-    online: "border-emerald-500/25",
-    recent: "border-amber-500/25",
-    stale: "border-red-500/25",
-    missing: "",
-    loggedOut: "border-slate-500/25",
   };
   return classes[freshness];
 }
