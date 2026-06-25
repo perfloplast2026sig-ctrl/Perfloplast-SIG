@@ -7,6 +7,7 @@ import {
   Boxes,
   ClipboardList,
   Factory,
+  CircleDollarSign,
   FileText,
   LayoutDashboard,
   ReceiptText,
@@ -24,6 +25,7 @@ const navigation: Array<{ name: string; href: string; icon: LucideIcon; roles: R
   { name: "Produccion", href: "/produccion", icon: Factory, roles: ["Super admin", "Administrador"] },
   { name: "Logistica", href: "/logistica", icon: Truck, roles: ["Super admin", "Administrador", "Piloto", "Bodeguero"] },
   { name: "Facturas", href: "/facturas", icon: ReceiptText, roles: ["Super admin", "Administrador", "Contaduria", "Vendedor"] },
+  { name: "Creditos", href: "/creditos", icon: CircleDollarSign, roles: ["Super admin", "Administrador", "Contaduria"] },
   { name: "Usuarios", href: "/usuarios", icon: ShieldCheck, roles: ["Super admin", "Administrador"] },
   { name: "Reportes", href: "/reportes", icon: FileText, roles: ["Super admin", "Administrador", "Contaduria"] },
 ];

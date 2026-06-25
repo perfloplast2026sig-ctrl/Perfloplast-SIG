@@ -61,6 +61,12 @@ enum DispatchStatus {
   CANCELLED
 }
 
+enum CreditStatus {
+  OPEN
+  PAID
+  CANCELLED
+}
+
 model User {
   id                 String              @id @default(cuid())
   name               String              @db.VarChar(120)
@@ -79,6 +85,8 @@ model User {
   dispatches         Dispatch[]          @relation("DispatchResponsible")
   driverLocations    DriverLocation[]
   dispatchReturns    DispatchReturn[]
+  createdCredits     CustomerCredit[]   @relation("CreditCreatedBy")
+  creditPayments     CreditPayment[]    @relation("CreditPaymentCreatedBy")
   auditLogs          AuditLog[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -247,6 +255,7 @@ model Client {
   phone     String?    @db.VarChar(40)
   address   String?    @db.VarChar(255)
   preorders Preorder[]
+  credits   CustomerCredit[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -272,6 +281,7 @@ model Preorder {
   items       PreorderItem[]
   dispatches  Dispatch[]
   invoice     Invoice?
+  credit      CustomerCredit?
   createdById String
   createdBy   User           @relation("PreorderCreatedBy", fields: [createdById], references: [id])
   confirmedAt DateTime?
@@ -454,6 +464,7 @@ model Invoice {
   number    String   @unique @db.VarChar(80)
   preorderId String  @unique
   preorder  Preorder @relation(fields: [preorderId], references: [id])
+  credit    CustomerCredit?
   companyAddress String @db.VarChar(255)
   companyPhone String @db.VarChar(80)
   totalGTQ Decimal @db.Decimal(14, 2)
@@ -463,6 +474,56 @@ model Invoice {
   @@index([issuedAt])
 }
 
+model CustomerCredit {
+  id                 String          @id @default(cuid())
+  code               String          @unique @db.VarChar(80)
+  clientId           String?
+  client             Client?         @relation(fields: [clientId], references: [id])
+  preorderId         String?         @unique
+  preorder           Preorder?       @relation(fields: [preorderId], references: [id])
+  invoiceId          String?         @unique
+  invoice            Invoice?        @relation(fields: [invoiceId], references: [id])
+  clientName         String          @db.VarChar(180)
+  taxId              String?         @db.VarChar(80)
+  phone              String?         @db.VarChar(40)
+  address            String?         @db.VarChar(255)
+  sellerName         String?         @db.VarChar(120)
+  preorderCode       String          @db.VarChar(80)
+  invoiceNumber      String?         @db.VarChar(80)
+  creditAmountGTQ    Decimal         @db.Decimal(14, 2)
+  openingBalanceGTQ  Decimal         @db.Decimal(14, 2)
+  status             CreditStatus    @default(OPEN)
+  notes              String?         @db.VarChar(255)
+  createdById        String
+  createdBy          User            @relation("CreditCreatedBy", fields: [createdById], references: [id])
+  payments           CreditPayment[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([clientName])
+  @@index([preorderCode])
+  @@index([invoiceNumber])
+  @@index([createdById, createdAt])
+}
+
+model CreditPayment {
+  id             String         @id @default(cuid())
+  creditId       String
+  credit         CustomerCredit @relation(fields: [creditId], references: [id])
+  paymentDate    DateTime       @default(now())
+  bank           String?        @db.VarChar(120)
+  documentNumber String?        @db.VarChar(120)
+  amountGTQ      Decimal        @db.Decimal(14, 2)
+  notes          String?        @db.VarChar(255)
+  createdById    String
+  createdBy      User           @relation("CreditPaymentCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime       @default(now())
+
+  @@index([creditId, paymentDate])
+  @@index([createdById, createdAt])
+  @@index([documentNumber])
+}
 model DriverLocation {
   id        String   @id @default(cuid())
   userId    String

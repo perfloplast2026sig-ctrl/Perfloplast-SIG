@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
-import { INVENTORY_MANAGER_ROLES, INVENTORY_VIEWER_ROLES, PRODUCTION_MANAGER_ROLES, USER_MANAGER_ROLES } from "@/lib/constants";
+import { CREDIT_MANAGER_ROLES, INVENTORY_MANAGER_ROLES, INVENTORY_VIEWER_ROLES, PRODUCTION_MANAGER_ROLES, USER_MANAGER_ROLES } from "@/lib/constants";
 import type { Role } from "@/types";
 
 export async function getCurrentUser() {
@@ -76,6 +76,17 @@ export async function requireProductionManager() {
 
   if (!PRODUCTION_MANAGER_ROLES.includes(roleName)) {
     throw new Error("No tienes permisos para registrar produccion.");
+  }
+
+  return user;
+}
+
+export async function requireCreditManager() {
+  const user = await requireCurrentUser();
+  const roleName = user.role.name as Role;
+
+  if (!CREDIT_MANAGER_ROLES.includes(roleName)) {
+    throw new Error("No tienes permisos para administrar creditos de clientes.");
   }
 
   return user;
