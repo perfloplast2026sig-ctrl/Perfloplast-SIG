@@ -57,19 +57,19 @@ export function ReportControls({ filters, kpis, sellers }: { filters: Filters; k
 
   return (
     <div className="space-y-4">
-      <div className="report-no-print flex flex-wrap items-center justify-between gap-3">
+      <div className="report-no-print grid gap-3 lg:grid-cols-[minmax(16rem,0.7fr)_minmax(24rem,1fr)] lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Filtros del reporte</p>
           <h2 className="mt-1 text-xl font-semibold">Segmentar informacion</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={() => setState(initialFilters)} type="button">
+        <div className="grid grid-cols-3 gap-2 lg:justify-self-end">
+          <button className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-full border bg-card px-3 text-sm font-semibold transition hover:bg-card-muted" onClick={() => setState(initialFilters)} type="button">
             <FilterX size={15} />Limpiar {activeCount > 0 ? `(${activeCount})` : ""}
           </button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" onClick={exportExcel} type="button">
+          <button className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-full border bg-card px-3 text-sm font-semibold transition hover:bg-card-muted" onClick={exportExcel} type="button">
             <FileSpreadsheet size={15} />Excel
           </button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90" onClick={() => printWithBodyClass("printing-report")} type="button">
+          <button className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-full bg-accent px-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90" onClick={() => printWithBodyClass("printing-report")} type="button">
             <Download size={15} />PDF
           </button>
         </div>

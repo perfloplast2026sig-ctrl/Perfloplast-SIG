@@ -152,6 +152,28 @@ body {
   display: none;
 }
 
+
+.page-actions > * {
+  min-width: 0;
+  width: 100%;
+}
+
+.page-actions button,
+.page-actions a {
+  min-height: 2.875rem;
+  width: 100%;
+  justify-content: center;
+  padding-inline: 0.85rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (min-width: 1280px) {
+  .page-actions {
+    max-width: 58rem;
+  }
+}
+
 .modal-close-button {
   inline-size: 2.5rem !important;
   block-size: 2.5rem !important;

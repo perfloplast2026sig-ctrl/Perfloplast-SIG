@@ -132,21 +132,27 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
         </div>
 
         <div className="relative rounded-[24px] border bg-card p-4 shadow-[0_18px_60px_rgba(20,36,31,0.07)] dark:shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="grid gap-4 xl:grid-cols-[minmax(15rem,0.58fr)_minmax(24rem,0.82fr)] 2xl:grid-cols-[minmax(15rem,0.55fr)_minmax(25rem,0.72fr)_minmax(38rem,1fr)] 2xl:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted">Exportacion</p>
               <h2 className="text-2xl font-black">Preparar reporte</h2>
             </div>
-            <div className="flex flex-wrap gap-2">
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DateField label="Desde" value={state.from} onChange={(value) => setState((current) => ({ ...current, from: value }))} />
+              <DateField label="Hasta" value={state.to} onChange={(value) => setState((current) => ({ ...current, to: value }))} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:col-span-2 2xl:col-span-1">
               <button
-                className="inline-flex h-11 items-center gap-2 rounded-full border bg-card px-4 text-sm font-bold transition hover:bg-card-muted"
+                className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-full border bg-card px-3 text-sm font-bold transition hover:bg-card-muted"
                 onClick={() => setShowContentSelector((value) => !value)}
                 type="button"
               >
                 <SlidersHorizontal size={16} />
-                Contenido PDF
+                <span className="truncate">Contenido PDF</span>
                 <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent">{Object.values(exportSections).filter(Boolean).length}/7</span>
-                <ChevronDown className={`transition ${showContentSelector ? "rotate-180" : ""}`} size={16} />
+                <ChevronDown className={`shrink-0 transition ${showContentSelector ? "rotate-180" : ""}`} size={16} />
               </button>
               <ActionButton onClick={() => setState(initialState)} variant="light">
                 <FilterX size={16} /> Limpiar {activeFilters.length ? `(${activeFilters.length})` : ""}
@@ -163,11 +169,6 @@ export function ExecutiveReportsDashboard({ reports, user }: { reports: ReportsD
           {showContentSelector ? (
             <ContentSelector exportSections={exportSections} onToggle={(key) => setExportSections((current) => ({ ...current, [key]: !current[key] }))} />
           ) : null}
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <DateField label="Desde" value={state.from} onChange={(value) => setState((current) => ({ ...current, from: value }))} />
-            <DateField label="Hasta" value={state.to} onChange={(value) => setState((current) => ({ ...current, to: value }))} />
-          </div>
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.25fr_0.85fr_0.9fr]">
@@ -831,7 +832,7 @@ function MetricPill({ color, label, value }: { color: string; label: string; val
 
 function ActionButton({ children, onClick, variant }: { children: React.ReactNode; onClick: () => void; variant: "light" | "dark" }) {
   const className = variant === "dark" ? "bg-accent text-accent-foreground hover:opacity-90" : "border bg-card hover:bg-card-muted";
-  return <button className={`inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-bold transition ${className}`} onClick={onClick} type="button">{children}</button>;
+  return <button className={`inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-full px-3 text-sm font-bold transition ${className}`} onClick={onClick} type="button">{children}</button>;
 }
 
 function DateField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
