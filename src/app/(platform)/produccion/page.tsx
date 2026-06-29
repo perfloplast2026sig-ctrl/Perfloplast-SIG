@@ -41,7 +41,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
     <>
       <PageHeading
         title="Produccion"
-        actions={<div className="flex flex-wrap items-center gap-2"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
+        actions={<div className="page-action-group"><OperationalReportExport title="Produccion" subtitle="Ordenes de produccion registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
           { label: "Produccion del dia", value: `${productionToday.toLocaleString("es-GT")} un`, detail: "Unidades de hoy" },
           { label: "Produccion del mes", value: `${productionMonth.toLocaleString("es-GT")} un`, detail: "Acumulado mensual" },
           { label: "Rechazos", value: `${totalRejected.toLocaleString("es-GT")} un`, detail: "Producto no aceptado" },

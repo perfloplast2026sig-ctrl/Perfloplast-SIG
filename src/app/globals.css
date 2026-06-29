@@ -158,14 +158,43 @@ body {
   width: 100%;
 }
 
-.page-actions button,
-.page-actions a {
+.page-actions > button,
+.page-actions > a {
   min-height: 2.875rem;
   width: 100%;
   justify-content: center;
   padding-inline: 0.85rem;
   text-align: center;
   white-space: nowrap;
+}
+
+.page-action-group {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.page-actions .page-action-group button,
+.page-actions .page-action-group a {
+  width: auto;
+  min-width: 11.5rem;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .page-actions > :only-child:not(.page-action-group) {
+    grid-column: 1 / -1;
+    width: min(100%, 18rem);
+    justify-self: end;
+  }
+
+  .page-actions > .page-action-group {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
 }
 
 @media (min-width: 1280px) {
