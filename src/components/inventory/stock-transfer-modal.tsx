@@ -95,18 +95,37 @@ export function StockTransferModal({ options, warehouses }: { options: TransferO
                 <div className="space-y-3">
                   {rows.map((row, index) => {
                     const selected = originOptions.find((option) => option.key === row.optionKey) || originOptions[0] || null;
+                    const productNames = uniqueProductNames(originOptions);
+                    const colorOptions = selected ? originOptions.filter((option) => option.productName === selected.productName) : [];
                     return (
                       <div key={row.key} className="rounded-2xl border bg-card p-3">
-                        <div className="grid gap-3 lg:grid-cols-[1fr_9rem_auto] lg:items-end">
+                        <div className="grid gap-3 lg:grid-cols-[1fr_0.9fr_9rem_auto] lg:items-end">
                           <label>
                             <span className="mb-2 block text-sm font-medium">Producto {index + 1}</span>
-                            <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" disabled={originOptions.length === 0} onChange={(event) => updateRow(row.key, { optionKey: event.target.value })} required value={selected?.key || ""}>
+                            <select
+                              className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent"
+                              disabled={originOptions.length === 0}
+                              onChange={(event) => {
+                                const next = originOptions.find((option) => option.productName === event.target.value);
+                                updateRow(row.key, { optionKey: next?.key || "", quantity: "" });
+                              }}
+                              required
+                              value={selected?.productName || ""}
+                            >
                               {originOptions.length === 0 ? <option value="">Sin productos disponibles en esta bodega</option> : null}
-                              {originOptions.map((option) => (
-                                <option key={option.key} value={option.key}>{option.label} - disponible {option.availableLabel}</option>
+                              {productNames.map((name) => (
+                                <option key={name} value={name}>{name}</option>
                               ))}
                             </select>
                             <input name="productId" type="hidden" value={selected?.productId || ""} />
+                          </label>
+                          <label>
+                            <span className="mb-2 block text-sm font-medium">Color</span>
+                            <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" disabled={colorOptions.length === 0} onChange={(event) => updateRow(row.key, { optionKey: event.target.value, quantity: "" })} required value={selected?.key || ""}>
+                              {colorOptions.map((option) => (
+                                <option key={option.key} value={option.key}>{option.color} - disponible {option.availableLabel}</option>
+                              ))}
+                            </select>
                           </label>
                           <label>
                             <span className="mb-2 block text-sm font-medium">Cantidad</span>
@@ -118,7 +137,7 @@ export function StockTransferModal({ options, warehouses }: { options: TransferO
                         </div>
                         {selected ? (
                           <p className="mt-3 rounded-xl border bg-card-muted/40 px-3 py-2 text-sm text-muted">
-                            Existencia: {selected.quantity.toLocaleString("es-GT")} un. Reservado: {selected.reserved.toLocaleString("es-GT")} un. Disponible: {selected.availableLabel} un.
+                            Color: {selected.color}. Existencia: {selected.quantity.toLocaleString("es-GT")} un. Reservado: {selected.reserved.toLocaleString("es-GT")} un. Disponible: {selected.availableLabel} un.
                           </p>
                         ) : null}
                       </div>
@@ -142,4 +161,8 @@ export function StockTransferModal({ options, warehouses }: { options: TransferO
 
 function newRow(optionKey: string): TransferRow {
   return { key: crypto.randomUUID(), optionKey, quantity: "" };
+}
+
+function uniqueProductNames(options: TransferOption[]) {
+  return Array.from(new Set(options.map((option) => option.productName))).sort((a, b) => a.localeCompare(b, "es"));
 }

@@ -32,6 +32,11 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
   const [selectedKey, setSelectedKey] = useState(productOptions[0]?.key || "");
   const [physicalQuantity, setPhysicalQuantity] = useState("");
   const selected = useMemo(() => productOptions.find((option) => option.key === selectedKey) || productOptions[0], [productOptions, selectedKey]);
+  const productNames = useMemo(() => uniqueProductNames(productOptions), [productOptions]);
+  const selectedColorOptions = useMemo(() => {
+    if (!selected) return [];
+    return productOptions.filter((option) => option.productName === selected.productName);
+  }, [productOptions, selected]);
   const parsedPhysical = Number(physicalQuantity || 0);
   const delta = selected ? parsedPhysical - selected.currentQuantity : 0;
 
@@ -71,7 +76,7 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
                 </>
               ) : null}
 
-              <div className="grid gap-4 sm:grid-cols-[0.75fr_1.25fr]">
+              <div className="grid gap-4 sm:grid-cols-[0.72fr_1.1fr_0.9fr]">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium">Bodega</span>
                   <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" onChange={(event) => changeWarehouse(event.target.value)} value={warehouseId}>
@@ -83,10 +88,27 @@ export function StockAdjustmentModal({ options }: { options: AdjustmentOption[] 
 
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium">Producto</span>
+                  <select
+                    className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent"
+                    onChange={(event) => {
+                      const next = productOptions.find((option) => option.productName === event.target.value);
+                      setSelectedKey(next?.key || "");
+                      setPhysicalQuantity("");
+                    }}
+                    value={selected?.productName || ""}
+                  >
+                    {productNames.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium">Color</span>
                   <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" onChange={(event) => { setSelectedKey(event.target.value); setPhysicalQuantity(""); }} value={selected?.key || ""}>
-                    {productOptions.map((option) => (
+                    {selectedColorOptions.map((option) => (
                       <option key={option.key} value={option.key}>
-                        {option.productName} - actual {option.currentQuantityLabel}
+                        {option.color} - actual {option.currentQuantityLabel}
                       </option>
                     ))}
                   </select>
@@ -145,6 +167,10 @@ function InfoBox({ label, value }: { label: string; value: string }) {
       <p className="mt-1 break-words text-lg font-black">{value}</p>
     </div>
   );
+}
+
+function uniqueProductNames(options: AdjustmentOption[]) {
+  return Array.from(new Set(options.map((option) => option.productName))).sort((a, b) => a.localeCompare(b, "es"));
 }
 
 function uniqueWarehouses(options: AdjustmentOption[]) {

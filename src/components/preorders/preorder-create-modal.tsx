@@ -105,14 +105,32 @@ export function PreorderCreateModal({ products, warehouses, nextCode, currentDat
               <div className="space-y-3">
                 {rows.map((row, index) => {
                   const product = availableProducts.find((item) => item.productId === row.productId);
+                  const productNames = uniqueProductNames(availableProducts);
+                  const selectedProductName = product ? productBaseName(product) : "";
+                  const colorOptions = selectedProductName ? availableProducts.filter((item) => productBaseName(item) === selectedProductName) : [];
 
                   return (
-                    <div key={row.key} className="grid gap-3 rounded-2xl border bg-card p-3 xl:grid-cols-[1.5fr_0.7fr_0.55fr_0.7fr_auto]">
+                    <div key={row.key} className="grid gap-3 rounded-2xl border bg-card p-3 xl:grid-cols-[1.25fr_1fr_0.65fr_0.55fr_0.7fr_auto]">
                       <label className="block">
                         <span className="mb-2 block text-sm font-medium">Producto {index + 1}</span>
-                        <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" name="productId" onChange={(event) => updateRow(row.key, { productId: event.target.value })} required value={row.productId}>
+                        <select
+                          className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent"
+                          onChange={(event) => {
+                            const next = availableProducts.find((item) => productBaseName(item) === event.target.value);
+                            updateRow(row.key, { productId: next?.productId || "", quantity: "" });
+                          }}
+                          required
+                          value={selectedProductName}
+                        >
                           <option value="">Seleccionar producto</option>
-                          {availableProducts.map((item) => <option key={item.productId} value={item.productId}>{item.name} · {item.color} · {item.priceLabel} · disp. {item.available}</option>)}
+                          {productNames.map((name) => <option key={name} value={name}>{name}</option>)}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-medium">Color</span>
+                        <select className="h-12 w-full rounded-2xl border bg-card px-4 text-sm outline-none focus:border-accent" disabled={colorOptions.length === 0} name="productId" onChange={(event) => updateRow(row.key, { productId: event.target.value, quantity: "" })} required value={row.productId}>
+                          <option value="">Seleccionar color</option>
+                          {colorOptions.map((item) => <option key={item.productId} value={item.productId}>{item.color} - disp. {item.available}</option>)}
                         </select>
                       </label>
                       <Field label="Cantidad" name="quantity" onChange={(value) => updateRow(row.key, { quantity: value })} placeholder="0" required type="number" value={row.quantity} />
@@ -175,6 +193,15 @@ function ReadOnly({ label, value }: { label: string; value: string }) {
 
 function newRow(): Row {
   return { key: crypto.randomUUID(), productId: "", quantity: "" };
+}
+
+function uniqueProductNames(products: ProductOption[]) {
+  return Array.from(new Set(products.map(productBaseName))).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function productBaseName(product: ProductOption) {
+  const suffix = ` - ${product.color}`.toLowerCase();
+  return product.name.toLowerCase().endsWith(suffix) ? product.name.slice(0, -suffix.length) : product.name;
 }
 
 function formatGTQ(value: number) {

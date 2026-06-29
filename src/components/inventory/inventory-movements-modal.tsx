@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, ArrowDownLeft, ArrowRightLeft, ArrowUpRight, PackageCheck, Search, X } from "lucide-react";
+import { Activity, ArrowDownLeft, ArrowLeft, ArrowRight, ArrowRightLeft, ArrowUpRight, PackageCheck, Search, X } from "lucide-react";
+
+const PAGE_SIZE = 6;
 
 type Movement = {
   id: string;
@@ -25,11 +27,18 @@ type Movement = {
 export function InventoryMovementsModal({ movements }: { movements: Movement[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return movements;
     return movements.filter((movement) => `${movement.code} ${movement.type} ${movement.category} ${movement.product} ${movement.color} ${movement.from} ${movement.to} ${movement.user} ${movement.reason} ${movement.reference}`.toLowerCase().includes(term));
   }, [movements, query]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  const rangeStart = filtered.length === 0 ? 0 : pageStart + 1;
+  const rangeEnd = Math.min(pageStart + PAGE_SIZE, filtered.length);
 
   return (
     <>
@@ -52,19 +61,86 @@ export function InventoryMovementsModal({ movements }: { movements: Movement[] }
             <div className="space-y-4 p-5">
               <label className="flex h-12 items-center gap-3 rounded-2xl border bg-background px-4">
                 <Search className="text-muted" size={18} />
-                <input className="min-w-0 flex-1 bg-transparent text-sm outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por producto, codigo, bodega, usuario o tipo..." value={query} />
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Buscar por producto, codigo, bodega, usuario o tipo..."
+                  value={query}
+                />
               </label>
               <div className="grid max-h-[58vh] gap-3 overflow-y-auto pr-1">
-                {filtered.map((movement) => (
+                {paginated.map((movement) => (
                   <MovementCard key={movement.id} movement={movement} />
                 ))}
                 {filtered.length === 0 ? <p className="rounded-2xl border bg-card-muted/60 p-4 text-sm text-muted">No hay movimientos con ese criterio.</p> : null}
               </div>
+              <PaginationControls
+                currentPage={currentPage}
+                onNext={() => setPage((value) => Math.min(value + 1, totalPages))}
+                onPrevious={() => setPage((value) => Math.max(value - 1, 1))}
+                rangeEnd={rangeEnd}
+                rangeStart={rangeStart}
+                totalItems={filtered.length}
+                totalPages={totalPages}
+              />
             </div>
           </div>
         </div>
       ) : null}
     </>
+  );
+}
+
+
+function PaginationControls({
+  currentPage,
+  onNext,
+  onPrevious,
+  rangeEnd,
+  rangeStart,
+  totalItems,
+  totalPages,
+}: {
+  currentPage: number;
+  onNext: () => void;
+  onPrevious: () => void;
+  rangeEnd: number;
+  rangeStart: number;
+  totalItems: number;
+  totalPages: number;
+}) {
+  return (
+    <div className="flex flex-col gap-3 border-t pt-4 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+      <p>
+        Mostrando {rangeStart}-{rangeEnd} de {totalItems} movimientos
+      </p>
+      <div className="flex items-center justify-between gap-3 sm:justify-end">
+        <button
+          className="grid size-10 place-items-center rounded-full border bg-card-muted text-foreground transition hover:bg-card disabled:cursor-not-allowed disabled:opacity-45"
+          disabled={currentPage === 1}
+          onClick={onPrevious}
+          title="Pagina anterior"
+          type="button"
+        >
+          <ArrowLeft size={16} />
+        </button>
+        <span className="min-w-24 text-center font-semibold text-foreground">
+          Pagina {currentPage} de {totalPages}
+        </span>
+        <button
+          className="grid size-10 place-items-center rounded-full border bg-card-muted text-foreground transition hover:bg-card disabled:cursor-not-allowed disabled:opacity-45"
+          disabled={currentPage === totalPages}
+          onClick={onNext}
+          title="Pagina siguiente"
+          type="button"
+        >
+          <ArrowRight size={16} />
+        </button>
+      </div>
+    </div>
   );
 }
 
