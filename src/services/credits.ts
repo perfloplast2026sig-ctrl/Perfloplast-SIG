@@ -38,6 +38,10 @@ async function getCreditsModuleDataRaw() {
   };
 }
 
+export type CreditsModuleData = Awaited<ReturnType<typeof getCreditsModuleDataRaw>>;
+export type CreditRow = CreditsModuleData["rows"][number];
+export type CreditInvoiceOption = CreditsModuleData["invoices"][number];
+
 export const getCreditsModuleDataCached = unstable_cache(
   async () => getCreditsModuleDataRaw(),
   ["credits-data"],

@@ -5,14 +5,11 @@ import { useMemo, useState } from "react";
 import { createCreditPaymentAction, createCustomerCreditAction } from "@/actions/credits";
 import { OperationalReportExport } from "@/components/reports/operational-report-export";
 import { downloadExcelWorkbook, excelCell } from "@/lib/excel";
-import type { getCreditsModuleData } from "@/services/credits";
-
-type CreditsData = Awaited<ReturnType<typeof getCreditsModuleData>>;
-type CreditRow = CreditsData["rows"][number];
+import type { CreditInvoiceOption, CreditRow, CreditsModuleData } from "@/services/credits";
 
 type Filters = { search: string; status: string };
 
-export function CreditsRegister({ data, generatedAt, generatedBy }: { data: CreditsData; generatedAt: string; generatedBy: string }) {
+export function CreditsRegister({ data, generatedAt, generatedBy }: { data: CreditsModuleData; generatedAt: string; generatedBy: string }) {
   const [filters, setFilters] = useState<Filters>({ search: "", status: "Todos" });
   const [selectedCreditId, setSelectedCreditId] = useState("");
   const [fileName, setFileName] = useState("");
@@ -69,7 +66,7 @@ export function CreditsRegister({ data, generatedAt, generatedBy }: { data: Cred
   );
 }
 
-function CreditCreatePanel({ invoices }: { invoices: CreditsData["invoices"] }) {
+function CreditCreatePanel({ invoices }: { invoices: CreditInvoiceOption[] }) {
   return <details className="rounded-2xl border bg-background p-4" open><summary className="cursor-pointer list-none font-semibold"><Plus className="mr-2 inline" size={16} />Nuevo credito</summary><form action={createCustomerCreditAction} className="mt-4 space-y-3"><label className="block text-sm font-semibold">Desde factura<select className="mt-1 h-11 w-full rounded-xl border bg-card px-3" name="invoiceId" defaultValue=""><option value="">Registro manual</option>{invoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.label}</option>)}</select></label><div className="grid gap-2 sm:grid-cols-2"><TextField name="clientName" label="Cliente" /><TextField name="preorderCode" label="Pedido" /><TextField name="sellerName" label="Vendedor" /><TextField name="creditAmount" label="Monto credito" type="number" step="0.01" /><TextField name="openingBalance" label="Saldo inicial" type="number" step="0.01" /><TextField name="invoiceNumber" label="Factura" /></div><TextField name="notes" label="Nota" /><button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground" type="submit">Guardar credito</button></form></details>;
 }
 

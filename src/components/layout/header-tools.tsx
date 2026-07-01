@@ -51,10 +51,26 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
     if (!term) return [];
     return searchItems.filter((item) => normalizeSearch(`${item.label} ${item.detail} ${item.type}`).includes(term)).slice(0, 8);
   }, [query, searchItems]);
+  const fallbackSearchHref = getFallbackSearchHref(query, searchItems);
+
+  function closeSearch() {
+    setShowSearch(false);
+    setQuery("");
+  }
 
   return (
     <>
-      <div className="relative min-w-0 flex-1">
+      <form
+        className="relative min-w-0 flex-1"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const href = results[0]?.href || fallbackSearchHref;
+          if (!href) return;
+
+          closeSearch();
+          router.push(href);
+        }}
+      >
         <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
         <input
           className="h-11 w-full rounded-full border bg-card pl-11 pr-4 text-sm outline-none transition placeholder:text-muted focus:border-accent"
@@ -65,12 +81,6 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
           }}
           onFocus={() => setShowSearch(true)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && results[0]) {
-              event.preventDefault();
-              setShowSearch(false);
-              setQuery("");
-              router.push(results[0].href);
-            }
             if (event.key === "Escape") setShowSearch(false);
           }}
           placeholder="Buscar..."
@@ -82,9 +92,14 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Busqueda global</p>
               <button className="grid size-7 place-items-center rounded-full border bg-card-muted" onClick={() => setShowSearch(false)} type="button"><X size={14} /></button>
             </div>
-            {results.length === 0 ? <p className="p-4 text-sm text-muted">Sin resultados.</p> : null}
+            {fallbackSearchHref ? (
+              <Link className="block border-b bg-card-muted/45 px-4 py-3 text-sm font-semibold transition hover:bg-card-muted" href={fallbackSearchHref} onClick={closeSearch}>
+                Buscar &quot;{query.trim()}&quot;
+              </Link>
+            ) : null}
+            {results.length === 0 ? <p className="p-4 text-sm text-muted">Sin sugerencias. Presiona Enter para buscar.</p> : null}
             {results.map((item, index) => (
-              <Link key={`${item.type}-${item.label}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={() => { setShowSearch(false); setQuery(""); }}>
+              <Link key={`${item.type}-${item.label}-${index}`} className="block border-b px-4 py-3 transition hover:bg-card-muted/70" href={item.href} onClick={closeSearch}>
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-semibold">{item.label}</p>
@@ -96,7 +111,7 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
             ))}
           </div>
         ) : null}
-      </div>
+      </form>
 
       <div className="relative">
         <button
@@ -141,4 +156,21 @@ export function HeaderTools({ notifications, searchItems }: { notifications: Not
 
 function normalizeSearch(value: string) {
   return value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function getFallbackSearchHref(query: string, searchItems: SearchItem[]) {
+  const term = query.trim();
+  if (!term) return "";
+
+  const targetType = ["Producto", "Preventa", "Cliente", "Despacho", "Factura", "Produccion", "Usuario"].find((type) => searchItems.some((item) => item.type === type));
+  const encoded = encodeURIComponent(term);
+
+  if (targetType === "Producto") return `/inventario?search=${encoded}`;
+  if (targetType === "Preventa" || targetType === "Cliente") return `/preventas?search=${encoded}`;
+  if (targetType === "Despacho") return `/logistica?search=${encoded}`;
+  if (targetType === "Factura") return `/facturas?search=${encoded}`;
+  if (targetType === "Produccion") return `/produccion?search=${encoded}`;
+  if (targetType === "Usuario") return `/usuarios?search=${encoded}`;
+
+  return "";
 }
