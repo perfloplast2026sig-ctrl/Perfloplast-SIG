@@ -59,7 +59,7 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
           codigo: order.code,
           productos: order.product,
           bodega: order.warehouse,
-          turno: `${order.shift} ${order.schedule}`,
+          turno: `${order.shift}\n${order.createdAt}`,
           cantidad: order.quantity,
           rechazos: order.rejectedQuantity,
           responsable: order.responsible,
@@ -89,9 +89,9 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
             data={filteredOrders}
             columns={[
               { header: "Orden", cell: (item) => <span className="font-mono text-xs font-semibold">{item.code}</span> },
-              { header: "Productos", cell: (item) => <p className="max-w-[380px] whitespace-normal leading-6">{item.product}</p> },
+              { header: "Productos", cell: (item) => <ProductSummary value={item.product} /> },
               { header: "Bodega", cell: (item) => item.warehouse },
-              { header: "Turno", cell: (item) => <div><p>{item.shift}</p><p className="text-xs text-muted">{item.schedule}</p></div> },
+              { header: "Turno", cell: (item) => <div><p>{item.shift}</p><p className="text-xs text-muted">{item.createdAt}</p></div> },
               { header: "Cantidad", align: "right", cell: (item) => <div className="text-right"><p className="font-semibold">{item.quantity}</p>{Number(item.rejectedQuantity) > 0 ? <p className="text-xs text-red-600 dark:text-red-300">Rech. {item.rejectedQuantity}</p> : null}</div> },
               { header: "Responsable", cell: (item) => <span className="text-muted">{item.responsible}</span> },
               { header: "Estado", cell: (item) => <Badge label={item.status.label} tone={item.status.tone} /> },
@@ -127,6 +127,15 @@ function filterProductionRows(rows: Awaited<ReturnType<typeof getProductionModul
 
 function normalizeSearch(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function ProductSummary({ value }: { value: string }) {
+  const lines = value.split("\n").filter(Boolean);
+  return (
+    <div className="max-w-[420px] space-y-1.5 whitespace-normal leading-tight">
+      {lines.map((line, index) => <p key={`${line}-${index}`} className={index % 2 === 0 ? "font-semibold" : "text-xs text-muted"}>{line}</p>)}
+    </div>
+  );
 }
 
 function ProductionFilters({ params, responsibleOptions }: { params: ProductionSearchParams; responsibleOptions: string[] }) {

@@ -51,11 +51,11 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
       <PageHeading
         title="Logistica y despachos"
         actions={<><Link className="inline-flex h-11 items-center justify-center rounded-full border bg-card px-4 text-sm font-semibold transition hover:bg-card-muted" href="/logistica/devoluciones">Ver devoluciones</Link><OperationalReportExport title="Logistica" subtitle="Despachos y rutas registradas" generatedAt={generatedAt} generatedBy={user.name} metrics={[
-          { label: "Despachos", value: String(visibleDispatches.length), detail: "Registros incluidos" },
+          { label: "Filas", value: String(visibleDispatchGroups.length), detail: `${visibleDispatches.length} despachos incluidos` },
           { label: "Activos", value: String(active), detail: "Pendientes o en ruta" },
           { label: "Entregados", value: String(delivered), detail: "Cerrados correctamente" },
           { label: "Carga total", value: `${totalLoad.toLocaleString("es-GT")} un`, detail: "Unidades en despachos" },
-        ]} columns={[
+        ]} period={formatLogisticsReportPeriod(params)} columns={[
           { key: "codigo", label: "Despacho" },
           { key: "preventa", label: "Preventa" },
           { key: "cliente", label: "Cliente" },
@@ -65,17 +65,7 @@ export default async function LogisticsPage({ searchParams }: { searchParams: Pr
           { key: "rechazos", label: "Rechazos" },
           { key: "valor", label: "Valor", align: "right" },
           { key: "estado", label: "Estado" },
-        ]} rows={visibleDispatches.map((dispatch) => ({
-          codigo: dispatch.code,
-          preventa: dispatch.preorder,
-          cliente: dispatch.client,
-          piloto: dispatch.driver,
-          destino: dispatch.destination,
-          carga: dispatch.load,
-          rechazos: dispatch.rejectedLoad,
-          valor: dispatch.value,
-          estado: dispatch.status.label,
-        }))} />{canCreateDispatch ? <DispatchCreateModal preorders={preorders} drivers={drivers} warehouses={warehouses} /> : null}</>}
+        ]} rows={buildLogisticsReportRows(visibleDispatchGroups)} />{canCreateDispatch ? <DispatchCreateModal preorders={preorders} drivers={drivers} warehouses={warehouses} /> : null}</>}
       />
 
       {params.error ? <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-300">{params.error}</div> : null}
@@ -159,7 +149,7 @@ function buildDispatchGroupRow(rows: Awaited<ReturnType<typeof getLogisticsModul
   const totalValue = sorted.reduce((sum, row) => sum + numericValue(row.value), 0);
   const clients = uniqueOptions(sorted.map((row) => row.client));
   const statuses = uniqueOptions(sorted.map((row) => row.status.label));
-  const rejected = sorted.filter((row) => row.rejectedLoad !== "Sin rechazos").map((row) => `${row.preorder}: ${row.rejectedLoad}`);
+  const rejected = sorted.filter((row) => row.rejectedLoad !== "Sin rechazos").map((row) => `${formatDocumentCode(row.preorder)}: ${formatDocumentReferences(row.rejectedLoad)}`);
   const printable = sorted.some((row) => isApprovalPdfAvailable(row.statusKey));
   return {
     key: dispatchApprovalGroupKey(first),
@@ -204,14 +194,20 @@ function formatMoney(value: number) {
 }
 
 function formatDispatchRange(rows: Awaited<ReturnType<typeof getLogisticsModuleData>>["dispatches"]) {
-  if (rows.length === 1) return rows[0].code;
-  return `${rows[0].code} a ${rows.at(-1)?.code || rows[0].code}`;
+  if (rows.length === 1) return formatDocumentCode(rows[0].code);
+  return `${formatDocumentCode(rows[0].code)} a ${formatDocumentCode(rows.at(-1)?.code || rows[0].code)}`;
 }
 
 function formatListRange(values: string[]) {
-  const uniqueValues = uniqueOptions(values);
-  if (uniqueValues.length <= 2) return uniqueValues.join(", ");
-  return `${uniqueValues[0]} + ${uniqueValues.length - 1} mas`;
+  return uniqueOptions(values).map(formatDocumentCode).join(", ");
+}
+
+function formatDocumentReferences(value: string) {
+  return value.replace(/\b(DSP|PV|FAC)-(?:\d{4}-)?(\d+)\b/g, (_match, prefix: string, number: string) => `${prefix}-${number.padStart(7, "0")}`);
+}
+
+function formatDocumentCode(value: string) {
+  return formatDocumentReferences(value.trim());
 }
 
 function LogisticsFilters({ params, driverOptions }: { params: LogisticsSearchParams; driverOptions: string[] }) {
@@ -265,6 +261,30 @@ function matchesPeriod(dateKey: string, period: string, from: string | undefined
 
 function currentGuatemalaDateKey() {
   return new Intl.DateTimeFormat("en-CA", { dateStyle: "short", timeZone: "America/Guatemala" }).format(new Date());
+}
+
+function buildLogisticsReportRows(groups: ReturnType<typeof buildVisibleDispatchGroups>) {
+  return groups.map((group) => ({
+    codigo: group.code,
+    preventa: group.invoice ? `${group.preorder}\n${group.invoice}` : group.preorder,
+    cliente: group.client,
+    piloto: group.driver,
+    destino: group.destination,
+    carga: group.load,
+    rechazos: group.rejectedLoad,
+    valor: group.value,
+    estado: group.status.label,
+  }));
+}
+
+function formatLogisticsReportPeriod(params: LogisticsSearchParams) {
+  const period = params.period || "Todos";
+  if (period === "Hoy") return "Hoy";
+  if (period === "Mes") return "Mes actual";
+  if (period === "Personalizado" && (params.from || params.to)) {
+    return `${params.from || "Inicio"} / ${params.to || "Hoy"}`;
+  }
+  return "Todos los registros";
 }
 
 function buildDispatchGroupDetail(group: ReturnType<typeof buildDispatchGroupRow>) {

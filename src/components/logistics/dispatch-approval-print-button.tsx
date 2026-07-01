@@ -73,7 +73,7 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
   const rows = sortDispatches(approvedDispatches.length ? approvedDispatches : [current]);
   const totalLoad = rows.reduce((sum, dispatch) => sum + parseQuantity(dispatch.load), 0);
   const totalValue = rows.reduce((sum, dispatch) => sum + parseMoney(dispatch.value), 0);
-  const detailRows = rows.flatMap((dispatch) => dispatch.items.map((item, index) => ({ dispatch, item, first: index === 0 })));
+  const detailRows = rows.flatMap((dispatch) => dispatch.items.map((item, index) => ({ dispatch, item, first: index === 0, itemCount: dispatch.items.length })));
   const clients = unique(rows.map((dispatch) => dispatch.client));
   const hasRejections = rows.some((dispatch) => dispatch.rejectedLoad !== "Sin rechazos");
   const manifestCode = buildManifestCode(rows);
@@ -108,25 +108,34 @@ function DispatchApprovalDocument({ current, dispatches }: { current: DispatchAp
       </section>
 
       <section className="mt-4 flex-1">
-        <div className="border-2 border-slate-900">
-          <table className="w-full border-collapse text-[12px]">
-            <thead className="bg-slate-100 text-left text-[10px] font-black uppercase tracking-[0.08em] text-slate-900">
+        <div className="overflow-hidden border-2 border-slate-900">
+          <table className="w-full table-fixed border-collapse text-left text-[12px]">
+            <colgroup>
+              <col className="w-[13%]" />
+              <col className="w-[34%]" />
+              <col className="w-[18%]" />
+              <col className="w-[19%]" />
+              <col className="w-[16%]" />
+            </colgroup>
+            <thead className="bg-slate-100 text-[10px] font-black uppercase tracking-[0.08em] text-slate-900">
               <tr>
                 <th className="border-b-2 border-r border-slate-900 px-2 py-2 text-center">Cant.</th>
-                <th className="border-b-2 border-r border-slate-900 px-2 py-2">Descripcion</th>
-                <th className="border-b-2 border-r border-slate-900 px-2 py-2">Color</th>
-                <th className="border-b-2 border-r border-slate-900 px-2 py-2">Pedido</th>
-                <th className="border-b-2 border-slate-900 px-2 py-2">Cliente</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2 text-left">Producto</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2 text-left">Color</th>
+                <th className="border-b-2 border-r border-slate-900 px-2 py-2 text-left">Pedido</th>
+                <th className="border-b-2 border-slate-900 px-2 py-2 text-left">Cliente</th>
               </tr>
             </thead>
             <tbody>
-              {detailRows.map(({ dispatch, first, item }) => (
-                <tr key={`${dispatch.id}-${item.id}`} className="align-top">
-                  <td className="border-r border-t border-slate-300 px-2 py-2 text-center font-black">{formatQuantity(parseQuantity(item.quantity))}</td>
-                  <td className="border-r border-t border-slate-300 px-2 py-2 font-bold">{item.product}</td>
-                  <td className="border-r border-t border-slate-300 px-2 py-2 text-slate-700">{item.color}</td>
-                  <td className="border-r border-t border-slate-300 px-2 py-2 font-mono text-[11px] font-bold">{first ? dispatch.preorder : ""}</td>
-                  <td className="border-t border-slate-300 px-2 py-2 font-semibold">{first ? dispatch.client : ""}</td>
+              {detailRows.map(({ dispatch, first, item, itemCount }) => (
+                <tr key={`${dispatch.id}-${item.id}`} className="align-middle odd:bg-white even:bg-slate-50/75">
+                  <td className="border-r border-t border-slate-300 px-2 py-2 text-center font-mono text-[13px] font-black tabular-nums">{formatQuantity(parseQuantity(item.quantity))}</td>
+                  <td className="border-r border-t border-slate-300 px-2 py-2 text-left">
+                    <span className="block break-words text-[12px] font-black leading-tight text-slate-950">{item.product}</span>
+                  </td>
+                  <td className="border-r border-t border-slate-300 px-2 py-2 text-left text-[11px] font-semibold leading-tight text-slate-700">{item.color}</td>
+                  {first ? <td className="border-r border-t border-slate-300 bg-white px-2 py-2 align-middle font-mono text-[11px] font-black leading-tight text-slate-950" rowSpan={itemCount}>{dispatch.preorder}</td> : null}
+                  {first ? <td className="border-t border-slate-300 bg-white px-2 py-2 align-middle text-[11px] font-bold leading-tight text-slate-950" rowSpan={itemCount}>{dispatch.client}</td> : null}
                 </tr>
               ))}
             </tbody>

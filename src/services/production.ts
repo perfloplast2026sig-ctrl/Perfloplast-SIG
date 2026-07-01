@@ -38,7 +38,7 @@ async function getProductionModuleDataRaw() {
       name: warehouse.name,
       isFactoryWarehouse: warehouse.isFactoryWarehouse,
     })),
-    nextCode,
+    nextCode: formatProductionCode(nextCode),
     currentShift: displayShiftName(currentShift.name),
     currentShiftRange: `${currentShift.startTime} - ${currentShift.endTime}`,
     shiftSchedules,
@@ -47,7 +47,7 @@ async function getProductionModuleDataRaw() {
     currentDateTime: new Intl.DateTimeFormat("es-GT", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala" }).format(new Date()),
     orders: orders.map((order) => ({
       id: order.id,
-      code: order.code,
+      code: formatProductionCode(order.code),
       product: formatOrderProducts(order.outputs),
       warehouse: order.destinationLocation?.name || "Sin bodega",
       shift: displayShiftName(order.shift),
@@ -175,9 +175,8 @@ export async function createProductionEntry(input: {
 }
 
 export async function getNextProductionCode() {
-  const year = new Date().getFullYear();
-  const count = await prisma.productionOrder.count({ where: { code: { startsWith: `OP-${year}-` } } });
-  return `OP-${year}-${String(count + 1).padStart(5, "0")}`;
+  const orders = await prisma.productionOrder.findMany({ where: { code: { startsWith: "OP-" } }, select: { code: true } });
+  return formatProductionCodeFromSequence(nextProductionSequence(orders.map((order) => order.code)));
 }
 
 export async function getShiftSchedules() {
@@ -233,9 +232,26 @@ export async function updateShiftSchedules(input: Array<{ name: string; startTim
 }
 
 async function buildProductionCode(tx: Prisma.TransactionClient) {
-  const year = new Date().getFullYear();
-  const count = await tx.productionOrder.count({ where: { code: { startsWith: `OP-${year}-` } } });
-  return `OP-${year}-${String(count + 1).padStart(5, "0")}`;
+  const orders = await tx.productionOrder.findMany({ where: { code: { startsWith: "OP-" } }, select: { code: true } });
+  return formatProductionCodeFromSequence(nextProductionSequence(orders.map((order) => order.code)));
+}
+
+function nextProductionSequence(codes: string[]) {
+  return codes.reduce((max, code) => Math.max(max, productionSequence(code)), 0) + 1;
+}
+
+function productionSequence(code: string) {
+  const match = /^OP-(?:\d{4}-)?(\d+)$/.exec(code.trim());
+  return match ? Number(match[1]) || 0 : 0;
+}
+
+function formatProductionCodeFromSequence(sequence: number) {
+  return `OP-${String(sequence).padStart(7, "0")}`;
+}
+
+function formatProductionCode(code: string) {
+  const sequence = productionSequence(code);
+  return sequence > 0 ? formatProductionCodeFromSequence(sequence) : code;
 }
 
 function getCurrentShift(schedules: Array<{ name: string; startTime: string; endTime: string }>) {
@@ -271,9 +287,11 @@ function formatOrderProducts(outputs: Array<{ product: { name: string; modelName
   if (outputs.length === 0) return "Sin producto";
 
   return outputs.map((output) => {
-    const rejected = Number(output.rejectedQuantity) > 0 ? `, rech. ${output.rejectedQuantity.toString()}` : "";
-    return `${output.product.modelName || output.product.name} · ${output.product.color || "Sin color"} (${output.producedQuantity.toString()}${rejected})`;
-  }).join(", ");
+    const produced = output.producedQuantity.toString();
+    const rejected = output.rejectedQuantity.toString();
+    const rejectedText = Number(output.rejectedQuantity) > 0 ? ` | Rech. ${rejected}` : "";
+    return `${output.product.modelName || output.product.name}\n${output.product.color || "Sin color"} | Buenos ${produced}${rejectedText}`;
+  }).join("\n");
 }
 
 function parseQuantity(value: string) {

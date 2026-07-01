@@ -171,23 +171,28 @@ export function InvoicesRegister({ generatedAt, generatedBy, initialSearch = "",
 
           <PaginationFooter currentPage={currentPage} end={Math.min(start + pageSize, filteredInvoices.length)} goToPage={setPage} start={filteredInvoices.length === 0 ? 0 : start + 1} total={filteredInvoices.length} totalPages={totalPages} />
 
-          {selectedInvoice ? (
-            <div className="border-t bg-card-muted/30 p-3 sm:p-5">
-              <div className="invoice-no-print mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Vista de factura</p>
-                  <p className="font-semibold">{selectedInvoice.number} - {selectedInvoice.client}</p>
-                </div>
-                <button aria-label="Cerrar vista de factura" className="modal-close-button grid place-items-center rounded-full border bg-card text-foreground shadow-sm transition hover:bg-card-muted" onClick={() => setSelectedId("")} type="button">
-                  <X size={16} />
-                </button>
-              </div>
-              <InvoiceDocument invoice={selectedInvoice} />
-            </div>
-          ) : null}
         </>
       )}
     </section>
+
+    {selectedInvoice ? (
+      <div className="invoice-no-print fixed inset-0 z-[2147482000] bg-slate-950/70 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label={`Vista de factura ${selectedInvoice.number}`}>
+        <div className="mx-auto flex h-full max-w-[1120px] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b bg-card px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Vista de factura</p>
+              <p className="truncate font-semibold">{selectedInvoice.number} - {selectedInvoice.client}</p>
+            </div>
+            <button aria-label="Cerrar vista de factura" className="modal-close-button grid place-items-center rounded-full border bg-background text-foreground shadow-sm transition hover:bg-card-muted" onClick={() => setSelectedId("")} type="button">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-auto bg-slate-100 px-3 py-5 sm:px-6">
+            <InvoiceDocument invoice={selectedInvoice} />
+          </div>
+        </div>
+      </div>
+    ) : null}
     </>
   );
 }

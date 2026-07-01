@@ -25,6 +25,7 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
   const [seller, setSeller] = useState("Todos");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [generatedAt, setGeneratedAt] = useState("Al generar PDF");
   const sellers = useMemo(() => Array.from(new Set(preorders.map((row) => row.seller).filter(Boolean))).sort((a, b) => a.localeCompare(b, "es")), [preorders]);
   const rows = useMemo(() => preorders.filter((row) => {
     if (seller !== "Todos" && row.seller !== seller) return false;
@@ -34,10 +35,12 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
   }), [from, preorders, seller, to]);
   const total = rows.reduce((sum, row) => sum + row.totalNumber, 0);
   const sellerSummary = useMemo(() => buildSellerSummary(rows), [rows]);
-  const productRows = useMemo(() => rows.flatMap((row) => row.items.map((item, index) => ({ ...item, code: row.code, key: `${row.code}-${index}` }))), [rows]);
+  const productGroups = useMemo(() => rows.map((row) => ({ code: formatPreorderCode(row.code), client: row.client, total: row.total, key: row.code, items: row.items })), [rows]);
+  const productCount = productGroups.reduce((sum, row) => sum + row.items.length, 0);
 
   const print = () => {
-    printWithBodyClass("printing-preorder-report");
+    setGeneratedAt(formatGeneratedAt(new Date()));
+    window.setTimeout(() => printWithBodyClass("printing-preorder-report"), 0);
   };
 
   return (
@@ -75,9 +78,10 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
               </div>
             </div>
             <div>
-              <p>Reporte comercial ejecutivo</p>
+              <p>Reporte comercial</p>
               <h1>Preventas</h1>
               <strong>{from || "Inicio"} / {to || "Hoy"}</strong>
+              <small>Generado: {generatedAt}</small>
             </div>
           </header>
 
@@ -94,6 +98,8 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
             <div><span>Ticket promedio</span><strong>{formatGTQ(total / Math.max(rows.length, 1))}</strong><small>Promedio por venta</small></div>
             <div><span>Vendedores</span><strong>{sellerSummary.length}</strong><small>Con actividad</small></div>
           </section>
+
+          <section className="preorder-report-section-title"><span />Resumen comercial</section>
 
           <section className="preorder-report-grid">
             <div className="preorder-report-card">
@@ -121,11 +127,11 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
           <section className="preorder-report-detail-grid">
             <div className="preorder-report-table">
               <h2>Detalle de preventas</h2>
-              <table>
+              <table className="preorder-sales-table">
                 <thead><tr><th>Codigo</th><th>Cliente</th><th>Vendedor</th><th>Bodega</th><th>Fecha</th><th>Estado</th><th>Total</th></tr></thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={row.code}><td>{row.code}</td><td>{row.client}</td><td>{row.seller}</td><td>{row.warehouse}</td><td>{row.date}</td><td>{row.status.label}</td><td>{row.total}</td></tr>
+                    <tr key={row.code}><td className="preorder-code-cell">{formatPreorderCode(row.code)}</td><td>{row.client}</td><td>{row.seller}</td><td>{row.warehouse}</td><td>{row.date}</td><td><span className="preorder-status-pill">{row.status.label}</span></td><td className="preorder-money-cell">{row.total}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -133,24 +139,46 @@ export function PreorderReportExport({ preorders }: { preorders: PreorderRow[] }
 
             <div className="preorder-report-table">
               <h2>Productos incluidos</h2>
-              <table>
-                <thead><tr><th>Preventa</th><th>Producto</th><th>Color</th><th>Cant.</th><th>Subtotal</th></tr></thead>
+              <table className="preorder-products-table">
+                <thead><tr><th>Preventa</th><th>Cliente</th><th>Productos asociados</th><th>Total</th></tr></thead>
                 <tbody>
-                  {productRows.map((item) => (
-                    <tr key={item.key}><td>{item.code}</td><td>{item.product}</td><td>{item.color}</td><td>{item.quantity}</td><td>{item.subtotal}</td></tr>
+                  {productGroups.map((group) => (
+                    <tr key={group.key}>
+                      <td className="preorder-code-cell"><strong>{group.code}</strong><small>{group.items.length} producto(s)</small></td>
+                      <td>{group.client}</td>
+                      <td className="preorder-products-list-cell">
+                        <div className="preorder-products-list">
+                          {group.items.map((item, index) => (
+                            <div key={`${group.key}-${index}`}>
+                              <strong>{item.product}</strong>
+                              <span>{item.color} | Cant. {item.quantity} | {item.subtotal}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="preorder-money-cell">{group.total}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </section>
 
-          <footer>Generado automaticamente por el sistema de inventario empresarial</footer>
+          <footer><span>Generado automaticamente por el sistema de inventario empresarial</span><strong>{rows.length} preventas - {productCount} productos</strong></footer>
         </article>
       </div>
     </>
   );
 }
 
+function formatGeneratedAt(date: Date) {
+  const datePart = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "America/Guatemala" }).format(date);
+  const timePart = new Intl.DateTimeFormat("es-GT", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Guatemala" }).format(date).replace(/\s+/g, " ");
+  return `${datePart}, ${timePart}`;
+}
+function formatPreorderCode(code: string) {
+  return code.replace(/\bPV-(?:\d{4}-)?(\d+)\b/g, (_match, number) => `PV-${number.padStart(7, "0")}`);
+}
 function formatGTQ(value: number) {
   return `Q ${value.toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

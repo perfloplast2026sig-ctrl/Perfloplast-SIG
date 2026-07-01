@@ -93,7 +93,7 @@ export function OperationalReportExport({
               <tbody>
                 {rows.map((row, index) => (
                   <tr key={`${row.codigo || row.code || index}-${index}`}>
-                    {columns.map((column) => <td key={column.key} className={column.align === "right" ? "text-right" : ""}>{row[column.key] || ""}</td>)}
+                    {columns.map((column) => <td key={column.key} className={column.align === "right" ? "text-right" : ""}><ReportCell value={row[column.key] || ""} /></td>)}
                   </tr>
                 ))}
               </tbody>
@@ -107,5 +107,15 @@ export function OperationalReportExport({
         </article>
       </div>
     </>
+  );
+}
+
+function ReportCell({ value }: { value: string }) {
+  const lines = value.split("\n").filter(Boolean);
+  if (lines.length <= 1) return value;
+  return (
+    <span className="operational-report-cell-list">
+      {lines.map((line, index) => <span key={`${line}-${index}`}>{line}</span>)}
+    </span>
   );
 }

@@ -821,21 +821,15 @@ body {
     padding: 0 !important;
   }
 
-  body.printing-operational-report .app-main > *:has(.operational-report-print-stage) > *:not(:has(.operational-report-print-stage)):not(.operational-report-print-stage) {
+  body.printing-operational-report .app-main > *:has(.operational-report-print-stage) > *:not(:has(.operational-report-print-stage)):not(.operational-report-print-stage),
+  body.printing-operational-report *:has(> .operational-report-print-stage) > *:not(.operational-report-print-stage),
+  body.printing-operational-report .operational-report-control {
     display: none !important;
   }
 
   body.printing-operational-report .app-main > *:has(.operational-report-print-stage) > *:has(.operational-report-print-stage) {
     display: block !important;
     width: 100% !important;
-  }
-
-  body.printing-operational-report .operational-report-control {
-    display: none !important;
-  }
-
-  body.printing-operational-report *:has(> .operational-report-print-stage) > *:not(.operational-report-print-stage) {
-    display: none !important;
   }
 
   body.printing-operational-report .operational-report-print-stage {
@@ -851,99 +845,117 @@ body {
     min-height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: #06184a !important;
+    color: #101828 !important;
     background: #ffffff !important;
-    font-size: 7.6px !important;
-    line-height: 1.18 !important;
+    font-size: 7.4px !important;
+    line-height: 1.22 !important;
   }
 
   body.printing-operational-report .operational-report-header {
     display: grid !important;
-    grid-template-columns: 1fr 58mm !important;
-    align-items: center !important;
-    gap: 7mm !important;
-    border-bottom: 1px solid #8fa9d5 !important;
-    padding-bottom: 2.4mm !important;
+    grid-template-columns: minmax(0, 1fr) 60mm !important;
+    align-items: start !important;
+    gap: 8mm !important;
+    border-bottom: 1.4px solid #123f7a !important;
+    padding: 0 0 3mm !important;
   }
 
   body.printing-operational-report .operational-report-brand-block {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: 18mm minmax(0, 1fr) !important;
     align-items: center !important;
-    gap: 2.2mm !important;
+    gap: 3mm !important;
   }
 
   body.printing-operational-report .operational-report-brand-block img {
-    width: 13mm !important;
+    width: 17mm !important;
     height: auto !important;
+    max-width: none !important;
   }
 
   body.printing-operational-report .operational-report-brand {
+    margin: 0 !important;
     color: #003b8f !important;
-    font-size: 14.5px !important;
+    font-size: 15px !important;
     font-weight: 950 !important;
     line-height: 1 !important;
+  }
+
+  body.printing-operational-report .operational-report-brand-block p:not(.operational-report-brand) {
+    margin: 0.45mm 0 0 !important;
+    color: #344054 !important;
+    font-size: 7.1px !important;
+    font-weight: 700 !important;
   }
 
   body.printing-operational-report .operational-report-header > div:last-child {
     text-align: right !important;
   }
 
-  body.printing-operational-report .operational-report-header h1 {
-    margin: 0.3mm 0 !important;
-    color: #06184a !important;
-    font-size: 21px !important;
+  body.printing-operational-report .operational-report-header > div:last-child p {
+    margin: 0 !important;
+    color: #667085 !important;
+    font-size: 7px !important;
     font-weight: 950 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-operational-report .operational-report-header h1 {
+    margin: 0.8mm 0 0.7mm !important;
+    color: #101828 !important;
+    font-size: 20px !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+  }
+
+  body.printing-operational-report .operational-report-header strong,
+  body.printing-operational-report .operational-report-header span {
+    display: block !important;
+    color: #123f7a !important;
+    font-size: 7.4px !important;
+    font-weight: 850 !important;
   }
 
   body.printing-operational-report .operational-report-header span {
-    display: block !important;
-    margin-top: 0.7mm !important;
-    color: #334d85 !important;
-    font-weight: 800 !important;
+    margin-top: 0.8mm !important;
+    color: #667085 !important;
   }
 
   body.printing-operational-report .operational-report-meta,
   body.printing-operational-report .operational-report-summary {
     display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 0 !important;
-    border-bottom: 1px solid #d7e1f2 !important;
+    border: 1px solid #c8d7ef !important;
+    border-right: 0 !important;
+    background: #ffffff !important;
   }
 
   body.printing-operational-report .operational-report-meta {
-    grid-template-columns: repeat(4, 1fr) !important;
-    margin-top: 2.2mm !important;
-    border-top: 1px solid #d7e1f2 !important;
-    padding: 1.4mm 0 !important;
+    margin-top: 3mm !important;
   }
 
   body.printing-operational-report .operational-report-summary {
-    grid-template-columns: repeat(4, 1fr) !important;
-    margin-top: 2.2mm !important;
-    border-top: 1px solid #d7e1f2 !important;
+    margin-top: 2mm !important;
   }
 
   body.printing-operational-report .operational-report-meta > div,
   body.printing-operational-report .operational-report-summary > div {
-    border-right: 1px solid #e2e9f5 !important;
+    min-height: 10mm !important;
+    border-right: 1px solid #c8d7ef !important;
     padding: 1.5mm 2mm !important;
+    background: #fbfdff !important;
   }
 
-  body.printing-operational-report .operational-report-meta > div:first-child,
-  body.printing-operational-report .operational-report-summary > div:first-child {
-    padding-left: 0 !important;
-  }
-
-  body.printing-operational-report .operational-report-meta > div:last-child,
-  body.printing-operational-report .operational-report-summary > div:last-child {
-    border-right: 0 !important;
-    padding-right: 0 !important;
+  body.printing-operational-report .operational-report-summary > div {
+    background: #ffffff !important;
   }
 
   body.printing-operational-report .operational-report-meta span,
   body.printing-operational-report .operational-report-summary span {
     display: block !important;
-    color: #003b8f !important;
-    font-size: 6.8px !important;
+    color: #123f7a !important;
+    font-size: 6.6px !important;
     font-weight: 950 !important;
     text-transform: uppercase !important;
   }
@@ -951,38 +963,51 @@ body {
   body.printing-operational-report .operational-report-meta strong,
   body.printing-operational-report .operational-report-summary strong {
     display: block !important;
-    margin-top: 0.5mm !important;
-    color: #06184a !important;
-    font-size: 10px !important;
+    margin-top: 0.6mm !important;
+    color: #101828 !important;
+    font-size: 9.5px !important;
     font-weight: 950 !important;
+    word-break: break-word !important;
   }
 
   body.printing-operational-report .operational-report-summary small {
     display: block !important;
     margin-top: 0.5mm !important;
-    color: #607399 !important;
+    color: #667085 !important;
+    font-size: 6.3px !important;
     font-weight: 750 !important;
   }
 
   body.printing-operational-report .operational-report-table {
-    margin-top: 2.6mm !important;
-    border-top: 1px solid #8fa9d5 !important;
-    padding-top: 1.8mm !important;
+    margin-top: 3mm !important;
     break-inside: auto !important;
   }
 
   body.printing-operational-report .operational-report-table h2 {
-    margin: 0 0 1.4mm !important;
-    color: #003b8f !important;
-    font-size: 7.8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.6mm !important;
+    margin: 0 0 1.8mm !important;
+    color: #123f7a !important;
+    font-size: 8.2px !important;
     font-weight: 950 !important;
     text-transform: uppercase !important;
+  }
+
+  body.printing-operational-report .operational-report-table h2::before {
+    content: "" !important;
+    display: block !important;
+    width: 4mm !important;
+    height: 1.2px !important;
+    background: #123f7a !important;
   }
 
   body.printing-operational-report .operational-report-table table {
     width: 100% !important;
     border-collapse: collapse !important;
     table-layout: fixed !important;
+    border-top: 1.3px solid #123f7a !important;
+    border-bottom: 1.3px solid #123f7a !important;
   }
 
   body.printing-operational-report .operational-report-table thead {
@@ -994,22 +1019,67 @@ body {
     page-break-inside: avoid !important;
   }
 
+  body.printing-operational-report .operational-report-table tbody tr:nth-child(even) {
+    background: #f8fbff !important;
+  }
+
   body.printing-operational-report .operational-report-table th {
-    background: #f7faff !important;
-    color: #334d85 !important;
-    font-size: 6.4px !important;
+    background: #eef4ff !important;
+    color: #123f7a !important;
+    font-size: 6.1px !important;
+    font-weight: 950 !important;
     text-align: left !important;
     text-transform: uppercase !important;
   }
 
   body.printing-operational-report .operational-report-table th,
   body.printing-operational-report .operational-report-table td {
-    border-bottom: 1px solid #dce6f4 !important;
-    height: 4.2mm !important;
-    padding: 1mm 1.1mm !important;
+    border-bottom: 1px solid #d8e3f4 !important;
+    min-height: 4.6mm !important;
+    padding: 1.1mm 1mm !important;
+    color: #101828 !important;
     vertical-align: top !important;
     word-break: break-word !important;
+    overflow-wrap: anywhere !important;
   }
+
+  body.printing-operational-report .operational-report-table td:nth-child(1),
+  body.printing-operational-report .operational-report-table td:nth-child(2) {
+    font-weight: 850 !important;
+  }
+
+  body.printing-operational-report .operational-report-cell-list {
+    display: grid !important;
+    gap: 0.7mm !important;
+  }
+
+  body.printing-operational-report .operational-report-cell-list > span {
+    display: block !important;
+    border-bottom: 1px solid #e6edf8 !important;
+    padding-bottom: 0.55mm !important;
+    line-height: 1.18 !important;
+  }
+
+  body.printing-operational-report .operational-report-cell-list > span:last-child {
+    border-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.printing-operational-report .operational-report-table td:nth-child(2) .operational-report-cell-list > span:nth-child(even) {
+    color: #667085 !important;
+    font-size: 6.3px !important;
+    font-weight: 750 !important;
+  }
+
+  body.printing-operational-report .operational-report-table th:nth-child(1) { width: 11% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(2) { width: 22% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(3) { width: 9% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(4) { width: 10% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(5) { width: 10% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(6) { width: 7% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(7) { width: 14% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(8) { width: 9% !important; }
+  body.printing-operational-report .operational-report-table th:nth-child(9) { width: 8% !important; }
 
   body.printing-operational-report .operational-report-table .text-right {
     text-align: right !important;
@@ -1020,12 +1090,11 @@ body {
     justify-content: space-between !important;
     gap: 5mm !important;
     margin-top: 4mm !important;
-    border-top: 1px solid #8fa9d5 !important;
-    padding-top: 1.4mm !important;
-    color: #6b7898 !important;
-    font-size: 6.6px !important;
+    border-top: 1px solid #c8d7ef !important;
+    padding-top: 1.5mm !important;
+    color: #667085 !important;
+    font-size: 6.5px !important;
   }
-
   body.printing-activity-report .app-shell,
   body.printing-activity-report .activity-report-no-print {
     display: none !important;
@@ -1338,237 +1407,6 @@ body {
     background: #ffffff !important;
     font-size: 7.6px !important;
     line-height: 1.18 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-header {
-    display: grid !important;
-    grid-template-columns: 1fr 54mm !important;
-    gap: 6mm !important;
-    align-items: center !important;
-    border-bottom: 1px solid #8fa9d5 !important;
-    padding-bottom: 2.4mm !important;
-  }
-
-  body.printing-preorder-report .preorder-report-brand-block {
-    display: flex !important;
-    align-items: center !important;
-    gap: 2.2mm !important;
-  }
-
-  body.printing-preorder-report .preorder-report-brand-block img {
-    width: 13mm !important;
-    height: auto !important;
-  }
-
-  body.printing-preorder-report .preorder-report-brand {
-    color: #003b8f !important;
-    font-size: 14.5px !important;
-    font-weight: 950 !important;
-    line-height: 1 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-header > div:last-child {
-    text-align: right !important;
-  }
-
-  body.printing-preorder-report .preorder-report-header h1 {
-    margin: 0.3mm 0 !important;
-    color: #06184a !important;
-    font-size: 22px !important;
-    font-weight: 950 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-filters {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0 !important;
-    margin-top: 2.2mm !important;
-    border-top: 1px solid #d7e1f2 !important;
-    border-bottom: 1px solid #d7e1f2 !important;
-    padding: 1.6mm 0 !important;
-    background: transparent !important;
-  }
-
-  body.printing-preorder-report .preorder-report-filters > div {
-    border-right: 1px solid #e2e9f5 !important;
-    padding: 0 2mm !important;
-  }
-
-  body.printing-preorder-report .preorder-report-filters > div:first-child {
-    padding-left: 0 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-filters > div:last-child {
-    border-right: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-filters span,
-  body.printing-preorder-report .preorder-report-summary span {
-    display: block !important;
-    color: #003b8f !important;
-    font-size: 7px !important;
-    font-weight: 950 !important;
-    text-transform: uppercase !important;
-  }
-
-  body.printing-preorder-report .preorder-report-filters strong {
-    display: block !important;
-    margin-top: 0.8mm !important;
-    color: #06184a !important;
-    font-weight: 850 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-summary {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0 !important;
-    margin-top: 2.2mm !important;
-    border-top: 1px solid #d7e1f2 !important;
-    border-bottom: 1px solid #d7e1f2 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-summary > div {
-    border: 0 !important;
-    border-right: 1px solid #e2e9f5 !important;
-    border-radius: 0 !important;
-    padding: 2mm 2.4mm !important;
-    background: transparent !important;
-  }
-
-  body.printing-preorder-report .preorder-report-summary > div:first-child {
-    padding-left: 0 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-summary > div:last-child {
-    border-right: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-summary strong {
-    display: block !important;
-    margin-top: 0.4mm !important;
-    color: #06184a !important;
-    font-size: 11px !important;
-    font-weight: 950 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-summary small {
-    display: block !important;
-    margin-top: 0.5mm !important;
-    color: #607399 !important;
-    font-weight: 750 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 4mm !important;
-    margin-top: 2.6mm !important;
-    break-inside: avoid !important;
-  }
-
-  body.printing-preorder-report .preorder-report-detail-grid {
-    display: block !important;
-    margin-top: 2.6mm !important;
-  }
-
-  body.printing-preorder-report .preorder-report-card {
-    border: 0 !important;
-    border-top: 1px solid #8fa9d5 !important;
-    border-radius: 0 !important;
-    min-height: 0 !important;
-    padding: 1.8mm 0 0 !important;
-    background: transparent !important;
-  }
-
-  body.printing-preorder-report .preorder-report-card h2,
-  body.printing-preorder-report .preorder-report-table h2 {
-    margin: 0 0 1.4mm !important;
-    color: #003b8f !important;
-    font-size: 7.6px !important;
-    font-weight: 950 !important;
-    text-transform: uppercase !important;
-  }
-
-  body.printing-preorder-report .preorder-report-bars > div {
-    margin-bottom: 1.5mm !important;
-  }
-
-  body.printing-preorder-report .preorder-report-bars p {
-    display: flex !important;
-    justify-content: space-between !important;
-    gap: 4mm !important;
-    margin-bottom: 1mm !important;
-    font-weight: 850 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-bars i {
-    display: block !important;
-    height: 2mm !important;
-    border-radius: 999px !important;
-    background: #0f9f63 !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table {
-    margin-top: 2.6mm !important;
-    border: 0 !important;
-    border-top: 1px solid #8fa9d5 !important;
-    border-radius: 0 !important;
-    padding: 1.8mm 0 0 !important;
-    break-inside: auto !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table table,
-  body.printing-preorder-report .preorder-report-card table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    table-layout: fixed !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table thead,
-  body.printing-preorder-report .preorder-report-card thead {
-    display: table-header-group !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table tfoot,
-  body.printing-preorder-report .preorder-report-card tfoot {
-    display: table-footer-group !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table tr,
-  body.printing-preorder-report .preorder-report-card tr {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table th,
-  body.printing-preorder-report .preorder-report-card th {
-    background: #f7faff !important;
-    color: #334d85 !important;
-    font-size: 6.4px !important;
-    text-align: left !important;
-    text-transform: uppercase !important;
-  }
-
-  body.printing-preorder-report .preorder-report-table th,
-  body.printing-preorder-report .preorder-report-table td,
-  body.printing-preorder-report .preorder-report-card th,
-  body.printing-preorder-report .preorder-report-card td {
-    border-bottom: 1px solid #dce6f4 !important;
-    height: 4.2mm !important;
-    padding: 1mm 1.1mm !important;
-    vertical-align: top !important;
-    word-break: break-word !important;
-  }
-
-  body.printing-preorder-report .preorder-report-print-target footer {
-    position: static !important;
-    margin-top: 4mm !important;
-    border-top: 1px solid #8fa9d5 !important;
-    padding-top: 1.5mm !important;
-    color: #6b7898 !important;
-    font-size: 6.6px !important;
   }
 
   body.printing-report .report-print-target {
@@ -2008,6 +1846,207 @@ body {
     margin: 7mm 7mm 8mm;
   }
 
+
+  body.printing-preorder-report .preorder-report-header {
+    border-bottom: 2px solid #0b3f7a !important;
+    grid-template-columns: 1fr 62mm !important;
+    padding-bottom: 4mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-header > div:last-child p {
+    color: #475569 !important;
+    font-size: 7px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-preorder-report .preorder-report-header > div:last-child small {
+    display: block !important;
+    margin-top: 1mm !important;
+    color: #64748b !important;
+    font-size: 6.8px !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-brand-block img {
+    width: 17mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-brand {
+    color: #0b4b8f !important;
+    font-size: 17px !important;
+    letter-spacing: 0 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters,
+  body.printing-preorder-report .preorder-report-summary {
+    overflow: hidden !important;
+    border: 1px solid #c9d8ee !important;
+    border-radius: 0 !important;
+    background: #f8fbff !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters {
+    margin-top: 4mm !important;
+    padding: 0 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-filters > div,
+  body.printing-preorder-report .preorder-report-summary > div {
+    padding: 2mm 2.4mm !important;
+    border-right: 1px solid #c9d8ee !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary {
+    margin-top: 2.6mm !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary > div {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fe 100%) !important;
+  }
+
+  body.printing-preorder-report .preorder-report-summary strong {
+    color: #06184a !important;
+    font-size: 13px !important;
+  }
+
+  body.printing-preorder-report .preorder-report-section-title {
+    display: grid !important;
+    grid-template-columns: 15mm 1fr !important;
+    align-items: center !important;
+    gap: 2mm !important;
+    margin-top: 4mm !important;
+    color: #0b4b8f !important;
+    font-size: 7.6px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.printing-preorder-report .preorder-report-section-title span {
+    display: block !important;
+    height: 1px !important;
+    background: #0b4b8f !important;
+  }
+
+  body.printing-preorder-report .preorder-report-card,
+  body.printing-preorder-report .preorder-report-table {
+    border: 1px solid #c9d8ee !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+  }
+
+  body.printing-preorder-report .preorder-report-card h2,
+  body.printing-preorder-report .preorder-report-table h2 {
+    margin: 0 !important;
+    border-bottom: 1px solid #c9d8ee !important;
+    padding: 1.5mm 2mm !important;
+    background: #eef4fc !important;
+    color: #0b3f7a !important;
+    font-size: 7.4px !important;
+  }
+
+  body.printing-preorder-report .preorder-report-bars {
+    padding: 2mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-bars i {
+    height: 1.7mm !important;
+    background: #16a163 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table {
+    margin-top: 3mm !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table th,
+  body.printing-preorder-report .preorder-report-card th {
+    background: #f1f5fb !important;
+    color: #0f315f !important;
+    font-size: 6.6px !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table td,
+  body.printing-preorder-report .preorder-report-card td {
+    color: #0f172a !important;
+    font-size: 7.1px !important;
+    line-height: 1.25 !important;
+  }
+
+  body.printing-preorder-report .preorder-report-table tbody tr:nth-child(even),
+  body.printing-preorder-report .preorder-report-card tbody tr:nth-child(even) {
+    background: #f8fbff !important;
+  }
+
+  body.printing-preorder-report .preorder-code-cell {
+    color: #06184a !important;
+    font-family: var(--font-geist-mono), Consolas, monospace !important;
+    font-weight: 950 !important;
+  }
+
+  body.printing-preorder-report .preorder-code-cell small {
+    display: block !important;
+    margin-top: 0.4mm !important;
+    color: #64748b !important;
+    font-family: var(--font-geist-sans), Arial, sans-serif !important;
+    font-size: 6.2px !important;
+    font-weight: 800 !important;
+  }
+
+  body.printing-preorder-report .preorder-product-cell {
+    font-weight: 900 !important;
+  }
+
+  body.printing-preorder-report .preorder-qty-cell,
+  body.printing-preorder-report .preorder-money-cell {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums !important;
+    font-weight: 900 !important;
+  }
+
+  body.printing-preorder-report .preorder-status-pill {
+    display: inline-block !important;
+    min-width: 17mm !important;
+    border: 1px solid #bfd3ea !important;
+    border-radius: 999px !important;
+    padding: 0.5mm 1.5mm !important;
+    background: #f8fbff !important;
+    color: #0b3f7a !important;
+    text-align: center !important;
+    font-size: 6.4px !important;
+    font-weight: 900 !important;
+  }
+
+  body.printing-preorder-report .preorder-sales-table th:nth-child(1) { width: 15% !important; }
+  body.printing-preorder-report .preorder-sales-table th:nth-child(2) { width: 17% !important; }
+  body.printing-preorder-report .preorder-sales-table th:nth-child(3) { width: 14% !important; }
+  body.printing-preorder-report .preorder-sales-table th:nth-child(4) { width: 12% !important; }
+  body.printing-preorder-report .preorder-sales-table th:nth-child(5) { width: 20% !important; }
+  body.printing-preorder-report .preorder-sales-table th:nth-child(6) { width: 11% !important; }
+  body.printing-preorder-report .preorder-sales-table th:nth-child(7) { width: 11% !important; }
+
+  body.printing-preorder-report .preorder-products-table th:nth-child(1) { width: 19% !important; }
+  body.printing-preorder-report .preorder-products-table th:nth-child(2) { width: 28% !important; }
+  body.printing-preorder-report .preorder-products-table th:nth-child(3) { width: 20% !important; }
+  body.printing-preorder-report .preorder-products-table th:nth-child(4) { width: 10% !important; }
+  body.printing-preorder-report .preorder-products-table th:nth-child(5) { width: 23% !important; }
+
+  body.printing-preorder-report .preorder-report-print-target footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 8mm !important;
+    border-top: 1px solid #0b4b8f !important;
+  }
+
+  body.printing-preorder-report .preorder-report-print-target footer strong {
+    color: #0b3f7a !important;
+    font-weight: 900 !important;
+  }
   body.printing-report .report-print-target {
     width: 100% !important;
     min-height: auto !important;
@@ -2682,4 +2721,366 @@ body {
   body.printing-report .report-print-target {
     padding: 8mm !important;
   }
+}
+
+/* Final preorder PDF layout: applies to preview and print. */
+body.printing-preorder-report .preorder-report-print-target {
+  color: #101828 !important;
+  font-size: 8px !important;
+  line-height: 1.24 !important;
+  background: #ffffff !important;
+}
+
+body.printing-preorder-report .preorder-report-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 62mm !important;
+  align-items: start !important;
+  gap: 8mm !important;
+  border-bottom: 1.5px solid #174a7c !important;
+  padding-bottom: 4mm !important;
+}
+
+body.printing-preorder-report .preorder-report-brand-block {
+  display: grid !important;
+  grid-template-columns: 18mm minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 3mm !important;
+}
+
+body.printing-preorder-report .preorder-report-brand-block img {
+  width: 17mm !important;
+  height: auto !important;
+}
+
+body.printing-preorder-report .preorder-report-brand {
+  margin: 0 !important;
+  color: #0b4b8f !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+body.printing-preorder-report .preorder-report-brand-block p:not(.preorder-report-brand) {
+  margin: 0.4mm 0 0 !important;
+  color: #344054 !important;
+  font-size: 7px !important;
+  font-weight: 700 !important;
+}
+
+body.printing-preorder-report .preorder-report-header > div:last-child {
+  text-align: right !important;
+}
+
+body.printing-preorder-report .preorder-report-header > div:last-child p {
+  margin: 0 !important;
+  color: #667085 !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+body.printing-preorder-report .preorder-report-header h1 {
+  margin: 0.7mm 0 !important;
+  color: #101828 !important;
+  font-size: 21px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+body.printing-preorder-report .preorder-report-header strong,
+body.printing-preorder-report .preorder-report-header small {
+  display: block !important;
+  color: #174a7c !important;
+  font-size: 7px !important;
+  font-weight: 850 !important;
+}
+
+body.printing-preorder-report .preorder-report-header small {
+  margin-top: 0.8mm !important;
+  color: #667085 !important;
+}
+
+body.printing-preorder-report .preorder-report-filters,
+body.printing-preorder-report .preorder-report-summary {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #c8d7ef !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+}
+
+body.printing-preorder-report .preorder-report-filters {
+  margin-top: 4mm !important;
+}
+
+body.printing-preorder-report .preorder-report-summary {
+  margin-top: 2.4mm !important;
+}
+
+body.printing-preorder-report .preorder-report-filters > div,
+body.printing-preorder-report .preorder-report-summary > div {
+  min-width: 0 !important;
+  border-right: 1px solid #c8d7ef !important;
+  padding: 2mm 2.3mm !important;
+  background: #fbfdff !important;
+}
+
+body.printing-preorder-report .preorder-report-filters > div:last-child,
+body.printing-preorder-report .preorder-report-summary > div:last-child {
+  border-right: 0 !important;
+}
+
+body.printing-preorder-report .preorder-report-filters span,
+body.printing-preorder-report .preorder-report-summary span {
+  display: block !important;
+  color: #174a7c !important;
+  font-size: 6.5px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+body.printing-preorder-report .preorder-report-filters strong,
+body.printing-preorder-report .preorder-report-summary strong {
+  display: block !important;
+  margin-top: 0.6mm !important;
+  color: #101828 !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  word-break: break-word !important;
+}
+
+body.printing-preorder-report .preorder-report-summary strong {
+  font-size: 12px !important;
+}
+
+body.printing-preorder-report .preorder-report-summary small {
+  display: block !important;
+  margin-top: 0.5mm !important;
+  color: #667085 !important;
+  font-size: 6.3px !important;
+  font-weight: 750 !important;
+}
+
+body.printing-preorder-report .preorder-report-section-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2mm !important;
+  margin-top: 4mm !important;
+  color: #174a7c !important;
+  font-size: 7.5px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+body.printing-preorder-report .preorder-report-section-title span {
+  display: block !important;
+  width: 8mm !important;
+  height: 1.2px !important;
+  background: #174a7c !important;
+}
+
+body.printing-preorder-report .preorder-report-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 3mm !important;
+  margin-top: 2mm !important;
+}
+
+body.printing-preorder-report .preorder-report-card,
+body.printing-preorder-report .preorder-report-table {
+  overflow: hidden !important;
+  border: 1px solid #c8d7ef !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+}
+
+body.printing-preorder-report .preorder-report-card h2,
+body.printing-preorder-report .preorder-report-table h2 {
+  margin: 0 !important;
+  border-bottom: 1px solid #c8d7ef !important;
+  padding: 1.5mm 2mm !important;
+  color: #174a7c !important;
+  background: #eef4fb !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+body.printing-preorder-report .preorder-report-bars {
+  padding: 2mm !important;
+}
+
+body.printing-preorder-report .preorder-report-bars > div {
+  margin-bottom: 1.4mm !important;
+}
+
+body.printing-preorder-report .preorder-report-bars p {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 3mm !important;
+  margin-bottom: 0.8mm !important;
+  color: #101828 !important;
+  font-weight: 850 !important;
+}
+
+body.printing-preorder-report .preorder-report-bars i {
+  display: block !important;
+  height: 1.6mm !important;
+  border-radius: 999px !important;
+  background: #16875d !important;
+}
+
+body.printing-preorder-report .preorder-report-detail-grid {
+  display: block !important;
+  margin-top: 3mm !important;
+}
+
+body.printing-preorder-report .preorder-report-table {
+  margin-top: 3mm !important;
+}
+
+body.printing-preorder-report .preorder-report-table table,
+body.printing-preorder-report .preorder-report-card table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+body.printing-preorder-report .preorder-report-table th,
+body.printing-preorder-report .preorder-report-card th {
+  border-bottom: 1px solid #d8e3f4 !important;
+  padding: 1mm 1.1mm !important;
+  color: #344054 !important;
+  background: #f8fbff !important;
+  font-size: 6.3px !important;
+  font-weight: 950 !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+}
+
+body.printing-preorder-report .preorder-report-table td,
+body.printing-preorder-report .preorder-report-card td {
+  border-bottom: 1px solid #e3ebf7 !important;
+  padding: 1mm 1.1mm !important;
+  color: #101828 !important;
+  font-size: 7px !important;
+  line-height: 1.2 !important;
+  vertical-align: top !important;
+  overflow-wrap: anywhere !important;
+}
+
+body.printing-preorder-report .preorder-report-table tbody tr:nth-child(even),
+body.printing-preorder-report .preorder-report-card tbody tr:nth-child(even) {
+  background: #fbfdff !important;
+}
+
+body.printing-preorder-report .preorder-code-cell {
+  color: #101828 !important;
+  font-family: var(--font-geist-mono), Consolas, monospace !important;
+  font-weight: 950 !important;
+}
+
+body.printing-preorder-report .preorder-code-cell small {
+  display: block !important;
+  margin-top: 0.5mm !important;
+  color: #667085 !important;
+  font-family: var(--font-geist-sans), Arial, sans-serif !important;
+  font-size: 6.1px !important;
+  font-weight: 750 !important;
+}
+
+body.printing-preorder-report .preorder-product-cell {
+  font-weight: 900 !important;
+}
+
+body.printing-preorder-report .preorder-qty-cell,
+body.printing-preorder-report .preorder-money-cell {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 900 !important;
+}
+
+body.printing-preorder-report .preorder-status-pill {
+  display: inline-block !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  color: #174a7c !important;
+  background: transparent !important;
+  font-size: 6.6px !important;
+  font-weight: 900 !important;
+}
+
+body.printing-preorder-report .preorder-sales-table th:nth-child(1) { width: 14% !important; }
+body.printing-preorder-report .preorder-sales-table th:nth-child(2) { width: 17% !important; }
+body.printing-preorder-report .preorder-sales-table th:nth-child(3) { width: 14% !important; }
+body.printing-preorder-report .preorder-sales-table th:nth-child(4) { width: 11% !important; }
+body.printing-preorder-report .preorder-sales-table th:nth-child(5) { width: 21% !important; }
+body.printing-preorder-report .preorder-sales-table th:nth-child(6) { width: 11% !important; }
+body.printing-preorder-report .preorder-sales-table th:nth-child(7) { width: 12% !important; }
+
+body.printing-preorder-report .preorder-products-table th:nth-child(1) { width: 20% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(2) { width: 30% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(3) { width: 21% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(4) { width: 9% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(5) { width: 20% !important; }
+
+body.printing-preorder-report .preorder-report-print-target footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 8mm !important;
+  margin-top: 4mm !important;
+  border-top: 1px solid #174a7c !important;
+  padding-top: 1.5mm !important;
+  color: #667085 !important;
+  font-size: 6.5px !important;
+}
+
+body.printing-preorder-report .preorder-report-print-target footer strong {
+  color: #174a7c !important;
+  font-weight: 900 !important;
+}
+body.printing-preorder-report .preorder-products-table th:nth-child(1) { width: 18% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(2) { width: 16% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(3) { width: 48% !important; }
+body.printing-preorder-report .preorder-products-table th:nth-child(4) { width: 18% !important; }
+
+body.printing-preorder-report .preorder-products-list-cell {
+  padding: 0 !important;
+}
+
+body.printing-preorder-report .preorder-products-list {
+  display: grid !important;
+  gap: 0 !important;
+}
+
+body.printing-preorder-report .preorder-products-list > div {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 2mm !important;
+  border-bottom: 1px solid #e3ebf7 !important;
+  padding: 1mm 1.1mm !important;
+}
+
+body.printing-preorder-report .preorder-products-list > div:last-child {
+  border-bottom: 0 !important;
+}
+
+body.printing-preorder-report .preorder-products-list strong {
+  color: #101828 !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  line-height: 1.18 !important;
+}
+
+body.printing-preorder-report .preorder-products-list span {
+  color: #475467 !important;
+  font-size: 6.6px !important;
+  font-weight: 800 !important;
+  line-height: 1.18 !important;
+  text-align: right !important;
 }
